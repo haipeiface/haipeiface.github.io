@@ -4,14 +4,20 @@
   <meta charset="utf-8">
   
   
-  <title>Hexo</title>
+  <title>策略+工厂模式解决if-else | Hexo</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-  <meta property="og:type" content="website">
-<meta property="og:title" content="Hexo">
-<meta property="og:url" content="http://example.com/index.html">
+  <meta name="description" content="假设我们要做一个外卖平台，有这样的需求： 12345671、外卖平台上的某家店铺为了促销，设置了多种会员优惠，其中包含**超级会员**折扣8折、**普通会员**折扣9折、**普通用户**没有折扣三种。2、希望用户在付款的时候，根据用户的会员等级，就可以知道用户符合哪种折扣策略，进而进行打折，计算出应付金额。3、随着业务发展，新的需求要求**专属会员**要在店铺下单金额大于30元的时候才可以享受优惠">
+<meta property="og:type" content="article">
+<meta property="og:title" content="策略+工厂模式解决if-else">
+<meta property="og:url" content="http://example.com/2024/10/07/%E7%AD%96%E7%95%A5+%E5%B7%A5%E5%8E%82%E6%A8%A1%E5%BC%8F%E8%A7%A3%E5%86%B3if-else/index.html">
 <meta property="og:site_name" content="Hexo">
+<meta property="og:description" content="假设我们要做一个外卖平台，有这样的需求： 12345671、外卖平台上的某家店铺为了促销，设置了多种会员优惠，其中包含**超级会员**折扣8折、**普通会员**折扣9折、**普通用户**没有折扣三种。2、希望用户在付款的时候，根据用户的会员等级，就可以知道用户符合哪种折扣策略，进而进行打折，计算出应付金额。3、随着业务发展，新的需求要求**专属会员**要在店铺下单金额大于30元的时候才可以享受优惠">
 <meta property="og:locale">
+<meta property="article:published_time" content="2024-10-07T14:07:35.000Z">
+<meta property="article:modified_time" content="2024-10-07T14:32:16.845Z">
 <meta property="article:author" content="John Doe">
+<meta property="article:tag" content="Java">
+<meta property="article:tag" content="设计模式">
 <meta name="twitter:card" content="summary">
   
     <link rel="alternate" href="/atom.xml" title="Hexo" type="application/atom+xml">
@@ -67,9 +73,7 @@
 </header>
 
       <div class="outer">
-        <section id="main">
-  
-    <article id="post-策略+工厂模式解决if-else" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+        <section id="main"><article id="post-策略+工厂模式解决if-else" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
   <div class="article-meta">
     <a href="/2024/10/07/%E7%AD%96%E7%95%A5+%E5%B7%A5%E5%8E%82%E6%A8%A1%E5%BC%8F%E8%A7%A3%E5%86%B3if-else/" class="article-date">
   <time class="dt-published" datetime="2024-10-07T14:07:35.000Z" itemprop="datePublished">2024-10-07</time>
@@ -82,8 +86,8 @@
       <header class="article-header">
         
   
-    <h1 itemprop="name">
-      <a class="p-name article-title" href="/2024/10/07/%E7%AD%96%E7%95%A5+%E5%B7%A5%E5%8E%82%E6%A8%A1%E5%BC%8F%E8%A7%A3%E5%86%B3if-else/">策略+工厂模式解决if-else</a>
+    <h1 class="p-name article-title" itemprop="headline name">
+      策略+工厂模式解决if-else
     </h1>
   
 
@@ -184,153 +188,19 @@
     </footer>
   </div>
   
-</article>
-
-
-
+    
+<nav id="article-nav">
   
-    <article id="post-8 个线程池最佳实践和坑！使用不当直接生产事故！！" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
-  <div class="article-meta">
-    <a href="/2024/10/06/8%20%E4%B8%AA%E7%BA%BF%E7%A8%8B%E6%B1%A0%E6%9C%80%E4%BD%B3%E5%AE%9E%E8%B7%B5%E5%92%8C%E5%9D%91%EF%BC%81%E4%BD%BF%E7%94%A8%E4%B8%8D%E5%BD%93%E7%9B%B4%E6%8E%A5%E7%94%9F%E4%BA%A7%E4%BA%8B%E6%95%85%EF%BC%81%EF%BC%81/" class="article-date">
-  <time class="dt-published" datetime="2024-10-06T09:23:41.000Z" itemprop="datePublished">2024-10-06</time>
-</a>
-    
-  </div>
-  <div class="article-inner">
-    
-    
-      <header class="article-header">
-        
   
-    <h1 itemprop="name">
-      <a class="p-name article-title" href="/2024/10/06/8%20%E4%B8%AA%E7%BA%BF%E7%A8%8B%E6%B1%A0%E6%9C%80%E4%BD%B3%E5%AE%9E%E8%B7%B5%E5%92%8C%E5%9D%91%EF%BC%81%E4%BD%BF%E7%94%A8%E4%B8%8D%E5%BD%93%E7%9B%B4%E6%8E%A5%E7%94%9F%E4%BA%A7%E4%BA%8B%E6%95%85%EF%BC%81%EF%BC%81/">8 个线程池最佳实践和坑！使用不当直接生产事故！！</a>
-    </h1>
+    <a href="/2024/10/06/8%20%E4%B8%AA%E7%BA%BF%E7%A8%8B%E6%B1%A0%E6%9C%80%E4%BD%B3%E5%AE%9E%E8%B7%B5%E5%92%8C%E5%9D%91%EF%BC%81%E4%BD%BF%E7%94%A8%E4%B8%8D%E5%BD%93%E7%9B%B4%E6%8E%A5%E7%94%9F%E4%BA%A7%E4%BA%8B%E6%95%85%EF%BC%81%EF%BC%81/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Älter</strong>
+      <div class="article-nav-title">8 个线程池最佳实践和坑！使用不当直接生产事故！！</div>
+    </a>
   
+</nav>
 
-      </header>
-    
-    <div class="e-content article-entry" itemprop="articleBody">
-      
-        <h2 id="1-正确声明线程池"><a href="#1-正确声明线程池" class="headerlink" title="1. 正确声明线程池"></a>1. 正确声明线程池</h2><p>线程池必须手动通过 ThreadPoolExecutor 的构造函数来声明，避免使用Executors 类创建线程池，会有 OOM 风险。</p>
-<p>Executors 返回线程池对象的弊端如下(后文会详细介绍到)：</p>
-<ul>
-<li><code>FixedThreadPool</code> 和 <code>SingleThreadExecutor</code> ：使用的是无界的 <code>LinkedBlockingQueue</code>，任务队列最大长度为 <code>Integer.MAX_VALUE</code>,可能堆积大量的请求，从而导致 OOM。</li>
-<li><code>CachedThreadPool</code> ：使用的是同步队列 <code>SynchronousQueue</code>, 允许创建的线程数量为 <code>Integer.MAX_VALUE</code> ，可能会创建大量线程，从而导致 OOM。</li>
-<li><code>ScheduledThreadPool</code>和 <code>SingleThreadScheduledExecutor</code> : 使用的无界的延迟阻塞队列<code>DelayedWorkQueue</code>，任务队列最大长度为 <code>Integer.MAX_VALUE</code>,可能堆积大量的请求，从而导致 OOM。</li>
-</ul>
-<p>说白了就是：使用有界队列，控制线程创建数量。</p>
-<p>除了避免 OOM 的原因之外，不推荐使用 Executors提供的两种快捷的线程池的原因还有：</p>
-<ul>
-<li>实际使用中需要根据自己机器的性能、业务场景来手动配置线程池的参数比如核心线程数、使用的任务队列、饱和策略等等。</li>
-<li>我们应该显示地给我们的线程池命名，这样有助于我们定位问题。</li>
-</ul>
-<h2 id="2-监测线程池运行状态"><a href="#2-监测线程池运行状态" class="headerlink" title="2.监测线程池运行状态"></a>2.监测线程池运行状态</h2><p>你可以通过一些手段来检测线程池的运行状态比如 SpringBoot 中的 Actuator 组件。</p>
-<p>除此之外，我们还可以利用 ThreadPoolExecutor 的相关 API 做一个简陋的监控。从下图可以看出， ThreadPoolExecutor提供了获取线程池当前的线程数和活跃线程数、已经执行完成的任务数、正在排队中的任务数等等。</p>
-<p><img src="/images/ThreadPoolExecutor%E7%9B%B8%E5%85%B3API.png" alt="img"></p>
-<p>下面是一个简单的 Demo。printThreadPoolStatus()会每隔一秒打印出线程池的线程数、活跃线程数、完成的任务数、以及队列中的任务数。</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * 打印线程池的状态</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@param</span> threadPool 线程池对象</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">printThreadPoolStatus</span><span class="params">(ThreadPoolExecutor threadPool)</span> &#123;</span><br><span class="line">    <span class="type">ScheduledExecutorService</span> <span class="variable">scheduledExecutorService</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">ScheduledThreadPoolExecutor</span>(<span class="number">1</span>, createThreadFactory(<span class="string">&quot;print-images/thread-pool-status&quot;</span>, <span class="literal">false</span>));</span><br><span class="line">    scheduledExecutorService.scheduleAtFixedRate(() -&gt; &#123;</span><br><span class="line">        log.info(<span class="string">&quot;=========================&quot;</span>);</span><br><span class="line">        log.info(<span class="string">&quot;ThreadPool Size: [&#123;&#125;]&quot;</span>, threadPool.getPoolSize());</span><br><span class="line">        log.info(<span class="string">&quot;Active Threads: &#123;&#125;&quot;</span>, threadPool.getActiveCount());</span><br><span class="line">        log.info(<span class="string">&quot;Number of Tasks : &#123;&#125;&quot;</span>, threadPool.getCompletedTaskCount());</span><br><span class="line">        log.info(<span class="string">&quot;Number of Tasks in Queue: &#123;&#125;&quot;</span>, threadPool.getQueue().size());</span><br><span class="line">        log.info(<span class="string">&quot;=========================&quot;</span>);</span><br><span class="line">    &#125;, <span class="number">0</span>, <span class="number">1</span>, TimeUnit.SECONDS);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<h2 id="3-建议不同类别的业务用不同的线程池"><a href="#3-建议不同类别的业务用不同的线程池" class="headerlink" title="3.建议不同类别的业务用不同的线程池"></a>3.建议不同类别的业务用不同的线程池</h2><p>很多人在实际项目中都会有类似这样的问题：<strong>我的项目中多个业务需要用到线程池，是为每个线程池都定义一个还是说定义一个公共的线程池呢？</strong></p>
-<p>一般建议是不同的业务使用不同的线程池，配置线程池的时候根据当前业务的情况对当前线程池进行配置，因为不同的业务的并发以及对资源的使用情况都不同，重心优化系统性能瓶颈相关的业务。</p>
-<p>我们再来看一个真实的事故案例！(本案例来源自：《线程池运用不当的一次线上事故》[1] ，很精彩的一个案例)</p>
-<p><img src="/images/%E7%88%B6%E4%BB%BB%E5%8A%A1%E5%AD%90%E4%BB%BB%E5%8A%A1%E4%BD%BF%E7%94%A8%E5%90%8C%E4%B8%80%E7%BA%BF%E7%A8%8B%E6%B1%A0%E4%BA%8B%E6%95%85.png" alt="img"></p>
-<p>上面的代码可能会存在死锁的情况，为什么呢？画个图给大家捋一捋。</p>
-<p>试想这样一种极端情况：假如我们线程池的核心线程数为 n，父任务（扣费任务）数量为 n，父任务下面有两个子任务（扣费任务下的子任务），其中一个已经执行完成，另外一个被放在了任务队列中。由于父任务把线程池核心线程资源用完，所以子任务因为无法获取到线程资源无法正常执行，一直被阻塞在队列中。父任务等待子任务执行完成，而子任务等待父任务释放线程池资源，这也就造成了 “死锁”.</p>
-<p><img src="/images/%E7%88%B6%E4%BB%BB%E5%8A%A1%E5%AD%90%E4%BB%BB%E5%8A%A1%E5%90%8C%E4%B8%80%E7%BA%BF%E7%A8%8B%E6%B1%A0%E9%80%A0%E6%88%90%E6%AD%BB%E9%94%81.png" alt="img"></p>
-<p>线程池使用不当导致死锁</p>
-<p>解决方法也很简单，就是新增加一个用于执行子任务的线程池专门为其服务。</p>
-<h2 id="4-别忘记给线程池命名"><a href="#4-别忘记给线程池命名" class="headerlink" title="4. 别忘记给线程池命名"></a>4. 别忘记给线程池命名</h2><p>初始化线程池的时候需要显示命名（设置线程池名称前缀），有利于定位问题。</p>
-<p>默认情况下创建的线程名字类似 pool-1-thread-n 这样的，没有业务含义，不利于我们定位问题。</p>
-<p>给线程池里的线程命名通常有下面两种方式：</p>
-<p><strong>1、利用 guava 的 ThreadFactoryBuilder</strong></p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">ThreadFactory</span> <span class="variable">threadFactory</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">ThreadFactoryBuilder</span>()</span><br><span class="line">                        .setNameFormat(threadNamePrefix + <span class="string">&quot;-%d&quot;</span>)</span><br><span class="line">                        .setDaemon(<span class="literal">true</span>).build();</span><br><span class="line"><span class="type">ExecutorService</span> <span class="variable">threadPool</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">ThreadPoolExecutor</span>(corePoolSize, maximumPoolSize, keepAliveTime, TimeUnit.MINUTES, workQueue, threadFactory)</span><br></pre></td></tr></table></figure>
-
-<p><strong>2、自己实现 ThreadFactory。</strong></p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> java.util.concurrent.Executors;</span><br><span class="line"><span class="keyword">import</span> java.util.concurrent.ThreadFactory;</span><br><span class="line"><span class="keyword">import</span> java.util.concurrent.atomic.AtomicInteger;</span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * 线程工厂，它设置线程名称，有利于我们定位问题。</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">final</span> <span class="keyword">class</span> <span class="title class_">NamingThreadFactory</span> <span class="keyword">implements</span> <span class="title class_">ThreadFactory</span> &#123;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> <span class="type">AtomicInteger</span> <span class="variable">threadNum</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">AtomicInteger</span>();</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> ThreadFactory delegate;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> String name;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 创建一个带名字的线程池生产工厂</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">public</span> <span class="title function_">NamingThreadFactory</span><span class="params">(ThreadFactory delegate, String name)</span> &#123;</span><br><span class="line">        <span class="built_in">this</span>.delegate = delegate;</span><br><span class="line">        <span class="built_in">this</span>.name = name; <span class="comment">// TODO consider uniquifying this</span></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">public</span> Thread <span class="title function_">newThread</span><span class="params">(Runnable r)</span> &#123;</span><br><span class="line">        <span class="type">Thread</span> <span class="variable">t</span> <span class="operator">=</span> delegate.newThread(r);</span><br><span class="line">        t.setName(name + <span class="string">&quot; [#&quot;</span> + threadNum.incrementAndGet() + <span class="string">&quot;]&quot;</span>);</span><br><span class="line">        <span class="keyword">return</span> t;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<h2 id="5-正确配置线程池参数"><a href="#5-正确配置线程池参数" class="headerlink" title="5.正确配置线程池参数"></a>5.正确配置线程池参数</h2><p>说到如何给线程池配置参数，美团的骚操作至今让我难忘（后面会提到）！</p>
-<p>我们先来看一下各种书籍和博客上一般推荐的配置线程池参数的方式，可以作为参考！</p>
-<p><strong>常规操作</strong></p>
-<p>很多人甚至可能都会觉得把线程池配置过大一点比较好！我觉得这明显是有问题的。就拿我们生活中非常常见的一例子来说：并不是人多就能把事情做好，增加了沟通交流成本。你本来一件事情只需要 3 个人做，你硬是拉来了 6 个人，会提升做事效率嘛？我想并不会。线程数量过多的影响也是和我们分配多少人做事情一样，对于多线程这个场景来说主要是增加了上下文切换成本。不清楚什么是上下文切换的话，可以看我下面的介绍。</p>
-<p>上下文切换：</p>
-<p>多线程编程中一般线程的个数都大于 CPU 核心的个数，而一个 CPU 核心在任意时刻只能被一个线程使用，为了让这些线程都能得到有效执行，CPU 采取的策略是为每个线程分配时间片并轮转的形式。当一个线程的时间片用完的时候就会重新处于就绪状态让给其他线程使用，这个过程就属于一次上下文切换。概括来说就是：当前任务在执行完 CPU 时间片切换到另一个任务之前会先保存自己的状态，以便下次再切换回这个任务时，可以再加载这个任务的状态。任务从保存到再加载的过程就是一次上下文切换。</p>
-<p>上下文切换通常是计算密集型的。也就是说，它需要相当可观的处理器时间，在每秒几十上百次的切换中，每次切换都需要纳秒量级的时间。所以，上下文切换对系统来说意味着消耗大量的 CPU 时间，事实上，可能是操作系统中时间消耗最大的操作。</p>
-<p>Linux 相比与其他操作系统（包括其他类 Unix 系统）有很多的优点，其中有一项就是，其上下文切换和模式切换的时间消耗非常少。</p>
-<p>类比于实现世界中的人类通过合作做某件事情，我们可以肯定的一点是线程池大小设置过大或者过小都会有问题，合适的才是最好。</p>
-<ul>
-<li>如果我们设置的线程池数量太小的话，如果同一时间有大量任务&#x2F;请求需要处理，可能会导致大量的请求&#x2F;任务在任务队列中排队等待执行，甚至会出现任务队列满了之后任务&#x2F;请求无法处理的情况，或者大量任务堆积在任务队列导致 OOM。这样很明显是有问题的，CPU 根本没有得到充分利用。</li>
-<li>如果我们设置线程数量太大，大量线程可能会同时在争取 CPU 资源，这样会导致大量的上下文切换，从而增加线程的执行时间，影响了整体执行效率。</li>
-</ul>
-<p>有一个简单并且适用面比较广的公式：</p>
-<ul>
-<li>CPU 密集型任务(N+1)：这种任务消耗的主要是 CPU 资源，可以将线程数设置为 N（CPU 核心数）+1。比 CPU 核心数多出来的一个线程是为了防止线程偶发的缺页中断，或者其它原因导致的任务暂停而带来的影响。一旦任务暂停，CPU 就会处于空闲状态，而在这种情况下多出来的一个线程就可以充分利用 CPU 的空闲时间。</li>
-<li>I&#x2F;O 密集型任务(2N)：这种任务应用起来，系统会用大部分的时间来处理 I&#x2F;O 交互，而线程在处理 I&#x2F;O 的时间段内不会占用 CPU 来处理，这时就可以将 CPU 交出给其它线程使用。因此在 I&#x2F;O 密集型任务的应用中，我们可以多配置一些线程，具体的计算方法是 2N。</li>
-</ul>
-<p><strong>如何判断是 CPU 密集任务还是 IO 密集任务？</strong></p>
-<p>CPU 密集型简单理解就是利用 CPU 计算能力的任务比如你在内存中对大量数据进行排序。但凡涉及到网络读取，文件读取这类都是 IO 密集型，这类任务的特点是 CPU 计算耗费时间相比于等待 IO 操作完成的时间来说很少，大部分时间都花在了等待 IO 操作完成上。</p>
-<p>🌈 拓展一下：</p>
-<p>线程数更严谨的计算的方法应该是：最佳线程数 &#x3D; N（CPU 核心数）∗（1+WT（线程等待时间）&#x2F;ST（线程计算时间）），其中 WT（线程等待时间）&#x3D;线程运行总时间 - ST（线程计算时间）。</p>
-<p>线程等待时间所占比例越高，需要越多线程。线程计算时间所占比例越高，需要越少线程。</p>
-<p>我们可以通过 JDK 自带的工具 VisualVM 来查看 WT&#x2F;ST 比例。</p>
-<p>CPU 密集型任务的 WT&#x2F;ST 接近或者等于 0，因此， 线程数可以设置为 N（CPU 核心数）∗（1+0）&#x3D; N，和我们上面说的 N（CPU 核心数）+1 差不多。</p>
-<p>IO 密集型任务下，几乎全是线程等待时间，从理论上来说，你就可以将线程数设置为 2N（按道理来说，WT&#x2F;ST 的结果应该比较大，这里选择 2N 的原因应该是为了避免创建过多线程吧）。</p>
-<p>公示也只是参考，具体还是要根据项目实际线上运行情况来动态调整。我在后面介绍的美团的线程池参数动态配置这种方案就非常不错，很实用！</p>
-<p><strong>美团的骚操作</strong></p>
-<p>美团技术团队在《Java 线程池实现原理及其在美团业务中的实践》[3]这篇文章中介绍到对线程池参数实现可自定义配置的思路和方法。</p>
-<p>美团技术团队的思路是主要对线程池的核心参数实现自定义可配置。这三个核心参数是：</p>
-<ul>
-<li>corePoolSize : 核心线程数线程数定义了最小可以同时运行的线程数量。</li>
-<li>maximumPoolSize : 当队列中存放的任务达到队列容量的时候，当前可以同时运行的线程数量变为最大线程数。</li>
-<li>workQueue: 当新任务来的时候会先判断当前运行的线程数量是否达到核心线程数，如果达到的话，新任务就会被存放在队列中。</li>
-</ul>
-<p><strong>为什么是这三个参数？</strong></p>
-<p>如何支持参数动态配置？且看 ThreadPoolExecutor 提供的下面这些方法。</p>
-<p><img src="/images/ThreadPoolExecutor%E6%94%B9%E9%80%A0%E5%8A%A8%E6%80%81%E9%85%8D%E7%BD%AE.png" alt="img"></p>
-<p>格外需要注意的是corePoolSize， 程序运行期间的时候，我们调用 setCorePoolSize（）这个方法的话，线程池会首先判断当前工作线程数是否大于corePoolSize，如果大于的话就会回收工作线程。</p>
-<p>另外，你也看到了上面并没有动态指定队列长度的方法，美团的方式是自定义了一个叫做 <code>ResizableCapacityLinkedBlockIngQueue</code> 的队列（主要就是把LinkedBlockingQueue的 capacity 字段的 final 关键字修饰给去掉了，让它变为可变的）。</p>
-<p>最终实现的可动态修改线程池参数效果如下。👏👏👏</p>
-<p><img src="/images/%E4%BF%AE%E6%94%B9%E7%BA%BF%E7%A8%8B%E6%B1%A0%E5%8F%82%E6%95%B0.png" alt="img"></p>
-<p>动态配置线程池参数最终效果</p>
-<p>如果我们的项目也想要实现这种效果的话，可以借助现成的开源项目：</p>
-<ul>
-<li>Hippo-4[4] ：一款强大的动态线程池框架，解决了传统线程池使用存在的一些痛点比如线程池参数没办法动态修改、不支持运行时变量的传递、无法执行优雅关闭。除了支持动态修改线程池参数、线程池任务传递上下文，还支持通知报警、运行监控等开箱即用的功能。</li>
-<li>Dynamic TP[5] ：轻量级动态线程池，内置监控告警功能，集成三方<a target="_blank" rel="noopener" href="https://cloud.tencent.com/product/tdmq?from_column=20065&from=20065">中间件</a>线程池管理，基于主流<a target="_blank" rel="noopener" href="https://cloud.tencent.com/product/tse?from_column=20065&from=20065">配置中心</a>（已支持 Nacos、Apollo，Zookeeper、Consul、Etcd，可通过 SPI 自定义实现）。</li>
-</ul>
-<h2 id="6-线程池使用的一些小坑"><a href="#6-线程池使用的一些小坑" class="headerlink" title="6.线程池使用的一些小坑"></a>6.线程池使用的一些小坑</h2><p><strong>重复创建线程池的坑</strong></p>
-<p>线程池是可以复用的，一定不要频繁创建线程池比如一个用户请求到了就单独创建一个线程池。</p>
-<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">@<span class="title class_">GetMapping</span>(<span class="string">&quot;wrong&quot;</span>)</span><br><span class="line">public <span class="title class_">String</span> <span class="title function_">wrong</span>() throws <span class="title class_">InterruptedException</span> &#123;</span><br><span class="line">    <span class="comment">// 自定义线程池</span></span><br><span class="line">    <span class="title class_">ThreadPoolExecutor</span> executor = <span class="keyword">new</span> <span class="title class_">ThreadPoolExecutor</span>(<span class="number">5</span>,<span class="number">10</span>,1L,<span class="title class_">TimeUnit</span>.<span class="property">SECONDS</span>,<span class="keyword">new</span> <span class="title class_">ArrayBlockingQueue</span>&lt;&gt;(<span class="number">100</span>),<span class="keyword">new</span> <span class="title class_">ThreadPoolExecutor</span>.<span class="title class_">CallerRunsPolicy</span>());</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 处理任务</span></span><br><span class="line">    executor.<span class="title function_">execute</span>(() -&gt; &#123;</span><br><span class="line">      <span class="comment">// ......</span></span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="string">&quot;OK&quot;</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>出现这种问题的原因还是对于线程池认识不够，需要加强线程池的基础知识。</p>
-<p><strong>Spring 内部线程池的坑</strong></p>
-<p>使用 Spring 内部线程池时，一定要手动自定义线程池，配置合理的参数，不然会出现生产问题（一个请求创建一个线程）。</p>
-<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line">@<span class="title class_">Configuration</span></span><br><span class="line">@<span class="title class_">EnableAsync</span></span><br><span class="line">public <span class="keyword">class</span> <span class="title class_">ThreadPoolExecutorConfig</span> &#123;</span><br><span class="line"></span><br><span class="line">    @<span class="title class_">Bean</span>(name=<span class="string">&quot;threadPoolExecutor&quot;</span>)</span><br><span class="line">    public <span class="title class_">Executor</span> <span class="title function_">threadPoolExecutor</span>(<span class="params"></span>)&#123;</span><br><span class="line">        <span class="title class_">ThreadPoolTaskExecutor</span> threadPoolExecutor = <span class="keyword">new</span> <span class="title class_">ThreadPoolTaskExecutor</span>();</span><br><span class="line">        int processNum = <span class="title class_">Runtime</span>.<span class="title function_">getRuntime</span>().<span class="title function_">availableProcessors</span>(); <span class="comment">// 返回可用处理器的Java虚拟机的数量</span></span><br><span class="line">        int corePoolSize = (int) (processNum / (<span class="number">1</span> - <span class="number">0.2</span>));</span><br><span class="line">        int maxPoolSize = (int) (processNum / (<span class="number">1</span> - <span class="number">0.5</span>));</span><br><span class="line">        threadPoolExecutor.<span class="title function_">setCorePoolSize</span>(corePoolSize); <span class="comment">// 核心池大小</span></span><br><span class="line">        threadPoolExecutor.<span class="title function_">setMaxPoolSize</span>(maxPoolSize); <span class="comment">// 最大线程数</span></span><br><span class="line">        threadPoolExecutor.<span class="title function_">setQueueCapacity</span>(maxPoolSize * <span class="number">1000</span>); <span class="comment">// 队列程度</span></span><br><span class="line">        threadPoolExecutor.<span class="title function_">setThreadPriority</span>(<span class="title class_">Thread</span>.<span class="property">MAX_PRIORITY</span>);</span><br><span class="line">        threadPoolExecutor.<span class="title function_">setDaemon</span>(<span class="literal">false</span>);</span><br><span class="line">        threadPoolExecutor.<span class="title function_">setKeepAliveSeconds</span>(<span class="number">300</span>);<span class="comment">// 线程空闲时间</span></span><br><span class="line">        threadPoolExecutor.<span class="title function_">setThreadNamePrefix</span>(<span class="string">&quot;test-Executor-&quot;</span>); <span class="comment">// 线程名字前缀</span></span><br><span class="line">        <span class="keyword">return</span> threadPoolExecutor;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p><strong>线程池和 ThreadLocal 共用的坑</strong></p>
-<p>线程池和 ThreadLocal共用，可能会导致线程从ThreadLocal获取到的是旧值&#x2F;脏数据。这是因为线程池会复用线程对象，与线程对象绑定的类的静态属性 ThreadLocal 变量也会被重用，这就导致一个线程可能获取到其他线程的ThreadLocal 值。</p>
-<p>不要以为代码中没有显示使用线程池就不存在线程池了，像常用的 Web <a target="_blank" rel="noopener" href="https://cloud.tencent.com/act/pro/promotion-cvm?from_column=20065&from=20065">服务器</a> Tomcat 处理任务为了提高并发量，就使用到了线程池，并且使用的是基于原生 Java 线程池改进完善得到的自定义线程池。</p>
-<p>当然了，你可以将 Tomcat 设置为单线程处理任务。不过，这并不合适，会严重影响其处理任务的速度。</p>
-<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">server.<span class="property">tomcat</span>.<span class="property">max</span>-threads=<span class="number">1</span></span><br></pre></td></tr></table></figure>
-
-<p>解决上述问题比较建议的办法是使用阿里巴巴开源的 TransmittableThreadLocal(TTL)。TransmittableThreadLocal类继承并加强了 JDK 内置的InheritableThreadLocal类，在使用线程池等会池化复用线程的执行组件情况下，提供ThreadLocal值的传递功能，解决异步执行时上下文传递的问题。</p>
-<p>InheritableThreadLocal 项目地址：<a target="_blank" rel="noopener" href="https://github.com/alibaba/transmittable-thread-local">https://github.com/alibaba/transmittable-thread-local</a> 。</p>
-
-      
-    </div>
-    <footer class="article-footer">
-      <a data-url="http://example.com/2024/10/06/8%20%E4%B8%AA%E7%BA%BF%E7%A8%8B%E6%B1%A0%E6%9C%80%E4%BD%B3%E5%AE%9E%E8%B7%B5%E5%92%8C%E5%9D%91%EF%BC%81%E4%BD%BF%E7%94%A8%E4%B8%8D%E5%BD%93%E7%9B%B4%E6%8E%A5%E7%94%9F%E4%BA%A7%E4%BA%8B%E6%95%85%EF%BC%81%EF%BC%81/" data-id="cm1z42o4d0000w4sl1ucd8ais" data-title="8 个线程池最佳实践和坑！使用不当直接生产事故！！" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
-      
-      
-      
-  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/JAVA/" rel="tag">JAVA</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/%E5%90%8E%E7%AB%AF/" rel="tag">后端</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/%E7%BA%BF%E7%A8%8B%E6%B1%A0/" rel="tag">线程池</a></li></ul>
-
-    </footer>
-  </div>
   
 </article>
-
-
-
-  
 
 
 </section>
