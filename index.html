@@ -69,6 +69,59 @@
       <div class="outer">
         <section id="main">
   
+    <article id="post-纯原生js简单实现可拖拽任务看板" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="article-meta">
+    <a href="/2024/10/29/%E7%BA%AF%E5%8E%9F%E7%94%9Fjs%E7%AE%80%E5%8D%95%E5%AE%9E%E7%8E%B0%E5%8F%AF%E6%8B%96%E6%8B%BD%E4%BB%BB%E5%8A%A1%E7%9C%8B%E6%9D%BF/" class="article-date">
+  <time class="dt-published" datetime="2024-10-29T15:12:04.000Z" itemprop="datePublished">2024-10-29</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="p-name article-title" href="/2024/10/29/%E7%BA%AF%E5%8E%9F%E7%94%9Fjs%E7%AE%80%E5%8D%95%E5%AE%9E%E7%8E%B0%E5%8F%AF%E6%8B%96%E6%8B%BD%E4%BB%BB%E5%8A%A1%E7%9C%8B%E6%9D%BF/">纯原生js简单实现可拖拽任务看板</a>
+    </h1>
+  
+
+      </header>
+    
+    <div class="e-content article-entry" itemprop="articleBody">
+      
+        <figure class="highlight html"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&lt;!DOCTYPE <span class="keyword">html</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">html</span> <span class="attr">lang</span>=<span class="string">&quot;zh-CN&quot;</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">head</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">meta</span> <span class="attr">charset</span>=<span class="string">&quot;UTF-8&quot;</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">title</span>&gt;</span>看板<span class="tag">&lt;/<span class="name">title</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">style</span>&gt;</span><span class="language-css"></span></span><br><span class="line"><span class="language-css">        <span class="selector-class">.kanban-board</span> &#123;</span></span><br><span class="line"><span class="language-css">            <span class="attribute">display</span>: flex;</span></span><br><span class="line"><span class="language-css">            <span class="attribute">overflow-x</span>: auto;</span></span><br><span class="line"><span class="language-css">            <span class="attribute">padding</span>: <span class="number">10px</span>;</span></span><br><span class="line"><span class="language-css">        &#125;</span></span><br><span class="line"><span class="language-css">        <span class="selector-class">.kanban-column</span> &#123;</span></span><br><span class="line"><span class="language-css">            <span class="attribute">background-color</span>: <span class="number">#f4f5f7</span>;</span></span><br><span class="line"><span class="language-css">            <span class="attribute">border-radius</span>: <span class="number">3px</span>;</span></span><br><span class="line"><span class="language-css">            <span class="attribute">margin-right</span>: <span class="number">10px</span>;</span></span><br><span class="line"><span class="language-css">            <span class="attribute">padding</span>: <span class="number">10px</span>;</span></span><br><span class="line"><span class="language-css">            <span class="attribute">width</span>: <span class="number">300px</span>;</span></span><br><span class="line"><span class="language-css">            <span class="attribute">flex-shrink</span>: <span class="number">0</span>;</span></span><br><span class="line"><span class="language-css">        &#125;</span></span><br><span class="line"><span class="language-css">        <span class="selector-class">.kanban-card</span> &#123;</span></span><br><span class="line"><span class="language-css">            <span class="attribute">background-color</span>: <span class="number">#fff</span>;</span></span><br><span class="line"><span class="language-css">            <span class="attribute">border-radius</span>: <span class="number">3px</span>;</span></span><br><span class="line"><span class="language-css">            <span class="attribute">box-shadow</span>: <span class="number">0</span> <span class="number">1px</span> <span class="number">0</span> <span class="built_in">rgba</span>(<span class="number">9</span>, <span class="number">30</span>, <span class="number">66</span>, <span class="number">0.25</span>);</span></span><br><span class="line"><span class="language-css">            <span class="attribute">margin-bottom</span>: <span class="number">10px</span>;</span></span><br><span class="line"><span class="language-css">            <span class="attribute">padding</span>: <span class="number">10px</span>;</span></span><br><span class="line"><span class="language-css">            <span class="attribute">cursor</span>: move;</span></span><br><span class="line"><span class="language-css">        &#125;</span></span><br><span class="line"><span class="language-css">    </span><span class="tag">&lt;/<span class="name">style</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">head</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">body</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">div</span> <span class="attr">class</span>=<span class="string">&quot;kanban-board&quot;</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">div</span> <span class="attr">class</span>=<span class="string">&quot;kanban-column&quot;</span> <span class="attr">ondragover</span>=<span class="string">&quot;event.preventDefault()&quot;</span> <span class="attr">ondrop</span>=<span class="string">&quot;drop(event)&quot;</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">h2</span>&gt;</span>待办事项<span class="tag">&lt;/<span class="name">h2</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">div</span> <span class="attr">id</span>=<span class="string">&quot;task1&quot;</span> <span class="attr">class</span>=<span class="string">&quot;kanban-card&quot;</span> <span class="attr">draggable</span>=<span class="string">&quot;true&quot;</span> <span class="attr">ondragstart</span>=<span class="string">&quot;drag(event)&quot;</span>&gt;</span>任务 1<span class="tag">&lt;/<span class="name">div</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">div</span> <span class="attr">id</span>=<span class="string">&quot;task2&quot;</span> <span class="attr">class</span>=<span class="string">&quot;kanban-card&quot;</span> <span class="attr">draggable</span>=<span class="string">&quot;true&quot;</span> <span class="attr">ondragstart</span>=<span class="string">&quot;drag(event)&quot;</span>&gt;</span>任务 2<span class="tag">&lt;/<span class="name">div</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;/<span class="name">div</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">div</span> <span class="attr">class</span>=<span class="string">&quot;kanban-column&quot;</span> <span class="attr">ondragover</span>=<span class="string">&quot;event.preventDefault()&quot;</span> <span class="attr">ondrop</span>=<span class="string">&quot;drop(event)&quot;</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">h2</span>&gt;</span>进行中<span class="tag">&lt;/<span class="name">h2</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">div</span> <span class="attr">id</span>=<span class="string">&quot;task3&quot;</span> <span class="attr">class</span>=<span class="string">&quot;kanban-card&quot;</span> <span class="attr">draggable</span>=<span class="string">&quot;true&quot;</span> <span class="attr">ondragstart</span>=<span class="string">&quot;drag(event)&quot;</span>&gt;</span>任务 3<span class="tag">&lt;/<span class="name">div</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;/<span class="name">div</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">div</span> <span class="attr">class</span>=<span class="string">&quot;kanban-column&quot;</span> <span class="attr">ondragover</span>=<span class="string">&quot;event.preventDefault()&quot;</span> <span class="attr">ondrop</span>=<span class="string">&quot;drop(event)&quot;</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">h2</span>&gt;</span>已完成<span class="tag">&lt;/<span class="name">h2</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">div</span> <span class="attr">id</span>=<span class="string">&quot;task4&quot;</span> <span class="attr">class</span>=<span class="string">&quot;kanban-card&quot;</span> <span class="attr">draggable</span>=<span class="string">&quot;true&quot;</span> <span class="attr">ondragstart</span>=<span class="string">&quot;drag(event)&quot;</span>&gt;</span>任务 4<span class="tag">&lt;/<span class="name">div</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;/<span class="name">div</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">div</span>&gt;</span></span><br><span class="line"></span><br><span class="line">    <span class="tag">&lt;<span class="name">script</span>&gt;</span><span class="language-javascript"></span></span><br><span class="line"><span class="language-javascript">        <span class="keyword">function</span> <span class="title function_">drag</span>(<span class="params">event</span>) &#123;</span></span><br><span class="line"><span class="language-javascript">            event.<span class="property">dataTransfer</span>.<span class="title function_">setData</span>(<span class="string">&quot;text&quot;</span>, event.<span class="property">target</span>.<span class="property">id</span>);</span></span><br><span class="line"><span class="language-javascript">        &#125;</span></span><br><span class="line"><span class="language-javascript"></span></span><br><span class="line"><span class="language-javascript">        <span class="keyword">function</span> <span class="title function_">drop</span>(<span class="params">event</span>) &#123;</span></span><br><span class="line"><span class="language-javascript">            event.<span class="title function_">preventDefault</span>();</span></span><br><span class="line"><span class="language-javascript">            <span class="keyword">const</span> data = event.<span class="property">dataTransfer</span>.<span class="title function_">getData</span>(<span class="string">&quot;text&quot;</span>);</span></span><br><span class="line"><span class="language-javascript">            <span class="keyword">const</span> card = <span class="variable language_">document</span>.<span class="title function_">getElementById</span>(data);</span></span><br><span class="line"><span class="language-javascript">            <span class="keyword">if</span> (event.<span class="property">target</span>.<span class="property">classList</span>.<span class="title function_">contains</span>(<span class="string">&#x27;kanban-column&#x27;</span>)) &#123;</span></span><br><span class="line"><span class="language-javascript">                event.<span class="property">target</span>.<span class="title function_">appendChild</span>(card);</span></span><br><span class="line"><span class="language-javascript">            &#125; <span class="keyword">else</span> <span class="keyword">if</span> (event.<span class="property">target</span>.<span class="property">classList</span>.<span class="title function_">contains</span>(<span class="string">&#x27;kanban-card&#x27;</span>)) &#123;</span></span><br><span class="line"><span class="language-javascript">                event.<span class="property">target</span>.<span class="property">parentNode</span>.<span class="title function_">insertBefore</span>(card, event.<span class="property">target</span>.<span class="property">nextSibling</span>);</span></span><br><span class="line"><span class="language-javascript">            &#125;</span></span><br><span class="line"><span class="language-javascript">        &#125;</span></span><br><span class="line"><span class="language-javascript">    </span><span class="tag">&lt;/<span class="name">script</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">body</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">html</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+
+
+<h3 id="说明"><a href="#说明" class="headerlink" title="说明"></a>说明</h3><p><strong>拖拽属性</strong>：每个任务卡片（kanban-card）设置了 draggable&#x3D;”true”，使其可以被拖动。</p>
+<p><strong>事件处理</strong>：</p>
+<p><code>ondragstart</code>：在拖动开始时触发，使用 <code>event.dataTransfer.setData</code> 存储被拖动元素的 ID。</p>
+<p><code>ondragover</code>：在拖动元素悬停在目标元素上时触发，使用 <code>event.preventDefault()</code> 允许放置。</p>
+<p><code>ondrop</code>：在放置时触发，使用 <code>event.dataTransfer.getData</code> 获取被拖动元素的 ID，并将其附加到目标元素。</p>
+<p><strong>注意</strong>：确保每个卡片有唯一的 <code>id</code>，以便在拖放操作中正确识别。您可以在生成卡片时动态分配 ID。</p>
+<p><strong>拖放逻辑</strong>：</p>
+<p><code>ondrop</code> 事件中，首先检查放置目标是否是一个列（kanban-column），如果是，则将卡片附加到该列。</p>
+<p>如果放置目标是另一个卡片（kanban-card），则将拖动的卡片插入到目标卡片的后面。</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://example.com/2024/10/29/%E7%BA%AF%E5%8E%9F%E7%94%9Fjs%E7%AE%80%E5%8D%95%E5%AE%9E%E7%8E%B0%E5%8F%AF%E6%8B%96%E6%8B%BD%E4%BB%BB%E5%8A%A1%E7%9C%8B%E6%9D%BF/" data-id="cm2uov2n9000jdssldgg5bkov" data-title="纯原生js简单实现可拖拽任务看板" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
+      
+      
+      
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/js/" rel="tag">js</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/%E5%89%8D%E7%AB%AF/" rel="tag">前端</a></li></ul>
+
+    </footer>
+  </div>
+  
+</article>
+
+
+
+  
     <article id="post-element-vue-admin前端mock是如何实现的" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
   <div class="article-meta">
     <a href="/2024/10/10/element-vue-admin%E5%89%8D%E7%AB%AFmock%E6%98%AF%E5%A6%82%E4%BD%95%E5%AE%9E%E7%8E%B0%E7%9A%84/" class="article-date">
@@ -125,7 +178,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://example.com/2024/10/10/element-vue-admin%E5%89%8D%E7%AB%AFmock%E6%98%AF%E5%A6%82%E4%BD%95%E5%AE%9E%E7%8E%B0%E7%9A%84/" data-id="cm2lux6z40003m0sl5ycv7n2u" data-title="element-vue-admin前端mock是如何实现的" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
+      <a data-url="http://example.com/2024/10/10/element-vue-admin%E5%89%8D%E7%AB%AFmock%E6%98%AF%E5%A6%82%E4%BD%95%E5%AE%9E%E7%8E%B0%E7%9A%84/" data-id="cm2uov2mf0003dssleoukdd6t" data-title="element-vue-admin前端mock是如何实现的" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
       
       
       
@@ -395,7 +448,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://example.com/2024/10/08/Disruptor%E5%9C%A8%E6%92%AE%E5%90%88%E5%BC%95%E6%93%8E%E7%9A%84%E5%AE%9E%E8%B7%B5%EF%BD%9C%E5%BE%97%E7%89%A9%E6%8A%80%E6%9C%AF/" data-id="cm2lux6xg0000m0sla08k5vzm" data-title="Disruptor在撮合引擎的实践｜得物技术" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
+      <a data-url="http://example.com/2024/10/08/Disruptor%E5%9C%A8%E6%92%AE%E5%90%88%E5%BC%95%E6%93%8E%E7%9A%84%E5%AE%9E%E8%B7%B5%EF%BD%9C%E5%BE%97%E7%89%A9%E6%8A%80%E6%9C%AF/" data-id="cm2uov2mc0001dssl1e1b0ufp" data-title="Disruptor在撮合引擎的实践｜得物技术" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
       
       
       
@@ -505,7 +558,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://example.com/2024/10/08/%E8%AE%BE%E7%BD%AE%E5%85%83%E7%B4%A0%E5%B1%85%E4%B8%AD%E7%9A%847%E7%A7%8D%E5%8A%9E%E6%B3%95/" data-id="cm2lux6z80008m0sl5hrm2bck" data-title="设置元素居中的7种办法" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
+      <a data-url="http://example.com/2024/10/08/%E8%AE%BE%E7%BD%AE%E5%85%83%E7%B4%A0%E5%B1%85%E4%B8%AD%E7%9A%847%E7%A7%8D%E5%8A%9E%E6%B3%95/" data-id="cm2uov2nb000ldsslgzqd31ga" data-title="设置元素居中的7种办法" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
       
       
       
@@ -671,7 +724,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://example.com/2024/10/07/%E4%BB%8E%20synchronized%20%E5%88%B0%20CAS%20%E5%92%8C%20AQS%20-%20%E5%BD%BB%E5%BA%95%E5%BC%84%E6%87%82%20Java%20%E5%90%84%E7%A7%8D%E5%B9%B6%E5%8F%91%E9%94%81/" data-id="cm2lux6z50004m0sl6l9l4ryl" data-title="从 synchronized 到 CAS 和 AQS - 彻底弄懂 Java 各种并发锁" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
+      <a data-url="http://example.com/2024/10/07/%E4%BB%8E%20synchronized%20%E5%88%B0%20CAS%20%E5%92%8C%20AQS%20-%20%E5%BD%BB%E5%BA%95%E5%BC%84%E6%87%82%20Java%20%E5%90%84%E7%A7%8D%E5%B9%B6%E5%8F%91%E9%94%81/" data-id="cm2uov2mg0004dssl732yblk3" data-title="从 synchronized 到 CAS 和 AQS - 彻底弄懂 Java 各种并发锁" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
       
       
       
@@ -791,7 +844,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://example.com/2024/10/07/%E7%AD%96%E7%95%A5+%E5%B7%A5%E5%8E%82%E6%A8%A1%E5%BC%8F%E8%A7%A3%E5%86%B3if-else/" data-id="cm2lux6z60005m0sl5ea9fc4i" data-title="策略+工厂模式解决if-else" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
+      <a data-url="http://example.com/2024/10/07/%E7%AD%96%E7%95%A5+%E5%B7%A5%E5%8E%82%E6%A8%A1%E5%BC%8F%E8%A7%A3%E5%86%B3if-else/" data-id="cm2uov2n9000idssld544eqnq" data-title="策略+工厂模式解决if-else" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
       
       
       
@@ -933,7 +986,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://example.com/2024/10/06/8%20%E4%B8%AA%E7%BA%BF%E7%A8%8B%E6%B1%A0%E6%9C%80%E4%BD%B3%E5%AE%9E%E8%B7%B5%E5%92%8C%E5%9D%91%EF%BC%81%E4%BD%BF%E7%94%A8%E4%B8%8D%E5%BD%93%E7%9B%B4%E6%8E%A5%E7%94%9F%E4%BA%A7%E4%BA%8B%E6%95%85%EF%BC%81%EF%BC%81/" data-id="cm2lux6z10001m0sla7oodz9y" data-title="8 个线程池最佳实践和坑！使用不当直接生产事故！！" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
+      <a data-url="http://example.com/2024/10/06/8%20%E4%B8%AA%E7%BA%BF%E7%A8%8B%E6%B1%A0%E6%9C%80%E4%BD%B3%E5%AE%9E%E8%B7%B5%E5%92%8C%E5%9D%91%EF%BC%81%E4%BD%BF%E7%94%A8%E4%B8%8D%E5%BD%93%E7%9B%B4%E6%8E%A5%E7%94%9F%E4%BA%A7%E4%BA%8B%E6%95%85%EF%BC%81%EF%BC%81/" data-id="cm2uov2kr0000dssl853pbv3z" data-title="8 个线程池最佳实践和坑！使用不当直接生产事故！！" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
       
       
       
@@ -960,7 +1013,7 @@
   <div class="widget-wrap">
     <h3 class="widget-title">Tags</h3>
     <div class="widget">
-      <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="/tags/CSS/" rel="tag">CSS</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/JAVA/" rel="tag">JAVA</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Java/" rel="tag">Java</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%89%8D%E7%AB%AF/" rel="tag">前端</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%90%8E%E7%AB%AF/" rel="tag">后端</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E7%BA%BF%E7%A8%8B%E6%B1%A0/" rel="tag">线程池</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/" rel="tag">设计模式</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E9%AB%98%E5%B9%B6%E5%8F%91/" rel="tag">高并发</a></li></ul>
+      <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="/tags/CSS/" rel="tag">CSS</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/JAVA/" rel="tag">JAVA</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Java/" rel="tag">Java</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/js/" rel="tag">js</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%89%8D%E7%AB%AF/" rel="tag">前端</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%90%8E%E7%AB%AF/" rel="tag">后端</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E7%BA%BF%E7%A8%8B%E6%B1%A0/" rel="tag">线程池</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/" rel="tag">设计模式</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E9%AB%98%E5%B9%B6%E5%8F%91/" rel="tag">高并发</a></li></ul>
     </div>
   </div>
 
@@ -970,7 +1023,7 @@
   <div class="widget-wrap">
     <h3 class="widget-title">Tag Cloud</h3>
     <div class="widget tagcloud">
-      <a href="/tags/CSS/" style="font-size: 10px;">CSS</a> <a href="/tags/JAVA/" style="font-size: 20px;">JAVA</a> <a href="/tags/Java/" style="font-size: 10px;">Java</a> <a href="/tags/%E5%89%8D%E7%AB%AF/" style="font-size: 15px;">前端</a> <a href="/tags/%E5%90%8E%E7%AB%AF/" style="font-size: 10px;">后端</a> <a href="/tags/%E7%BA%BF%E7%A8%8B%E6%B1%A0/" style="font-size: 10px;">线程池</a> <a href="/tags/%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/" style="font-size: 10px;">设计模式</a> <a href="/tags/%E9%AB%98%E5%B9%B6%E5%8F%91/" style="font-size: 10px;">高并发</a>
+      <a href="/tags/CSS/" style="font-size: 10px;">CSS</a> <a href="/tags/JAVA/" style="font-size: 20px;">JAVA</a> <a href="/tags/Java/" style="font-size: 10px;">Java</a> <a href="/tags/js/" style="font-size: 10px;">js</a> <a href="/tags/%E5%89%8D%E7%AB%AF/" style="font-size: 20px;">前端</a> <a href="/tags/%E5%90%8E%E7%AB%AF/" style="font-size: 10px;">后端</a> <a href="/tags/%E7%BA%BF%E7%A8%8B%E6%B1%A0/" style="font-size: 10px;">线程池</a> <a href="/tags/%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/" style="font-size: 10px;">设计模式</a> <a href="/tags/%E9%AB%98%E5%B9%B6%E5%8F%91/" style="font-size: 10px;">高并发</a>
     </div>
   </div>
 
@@ -992,6 +1045,10 @@
       <ul>
         
           <li>
+            <a href="/2024/10/29/%E7%BA%AF%E5%8E%9F%E7%94%9Fjs%E7%AE%80%E5%8D%95%E5%AE%9E%E7%8E%B0%E5%8F%AF%E6%8B%96%E6%8B%BD%E4%BB%BB%E5%8A%A1%E7%9C%8B%E6%9D%BF/">纯原生js简单实现可拖拽任务看板</a>
+          </li>
+        
+          <li>
             <a href="/2024/10/10/element-vue-admin%E5%89%8D%E7%AB%AFmock%E6%98%AF%E5%A6%82%E4%BD%95%E5%AE%9E%E7%8E%B0%E7%9A%84/">element-vue-admin前端mock是如何实现的</a>
           </li>
         
@@ -1005,10 +1062,6 @@
         
           <li>
             <a href="/2024/10/07/%E4%BB%8E%20synchronized%20%E5%88%B0%20CAS%20%E5%92%8C%20AQS%20-%20%E5%BD%BB%E5%BA%95%E5%BC%84%E6%87%82%20Java%20%E5%90%84%E7%A7%8D%E5%B9%B6%E5%8F%91%E9%94%81/">从 synchronized 到 CAS 和 AQS - 彻底弄懂 Java 各种并发锁</a>
-          </li>
-        
-          <li>
-            <a href="/2024/10/07/%E7%AD%96%E7%95%A5+%E5%B7%A5%E5%8E%82%E6%A8%A1%E5%BC%8F%E8%A7%A3%E5%86%B3if-else/">策略+工厂模式解决if-else</a>
           </li>
         
       </ul>
