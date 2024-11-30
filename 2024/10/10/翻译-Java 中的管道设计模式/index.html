@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  
+  <title>翻译-Java 中的管道设计模式 | haipeiface.github.io</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="原文地址:  https:&#x2F;&#x2F;www.baeldung.com&#x2F;java-pipeline-design-pattern 1. 概述在本教程中，我们将回顾一个不属于经典 GoF 模式的有趣模式，即 Pipeline 模式。 它功能强大，可以帮助解决棘手的问题并改进应用程序的设计。此外，Java 有一些内置解决方案来帮助实现此模式;我们最后会讨论它们。 2. 相关模式通常，将 Pipeline 模式">
+<meta property="og:type" content="article">
+<meta property="og:title" content="翻译-Java 中的管道设计模式">
+<meta property="og:url" content="http://example.com/2024/10/10/%E7%BF%BB%E8%AF%91-Java%20%E4%B8%AD%E7%9A%84%E7%AE%A1%E9%81%93%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/index.html">
+<meta property="og:site_name" content="haipeiface.github.io">
+<meta property="og:description" content="原文地址:  https:&#x2F;&#x2F;www.baeldung.com&#x2F;java-pipeline-design-pattern 1. 概述在本教程中，我们将回顾一个不属于经典 GoF 模式的有趣模式，即 Pipeline 模式。 它功能强大，可以帮助解决棘手的问题并改进应用程序的设计。此外，Java 有一些内置解决方案来帮助实现此模式;我们最后会讨论它们。 2. 相关模式通常，将 Pipeline 模式">
+<meta property="og:locale">
+<meta property="article:published_time" content="2024-10-09T20:07:40.000Z">
+<meta property="article:modified_time" content="2024-11-30T09:50:00.097Z">
+<meta property="article:author" content="haipeiface">
+<meta property="article:tag" content="Java">
+<meta property="article:tag" content="设计模式">
+<meta property="article:tag" content="翻译">
+<meta name="twitter:card" content="summary">
+  
+    <link rel="alternate" href="/atom.xml" title="haipeiface.github.io" type="application/atom+xml">
+  
+  
+    <link rel="shortcut icon" href="/favicon.png">
+  
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+    
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.min.css">
+
+  
+  
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">haipeiface.github.io</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"><span class="fa fa-bars"></span></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        
+          <a class="nav-icon" href="/atom.xml" title="RSS Feed"><span class="fa fa-rss"></span></a>
+        
+        <a class="nav-icon nav-search-btn" title="Suche"><span class="fa fa-search"></span></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Suche"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://example.com"></form>
+      </div>
+    </div>
+  </div>
+</header>
+
+      <div class="outer">
+        <section id="main"><article id="post-翻译-Java 中的管道设计模式" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="article-meta">
+    <a href="/2024/10/10/%E7%BF%BB%E8%AF%91-Java%20%E4%B8%AD%E7%9A%84%E7%AE%A1%E9%81%93%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/" class="article-date">
+  <time class="dt-published" datetime="2024-10-09T20:07:40.000Z" itemprop="datePublished">2024-10-10</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="p-name article-title" itemprop="headline name">
+      翻译-Java 中的管道设计模式
+    </h1>
+  
+
+      </header>
+    
+    <div class="e-content article-entry" itemprop="articleBody">
+      
+        <p>原文地址:  <a target="_blank" rel="noopener" href="https://www.baeldung.com/java-pipeline-design-pattern">https://www.baeldung.com/java-pipeline-design-pattern</a></p>
+<h2 id="1-概述"><a href="#1-概述" class="headerlink" title="1. 概述"></a>1. 概述</h2><p>在本教程中，我们将回顾一个不属于经典 <a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Design_Patterns">GoF</a> 模式的有趣模式，即 Pipeline 模式。</p>
+<p>它功能强大，可以帮助解决棘手的问题并改进应用程序的设计。此外，Java 有一些内置解决方案来帮助实现此模式;我们最后会讨论它们。</p>
+<h2 id="2-相关模式"><a href="#2-相关模式" class="headerlink" title="2. 相关模式"></a>2. 相关模式</h2><p>通常，将 Pipeline 模式与 <a target="_blank" rel="noopener" href="https://www.baeldung.com/chain-of-responsibility-pattern">Chain of Responsibility</a> 进行比较。Pipeline 与 <a target="_blank" rel="noopener" href="https://www.baeldung.com/java-decorator-pattern">Decorator</a> 也有许多共同点。在某些方面，它更接近 Decorator 而不是 Chain of Responsibility。让我们回顾一下这些模式之间的相似之处和不同之处。</p>
+<h3 id="2-1-责任链"><a href="#2-1-责任链" class="headerlink" title="2.1. 责任链"></a>2.1. 责任链</h3><p><strong>经常比较 Pipeline 和 Chain of Responsibility，因为这两种模式都显式声明了一个分步过程。</strong>Pipeline 和 Chain of Responsibility 之间的第一个区别是后者通常没有 <em>handleRequest（）</em> 方法的返回值：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">+-------------------+</span><br><span class="line">|      Handler      |</span><br><span class="line">+-------------------+</span><br><span class="line">| - successor: Handler |</span><br><span class="line">+-------------------+</span><br><span class="line">| + setSuccessor(Handler): void |</span><br><span class="line">| + handleRequest(request: String): void |</span><br><span class="line">+-------------------+</span><br><span class="line">          ^</span><br><span class="line">          |         </span><br><span class="line">+-----------------------+      +-----------------------+</span><br><span class="line">|   ConcreteHandlerA    |      |   ConcreteHandlerB    |</span><br><span class="line">+-----------------------+      +-----------------------+</span><br><span class="line">| + handleRequest(request: String): void |</span><br><span class="line">+-----------------------+      +-----------------------+</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+
+
+<p>但是，没有什么能阻止我们从 <em>handleRequest（）</em> 方法返回值。在这种情况下，它将被定义为 <em>Handler</em> 接口的一部分。</p>
+<h3 id="2-2-装饰器"><a href="#2-2-装饰器" class="headerlink" title="2.2. 装饰器"></a>2.2. 装饰器</h3><p>Decorator 不会立即与管道模式产生相似之处，因为它没有明确说明其链状结构。<strong>但是，通过其委托和递归嵌套，其行为与 Chain of Responsibility 或 Pipeline 非常相似：</strong></p>
+<p>在经典 （GoF） 实现中，此模式添加行为，并且没有操作的返回值。但是，这是更改对象状态或使用不同组件处理数据的<a target="_blank" rel="noopener" href="https://www.baeldung.com/java-decorator-pattern#decorator-pattern-example">合理选择</a>。<strong>通常，改变状态的解决方案可能过于复杂，因为我们可以通过更直接的结构来实现结果。</strong>同时，Decorator 提供了临时依赖关系的管理并维护执行顺序。</p>
+<h2 id="3-管道"><a href="#3-管道" class="headerlink" title="3. 管道"></a>3. 管道</h2><p>Pipeline 模式背后的主要思想是创建一组操作 （pipeline） 并通过它传递数据。尽管 Chain of Responsibility 和 Decorator 可以部分处理此任务。<strong>Pipeline 的主要功能是它可以灵活地选择其结果的类型。</strong></p>
+<p>Chain of Responsibility 和 Decorator 分别只返回在 Handler 和 Component 接口中定义的类型。另一方面，Pipeline 可以处理任何类型的输入和输出。这种模式的灵活性是它的主要特点。</p>
+<h3 id="3-1-不可变管道"><a href="#3-1-不可变管道" class="headerlink" title="3.1. 不可变管道"></a>3.1. 不可变管道</h3><p>让我们为不可变管道创建一个简单的示例。我们将从 <em>Pipe</em> 接口开始：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">interface</span> <span class="title class_">Pipe</span>&lt;IN, OUT&gt; &#123;</span><br><span class="line">    OUT <span class="title function_">process</span><span class="params">(IN input)</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这是一个非常简单的接口，只有一个方法，它接受输入并生成输出。<strong>接口是参数化的，我们可以在其内部提供任何实现。</strong>另外，请注意，本文中的示例将与<a target="_blank" rel="noopener" href="https://docs.oracle.com/javase/tutorial/java/generics/types.html">类型参数</a>的官方命名约定有所不同。这是为了更好地区分方法级别和类级别参数。现在，让我们创建一个类，该类将在管道中保存管道：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">Pipeline</span>&lt;IN, OUT&gt; &#123;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> Collection&lt;Pipe&lt;?, ?&gt;&gt; pipes;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="title function_">Pipeline</span><span class="params">(Pipe&lt;IN, OUT&gt; pipe)</span> &#123;</span><br><span class="line">        pipes = Collections.singletonList(pipe);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="title function_">Pipeline</span><span class="params">(Collection&lt;Pipe&lt;?, ?&gt;&gt; pipes)</span> &#123;</span><br><span class="line">        <span class="built_in">this</span>.pipes = <span class="keyword">new</span> <span class="title class_">ArrayList</span>&lt;&gt;(pipes);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> &lt;IN, OUT&gt; Pipeline&lt;IN, OUT&gt; <span class="title function_">of</span><span class="params">(Pipe&lt;IN, OUT&gt; pipe)</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">new</span> <span class="title class_">Pipeline</span>&lt;&gt;(pipe);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> &lt;NEW_OUT&gt; Pipeline&lt;IN, NEW_OUT&gt; <span class="title function_">withNextPipe</span><span class="params">(Pipe&lt;OUT, NEW_OUT&gt; pipe)</span> &#123;</span><br><span class="line">        <span class="keyword">final</span> ArrayList&lt;Pipe&lt;?, ?&gt;&gt; newPipes = <span class="keyword">new</span> <span class="title class_">ArrayList</span>&lt;&gt;(pipes);</span><br><span class="line">        newPipes.add(pipe);</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">new</span> <span class="title class_">Pipeline</span>&lt;&gt;(newPipes);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> OUT <span class="title function_">process</span><span class="params">(IN input)</span> &#123;</span><br><span class="line">        <span class="type">Object</span> <span class="variable">output</span> <span class="operator">=</span> input;</span><br><span class="line">        <span class="keyword">for</span> (<span class="keyword">final</span> Pipe pipe : pipes) &#123;</span><br><span class="line">            output = pipe.process(output);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> (OUT) output;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>构造函数和静态工厂非常简单，因此让我们专注于 <em>withNextPipe</em> 方法：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> &lt;NEW_OUT&gt; Pipeline&lt;IN, NEW_OUT&gt; <span class="title function_">withNextPipe</span><span class="params">(Pipe&lt;OUT, NEW_OUT&gt; pipe)</span> &#123;</span><br><span class="line">    <span class="keyword">final</span> ArrayList&lt;Pipe&lt;?, ?&gt;&gt; newPipes = <span class="keyword">new</span> <span class="title class_">ArrayList</span>&lt;&gt;(pipes);</span><br><span class="line">    newPipes.add(pipe);</span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">new</span> <span class="title class_">Pipeline</span>&lt;&gt;(newPipes);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>因为我们需要一定程度的类型安全，并且不允许管道失败的管道，所以我们需要存储有关当前输入和输出类型的信息。<strong>此信息存储在 *Pipeline* 对象中。但是，在添加新的 *Pipe 时，*我们需要更新此信息，而我们不能对同一个对象执行此操作。</strong>这就是为什么决定使 <em>Pipeline</em> 不可变，并且添加新的 <em>Pipe</em> 将生成一个新的单独的 <em>Pipeline。</em></p>
+<p><em>Pipeline</em> 的流程部分非常简单：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> OUT <span class="title function_">process</span><span class="params">(IN input)</span> &#123;</span><br><span class="line">    <span class="type">Object</span> <span class="variable">output</span> <span class="operator">=</span> input;</span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">final</span> Pipe pipe : pipes) &#123;</span><br><span class="line">        output = pipe.process(output);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> (OUT) output;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>但是，在这种情况下，我们需要使用 raw 类型。我们确保 Pipes 正确传递，因此应该没有问题。最终，我们必须将结果强制转换为预期的类型。</p>
+<h3 id="3-2-简单管道"><a href="#3-2-简单管道" class="headerlink" title="3.2. 简单管道"></a>3.2. 简单管道</h3><p>我们可以稍微简化上面的示例，并完全摆脱 <em>Pipeline</em> 类：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">interface</span> <span class="title class_">Pipe</span>&lt;IN, OUT&gt; &#123;</span><br><span class="line">    OUT <span class="title function_">process</span><span class="params">(IN input)</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">default</span> &lt;NEW_OUT&gt; Pipe&lt;IN, NEW_OUT&gt; <span class="title function_">add</span><span class="params">(Pipe &lt;OUT, NEW_OUT&gt; pipe)</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> input -&gt; pipe.execute(execute(input));</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>此实现更接近前面讨论的模式（Decorator 和 Chain of Responsibility），因为它具有从一个管道委托到另一个管道的递归结构。<strong>但是，在此实现中，所有 Pipes 都隐藏在方法调用中，因此很难获取整个管道。</strong>同时，与之前使用 Pipeline 的实现相比，此解决方案非常简单灵活<em>。</em></p>
+<h3 id="3-3-功能解决方案"><a href="#3-3-功能解决方案" class="headerlink" title="3.3. 功能解决方案"></a>3.3. 功能解决方案</h3><p>我们可以迭代以前的解决方案，并使用 vanilla Java 对其进行改进。让我们再次看一下 <em>Pipe</em> 接口：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">interface</span> <span class="title class_">Pipe</span>&lt;IN, OUT&gt; &#123;</span><br><span class="line">    OUT <span class="title function_">process</span><span class="params">(IN input)</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">default</span> &lt;NEW_OUT&gt; Pipe&lt;IN, NEW_OUT&gt; <span class="title function_">add</span><span class="params">(Pipe &lt;OUT, NEW_OUT&gt; pipe)</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> input -&gt; pipe.execute(execute(input));</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这是一个具有一个默认方法的函数接口。我们可以用一个已经存在的 <em>Function</em> 接口来替换它：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">interface</span> <span class="title class_">Function</span>&lt;T, R&gt; &#123;</span><br><span class="line">    <span class="comment">//...</span></span><br><span class="line">    R <span class="title function_">apply</span><span class="params">(T t)</span>;</span><br><span class="line">    <span class="comment">//...</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>此外，<em>Function</em> 接口还包含几个有用的方法，其中一个是 <em>andThen：</em></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">default</span> &lt;V&gt; Function&lt;T, V&gt; <span class="title function_">andThen</span><span class="params">(Function&lt;? <span class="built_in">super</span> R, ? extends V&gt; after)</span> &#123;</span><br><span class="line">    Objects.requireNonNull(after);</span><br><span class="line">    <span class="keyword">return</span> (T t) -&gt; after.apply(apply(t));</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>我们可以使用它来代替之前的 <em>add</em> 方法。此外，<em>Function</em> 接口提供了一种在管道开头添加函数的方法：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">default</span> &lt;V&gt; Function&lt;V, R&gt; <span class="title function_">compose</span><span class="params">(Function&lt;? <span class="built_in">super</span> V, ? extends T&gt; before)</span> &#123;</span><br><span class="line">    Objects.requireNonNull(before);</span><br><span class="line">    <span class="keyword">return</span> (V v) -&gt; apply(before.apply(v));</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>通过使用 <em>Function</em>，我们可以创建非常灵活且易于使用的管道：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Test</span></span><br><span class="line"><span class="keyword">void</span> <span class="title function_">whenCombiningThreeFunctions_andInitializingPipeline_thenResultIsCorrect</span><span class="params">()</span> &#123;</span><br><span class="line">    Function&lt;Integer, Integer&gt; square = s -&gt; s * s;</span><br><span class="line">    Function&lt;Integer, Integer&gt; half = s -&gt; s / <span class="number">2</span>;</span><br><span class="line">    Function&lt;Integer, String&gt; toString = Object::toString;</span><br><span class="line">    Function&lt;Integer, String&gt; pipeline = square.andThen(half)</span><br><span class="line">        .andThen(toString);</span><br><span class="line">    <span class="type">String</span> <span class="variable">result</span> <span class="operator">=</span> pipeline.apply(<span class="number">5</span>);</span><br><span class="line">    <span class="type">String</span> <span class="variable">expected</span> <span class="operator">=</span> <span class="string">&quot;12&quot;</span>;</span><br><span class="line">    assertEquals(expected, result);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><em>管道</em>直接获取参数，使此方法非常干净。额外地，我们可以使用 <em>BiFunctions</em> 扩展管道：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Test</span></span><br><span class="line"><span class="keyword">void</span> <span class="title function_">whenCombiningFunctionAndBiFunctions_andInitializingPipeline_thenResultIsCorrect</span><span class="params">()</span> &#123;</span><br><span class="line">    BiFunction&lt;Integer, Integer, Integer&gt; add = Integer::sum;</span><br><span class="line">    BiFunction&lt;Integer, Integer, Integer&gt; mul = (a, b) -&gt; a * b;</span><br><span class="line">    Function&lt;Integer, String&gt; toString = Object::toString;</span><br><span class="line">    BiFunction&lt;Integer, Integer, String&gt; pipeline = add.andThen(a -&gt; mul.apply(a, <span class="number">2</span>))</span><br><span class="line">        .andThen(toString);</span><br><span class="line">    <span class="type">String</span> <span class="variable">result</span> <span class="operator">=</span> pipeline.apply(<span class="number">1</span>, <span class="number">2</span>);</span><br><span class="line">    <span class="type">String</span> <span class="variable">expected</span> <span class="operator">=</span> <span class="string">&quot;6&quot;</span>;</span><br><span class="line">    assertEquals(expected, result);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>因为 *andThen* 方法采用 *Function，*所以我们必须使用<a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Currying">局部套用</a>将 *mul* *BiFunction* 转换为函数。</strong>尽管我们在函数内部提供参数，而不是在调用管道时提供参数，但此解决方案仍然简单明了。Stream API 中使用相同的方法，流中的操作序列称为管道。</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://example.com/2024/10/10/%E7%BF%BB%E8%AF%91-Java%20%E4%B8%AD%E7%9A%84%E7%AE%A1%E9%81%93%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/" data-id="cm43zseal000cbgslby9vecgr" data-title="翻译-Java 中的管道设计模式" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
+      
+      
+      
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Java/" rel="tag">Java</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/%E7%BF%BB%E8%AF%91/" rel="tag">翻译</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/" rel="tag">设计模式</a></li></ul>
+
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2024/10/29/%E7%BA%AF%E5%8E%9F%E7%94%9Fjs%E7%AE%80%E5%8D%95%E5%AE%9E%E7%8E%B0%E5%8F%AF%E6%8B%96%E6%8B%BD%E4%BB%BB%E5%8A%A1%E7%9C%8B%E6%9D%BF/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Neuer</strong>
+      <div class="article-nav-title">
+        
+          纯原生js简单实现可拖拽任务看板
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2024/10/10/%E6%96%87%E6%A1%A3-element-vue-admin%20mock-api/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Älter</strong>
+      <div class="article-nav-title">文档-element-vue-admin官方文档mock-api</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tags</h3>
+    <div class="widget">
+      <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="/tags/CSS/" rel="tag">CSS</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/JAVA/" rel="tag">JAVA</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Java/" rel="tag">Java</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/js/" rel="tag">js</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%89%8D%E7%AB%AF/" rel="tag">前端</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%90%8E%E7%AB%AF/" rel="tag">后端</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E7%BA%BF%E7%A8%8B%E6%B1%A0/" rel="tag">线程池</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E7%BF%BB%E8%AF%91/" rel="tag">翻译</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/" rel="tag">设计模式</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E9%AB%98%E5%B9%B6%E5%8F%91/" rel="tag">高并发</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tag Cloud</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/CSS/" style="font-size: 10px;">CSS</a> <a href="/tags/JAVA/" style="font-size: 16.67px;">JAVA</a> <a href="/tags/Java/" style="font-size: 13.33px;">Java</a> <a href="/tags/js/" style="font-size: 10px;">js</a> <a href="/tags/%E5%89%8D%E7%AB%AF/" style="font-size: 20px;">前端</a> <a href="/tags/%E5%90%8E%E7%AB%AF/" style="font-size: 10px;">后端</a> <a href="/tags/%E7%BA%BF%E7%A8%8B%E6%B1%A0/" style="font-size: 10px;">线程池</a> <a href="/tags/%E7%BF%BB%E8%AF%91/" style="font-size: 10px;">翻译</a> <a href="/tags/%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/" style="font-size: 13.33px;">设计模式</a> <a href="/tags/%E9%AB%98%E5%B9%B6%E5%8F%91/" style="font-size: 10px;">高并发</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Archiv</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/11/">November 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/10/">October 2024</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">letzter Beitrag</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2024/11/30/%E5%89%8D%E7%AB%AF-%E6%97%A0%E6%84%9F%E5%88%B7%E6%96%B0token/">前端-无感刷新token</a>
+          </li>
+        
+          <li>
+            <a href="/2024/10/29/%E7%BA%AF%E5%8E%9F%E7%94%9Fjs%E7%AE%80%E5%8D%95%E5%AE%9E%E7%8E%B0%E5%8F%AF%E6%8B%96%E6%8B%BD%E4%BB%BB%E5%8A%A1%E7%9C%8B%E6%9D%BF/">纯原生js简单实现可拖拽任务看板</a>
+          </li>
+        
+          <li>
+            <a href="/2024/10/10/%E7%BF%BB%E8%AF%91-Java%20%E4%B8%AD%E7%9A%84%E7%AE%A1%E9%81%93%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/">翻译-Java 中的管道设计模式</a>
+          </li>
+        
+          <li>
+            <a href="/2024/10/10/%E6%96%87%E6%A1%A3-element-vue-admin%20mock-api/">文档-element-vue-admin官方文档mock-api</a>
+          </li>
+        
+          <li>
+            <a href="/2024/10/10/element-vue-admin%E5%89%8D%E7%AB%AFmock%E6%98%AF%E5%A6%82%E4%BD%95%E5%AE%9E%E7%8E%B0%E7%9A%84/">element-vue-admin前端mock是如何实现的</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      
+      &copy; 2024 haipeiface<br>
+      Powered by <a href="https://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+
+<script src="/js/jquery-3.6.4.min.js"></script>
+
+
+
+  
+<script src="/fancybox/jquery.fancybox.min.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+
+  </div>
+</body>
+</html>
