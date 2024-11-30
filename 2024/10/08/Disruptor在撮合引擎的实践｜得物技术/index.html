@@ -13,23 +13,23 @@
 <meta property="og:site_name" content="haipeiface.github.io">
 <meta property="og:description" content="目录 一、Disruptor的简介  Disruptor的使用场景 Disruptor和ArrayBlockingQueue性能对比 Disruptor快速接入指南 Disruptor消费者等待策略 Disruptor灵活的消费者模式  二、Disruptor的核心概念  Disruptor内部组件交互图 核心概念  三、Disruptor的特点  环形数组结构 无锁化设计 独占缓存行的方式消除伪">
 <meta property="og:locale">
-<meta property="og:image" content="http://example.com/images%5CABQvsDisruptor.png">
-<meta property="og:image" content="http://example.com/images%5C%E6%B6%88%E8%B4%B9%E8%80%85%E7%AD%89%E5%BE%85%E7%AD%96%E7%95%A5.png">
-<meta property="og:image" content="http://example.com/images%5C%E5%A4%9A%E6%B6%88%E8%B4%B9%E8%80%85%E7%BB%84%E5%B9%B6%E8%A1%8C%E6%A8%A1%E5%BC%8F.png">
-<meta property="og:image" content="http://example.com/images%5C%E5%A4%9A%E4%B8%AA%E6%B6%88%E8%B4%B9%E8%80%85%E7%BB%84%E4%B9%8B%E9%97%B4%E8%88%AA%E9%81%93%E6%89%A7%E8%A1%8C%E6%A8%A1%E5%BC%8F.png">
-<meta property="og:image" content="http://example.com/images%5C%E7%81%B5%E6%B4%BB%E6%B6%88%E8%B4%B9%E8%80%85%E6%89%A7%E8%A1%8C%E9%A1%BA%E5%BA%8F.png">
-<meta property="og:image" content="http://example.com/images%5C%E5%86%85%E9%83%A8%E7%BB%84%E4%BB%B6%E4%BA%A4%E4%BA%92%E5%9B%BE.png">
-<meta property="og:image" content="http://example.com/images%5CProcessingSequenceBarrier.png">
-<meta property="og:image" content="http://example.com/images%5CLhsPadding.png">
-<meta property="og:image" content="http://example.com/images%5CfillEventFactory.png">
-<meta property="og:image" content="http://example.com/images%5C%E6%A0%B8%E5%BF%83%E6%9C%8D%E5%8A%A1%E6%95%B0%E6%8D%AE%E6%B5%81%E5%90%91.png">
-<meta property="og:image" content="http://example.com/images%5C%E6%92%AE%E5%90%88%E5%BC%95%E6%93%8E%E6%B5%81%E7%A8%8B%E5%9B%BE.png">
+<meta property="og:image" content="http://example.com/images/ABQvsDisruptor.png">
+<meta property="og:image" content="http://example.com/images/%E6%B6%88%E8%B4%B9%E8%80%85%E7%AD%89%E5%BE%85%E7%AD%96%E7%95%A5.png">
+<meta property="og:image" content="http://example.com/images/%E5%A4%9A%E6%B6%88%E8%B4%B9%E8%80%85%E7%BB%84%E5%B9%B6%E8%A1%8C%E6%A8%A1%E5%BC%8F.png">
+<meta property="og:image" content="http://example.com/images/%E5%A4%9A%E4%B8%AA%E6%B6%88%E8%B4%B9%E8%80%85%E7%BB%84%E4%B9%8B%E9%97%B4%E8%88%AA%E9%81%93%E6%89%A7%E8%A1%8C%E6%A8%A1%E5%BC%8F.png">
+<meta property="og:image" content="http://example.com/images/%E7%81%B5%E6%B4%BB%E6%B6%88%E8%B4%B9%E8%80%85%E6%89%A7%E8%A1%8C%E9%A1%BA%E5%BA%8F.png">
+<meta property="og:image" content="http://example.com/images/%E5%86%85%E9%83%A8%E7%BB%84%E4%BB%B6%E4%BA%A4%E4%BA%92%E5%9B%BE.png">
+<meta property="og:image" content="http://example.com/images/ProcessingSequenceBarrier.png">
+<meta property="og:image" content="http://example.com/images/LhsPadding.png">
+<meta property="og:image" content="http://example.com/images/fillEventFactory.png">
+<meta property="og:image" content="http://example.com/images/%E6%A0%B8%E5%BF%83%E6%9C%8D%E5%8A%A1%E6%95%B0%E6%8D%AE%E6%B5%81%E5%90%91.png">
+<meta property="og:image" content="http://example.com/images/%E6%92%AE%E5%90%88%E5%BC%95%E6%93%8E%E6%B5%81%E7%A8%8B%E5%9B%BE.png">
 <meta property="article:published_time" content="2024-10-08T01:26:42.000Z">
-<meta property="article:modified_time" content="2024-11-30T09:16:48.044Z">
+<meta property="article:modified_time" content="2024-11-30T09:29:07.882Z">
 <meta property="article:author" content="haipeiface">
 <meta property="article:tag" content="JAVA">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="http://example.com/images%5CABQvsDisruptor.png">
+<meta name="twitter:image" content="http://example.com/images/ABQvsDisruptor.png">
   
     <link rel="alternate" href="/atom.xml" title="haipeiface.github.io" type="application/atom+xml">
   
@@ -150,7 +150,7 @@
 <li>ArrayBlockingQueue是基于数组ArrayList实现的，通过ReentrantLock独占锁保证线程安全；</li>
 <li>Disruptor是基于环形数组队列RingBuffer实现的，通过CAS乐观锁保证线程安全。在多种生产者-消费者模式下的性能对比。</li>
 </ul>
-<p><img src="/images%5CABQvsDisruptor.png" alt="图片"></p>
+<p><img src="/images/ABQvsDisruptor.png" alt="图片"></p>
 <p><strong>Disruptor快速接入指南</strong></p>
 <p><strong>引入Maven依赖</strong></p>
 <figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span><br><span class="line"></span><br><span class="line">  <span class="tag">&lt;<span class="name">groupld</span>&gt;</span>com.lmax<span class="tag">&lt;/<span class="name">groupld</span>&gt;</span></span><br><span class="line"></span><br><span class="line">  <span class="tag">&lt;<span class="name">artifactld</span>&gt;</span>disruptor<span class="tag">&lt;/<span class="name">artifactld</span>&gt;</span></span><br><span class="line"></span><br><span class="line">  <span class="tag">&lt;<span class="name">version</span>&gt;</span>4.0.0<span class="tag">&lt;/<span class="name">version</span>&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span><br></pre></td></tr></table></figure>
@@ -186,7 +186,7 @@
 <p> <strong>Disruptor消费者等待策略</strong></p>
 <p>等待策略WaitStrategy是一种决定一个消费者如何等待生产者将event对象放入Disruptor的方式&#x2F;策略。</p>
 <p>下面是常见的4种消费者等待策略：</p>
-<p><img src="/images%5C%E6%B6%88%E8%B4%B9%E8%80%85%E7%AD%89%E5%BE%85%E7%AD%96%E7%95%A5.png" alt="图片"></p>
+<p><img src="/images/%E6%B6%88%E8%B4%B9%E8%80%85%E7%AD%89%E5%BE%85%E7%AD%96%E7%95%A5.png" alt="图片"></p>
 <p><strong>Disruptor灵活的消费者模式</strong></p>
 <p><strong>支持单生产者和多生产者</strong></p>
 <p>构造Disruptor时指定生产者类型即可：ProducerType.SINGLE 和 ProducerType.MULTI</p>
@@ -216,13 +216,13 @@
 <ul>
 <li>多个消费者组之间并行模式</li>
 </ul>
-<p><img src="/images%5C%E5%A4%9A%E6%B6%88%E8%B4%B9%E8%80%85%E7%BB%84%E5%B9%B6%E8%A1%8C%E6%A8%A1%E5%BC%8F.png" alt="图片"></p>
+<p><img src="/images/%E5%A4%9A%E6%B6%88%E8%B4%B9%E8%80%85%E7%BB%84%E5%B9%B6%E8%A1%8C%E6%A8%A1%E5%BC%8F.png" alt="图片"></p>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//注册消费者组1</span></span><br><span class="line">disruptor.handleEventsWithWorkerPool(<span class="keyword">new</span> <span class="title class_">LongWorkHandler</span>()     </span><br><span class="line">	, <span class="keyword">new</span> <span class="title class_">LongWorkHandler</span>()       </span><br><span class="line">	, <span class="keyword">new</span> <span class="title class_">LongWorkHandler</span>());</span><br><span class="line"><span class="comment">//注册消费者组2</span></span><br><span class="line">disruptor.handleEventsWithWorkerPool(<span class="keyword">new</span> <span class="title class_">OtherWorkHandler</span>()    </span><br><span class="line">	, <span class="keyword">new</span> <span class="title class_">OtherWorkHandler</span>()      </span><br><span class="line">	, <span class="keyword">new</span> <span class="title class_">OtherWorkHandler</span>());</span><br></pre></td></tr></table></figure>
 
 <ul>
 <li>多个消费者组之间航道执行模式</li>
 </ul>
-<p><img src="/images%5C%E5%A4%9A%E4%B8%AA%E6%B6%88%E8%B4%B9%E8%80%85%E7%BB%84%E4%B9%8B%E9%97%B4%E8%88%AA%E9%81%93%E6%89%A7%E8%A1%8C%E6%A8%A1%E5%BC%8F.png" alt="图片"></p>
+<p><img src="/images/%E5%A4%9A%E4%B8%AA%E6%B6%88%E8%B4%B9%E8%80%85%E7%BB%84%E4%B9%8B%E9%97%B4%E8%88%AA%E9%81%93%E6%89%A7%E8%A1%8C%E6%A8%A1%E5%BC%8F.png" alt="图片"></p>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//注册消费者</span></span><br><span class="line">disruptor.handleEventsWithWorkerPool(<span class="keyword">new</span> <span class="title class_">LongWorkHandler</span>(), </span><br><span class="line">                                     <span class="keyword">new</span> <span class="title class_">LongWorkHandler</span>(),</span><br><span class="line">                                     <span class="keyword">new</span> <span class="title class_">LongWorkHandler</span>())        	     </span><br><span class="line">    .thenHandleEventsWithWorkerPool(<span class="keyword">new</span> <span class="title class_">OtherWorkHandler</span>(),                                         </span><br><span class="line">                                    <span class="keyword">new</span> <span class="title class_">OtherWorkHandler</span>(),</span><br><span class="line">                                    <span class="keyword">new</span> <span class="title class_">OtherWorkHandler</span>());</span><br></pre></td></tr></table></figure>
 
 
@@ -231,7 +231,7 @@
 
 <p><strong>多消费者：链式、菱形、六边形执行模式</strong></p>
 <p>通过多种组合方式，可实现灵活的消费者执行顺序，如下：</p>
-<p><img src="/images%5C%E7%81%B5%E6%B4%BB%E6%B6%88%E8%B4%B9%E8%80%85%E6%89%A7%E8%A1%8C%E9%A1%BA%E5%BA%8F.png" alt="图片"></p>
+<p><img src="/images/%E7%81%B5%E6%B4%BB%E6%B6%88%E8%B4%B9%E8%80%85%E6%89%A7%E8%A1%8C%E9%A1%BA%E5%BA%8F.png" alt="图片"></p>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//链式</span></span><br><span class="line">disruptor.handleEventsWith(<span class="keyword">new</span> <span class="title class_">LongEventHandler11</span>()).then(<span class="keyword">new</span> <span class="title class_">LongEventHandler12</span>());</span><br><span class="line">disruptor.handleEventsWith(<span class="keyword">new</span> <span class="title class_">LongEventHandler21</span>()).then(<span class="keyword">new</span> <span class="title class_">LongEventHandler22</span>());</span><br><span class="line"></span><br><span class="line"><span class="comment">//菱形</span></span><br><span class="line">disruptor.handleEventsWith(<span class="keyword">new</span> <span class="title class_">LongEventHandler1</span>(), <span class="keyword">new</span> <span class="title class_">LongEventHandler2</span>())    .then(<span class="keyword">new</span> <span class="title class_">LongEventHandler3</span>());  </span><br><span class="line"><span class="comment">//六边形</span></span><br><span class="line"><span class="type">LongEventHandler</span> <span class="variable">handler11</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">LongEventHandler</span>();</span><br><span class="line"><span class="type">LongEventHandler</span> <span class="variable">handler12</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">LongEventHandler</span>();</span><br><span class="line"><span class="type">LongEventHandler</span> <span class="variable">handler21</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">LongEventHandler</span>();</span><br><span class="line"><span class="type">LongEventHandler</span> <span class="variable">handler22</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">LongEventHandler</span>();</span><br><span class="line"><span class="type">LongEventHandler</span> <span class="variable">handler3</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">LongEventHandler</span>();</span><br><span class="line">disruptor.handleEventsWith(handler11, handler21);</span><br><span class="line">disruptor.after(handler11).handleEventsWith(handler12);</span><br><span class="line">disruptor.after(handler21).handleEventsWith(handler22);</span><br><span class="line">disruptor.after(handler12, handler22).handleEventsWith(handler3);</span><br></pre></td></tr></table></figure>
 
 
@@ -241,7 +241,7 @@
 <p><strong>二</strong></p>
 <p><strong>Disruptor的核心概念</strong></p>
 <p><strong>Disruptor内部组件交互图</strong></p>
-<p><img src="/images%5C%E5%86%85%E9%83%A8%E7%BB%84%E4%BB%B6%E4%BA%A4%E4%BA%92%E5%9B%BE.png" alt="图片"></p>
+<p><img src="/images/%E5%86%85%E9%83%A8%E7%BB%84%E4%BB%B6%E4%BA%A4%E4%BA%92%E5%9B%BE.png" alt="图片"></p>
 <p> <strong>核心概念</strong></p>
 <p>有些概念前面已经介绍过，在此不再赘述，说一说还未介绍的几个概念：</p>
 <p><strong>Sequence</strong></p>
@@ -253,7 +253,7 @@
 <p>SequenceBarrier用于保证事件的有序性。它通过维护一组Sequence来跟踪消费者的进度，当生产者发布新的事件时，序列屏障会检查是否所有消费者都已处理完前面的事件，如果是，则通知生产者可以发布新的事件。</p>
 <p>SequenceBarrier是消费者与RingBuffer之间的桥梁。在Disruptor中，消费者直接访问的是SequenceBarrier，而不是RingBuffer，因此SequenceBarrier能减少RingBuffer上的并发冲突，当消费者的消费速度大于生产者的生产速度时，消费者就可以通过waitFor()方法给予生产者一定的缓冲时间，从而协调了生产者和消费者的速度问题。</p>
 <p>SequenceBarrier同时也是消费者与消费者之间消费依赖的抽象，SequenceBarrier只有一个实现类，即ProcessingSequenceBarrier。ProcessingSequenceBarrier由生产者Sequencer、消费定位cursorSequence、等待策略waitStrategy、还有一组依赖Sequence(dependentSequence)组成。</p>
-<p><img src="/images%5CProcessingSequenceBarrier.png" alt="图片"></p>
+<p><img src="/images/ProcessingSequenceBarrier.png" alt="图片"></p>
 <p><strong>三</strong></p>
 <p><strong>Disruptor的特点</strong></p>
 <p><strong>环形数组结构</strong></p>
@@ -276,11 +276,11 @@
 <p><strong>CPU针对缓存的操作是以Cache Line为基本单位，对缓存行中的单个变量进行修改，会导致整个缓存行其他不相关的数据也都失效了，需要从主存重新加载，这个过程会带来性能损耗。</strong></p>
 <p><strong>Disruptor是如何解决伪共享的</strong></p>
 <p>Sequence是标识RingBuffer环形数组的下标，同时生产者和消费者也会维护各自的Sequence，最重要的是，<strong>Sequence通过填充CPU缓存行避免了伪共享带来的性能损耗</strong>，来看下其填充缓存行源码：</p>
-<p><img src="/images%5CLhsPadding.png" alt="图片"></p>
+<p><img src="/images/LhsPadding.png" alt="图片"></p>
 <p><strong>预分配内存</strong></p>
 <p>环形队列存放的是Event对象，而且是在Disruptor创建的时候调用EventFactory创建并一次将队列填满。Event保存生产者生产的数据，消费者也是通过Event获取数据，后续生产者只需要替换掉Event中的属性值。这种方式避免了重复创建对象，降低JVM的GC频率，带来系统性能的提升。后续我们在做编码的时候其实也可以借鉴这种实现思路。</p>
 <p>见com.lmax.disruptor.RingBuffer.fill(EventFactoryeventFactory)</p>
-<p><img src="/images%5CfillEventFactory.png" alt="图片"></p>
+<p><img src="/images/fillEventFactory.png" alt="图片"></p>
 <p><strong>四</strong></p>
 <p><strong>Disruptor在撮合引擎中的应用</strong></p>
 <p><strong>数字货币交易系统的简介</strong></p>
@@ -288,7 +288,7 @@
 <p>为用户提供数字虚拟货币的实时在线交易平台，实现盈亏。</p>
 <p>**交易系统简化交互图<br>**</p>
 <p>为了便于理解，简单列举交易系统的核心服务和数据流向，见下图：</p>
-<p><img src="/images%5C%E6%A0%B8%E5%BF%83%E6%9C%8D%E5%8A%A1%E6%95%B0%E6%8D%AE%E6%B5%81%E5%90%91.png" alt="图片"></p>
+<p><img src="/images/%E6%A0%B8%E5%BF%83%E6%9C%8D%E5%8A%A1%E6%95%B0%E6%8D%AE%E6%B5%81%E5%90%91.png" alt="图片"></p>
 <p><strong>撮合应用的特点</strong></p>
 <ul>
 <li>纯内存的、CPU密集型的</li>
@@ -301,7 +301,7 @@
 <h2 id="为什么撮合应用不设计成无状态的？"><a href="#为什么撮合应用不设计成无状态的？" class="headerlink" title="为什么撮合应用不设计成无状态的？"></a>为什么撮合应用不设计成无状态的？</h2><p>在学习或者实际做架构设计时，一般大多数情况都建议将应用设计为无状态的，可以通过水平扩展，实现应用的高可用、高性能。而有状态的应用一般有单点故障问题，难以通过水平扩展提升应用的性能，但是做架构设计的时候，还是需要从实际的场景出发，而撮合应用场景很显然更适合设计成有状态的。在数字加密货币交易平台，每一种数字加密货币都是由唯一的“交易对”去标识的，类似股票交易中的股票代码，针对不同交易对的买卖交易单是天然隔离的，而同种交易对的买卖交易单必须是在同一个应用去处理的，否则匹配撮合的时候是有问题的。如果使用无状态的设计，那么所有的交易对都必须在一个集群内处理，而且每个应用都必须要有全量交易对的订单数据，这样就会存在两个问题：多个应用撮合匹配结果不一致，以哪个为准、热点交易对如何做隔离，所以解决方案就是根据交易对维度对订单做分片，同一个交易对的订单消息路由到同一个撮合应用进行处理，这样其实就是将撮合应用设计成有状态的。每一种交易对每个时刻有且只有一个应用能处理，然后再通过k8s的Liveness和Readiness探针做自动故障转移和恢复来解决单点故障的问题，最后通过本地缓存Caffeine+高性能队列Disruptor提升单pod的吞吐量。16C64G的配置在实际业务场景压测的结果是，单机最大TPS在200w&#x2F;s左右，对于整个交易系统而言性能瓶颈已经不在撮合应用，因为极端情况下可以配置成一个pod处理一个交易对。</p>
 <p><strong>撮合引擎流程图</strong></p>
 <p>撮合引擎服务核心链路流程图：</p>
-<p><img src="/images%5C%E6%92%AE%E5%90%88%E5%BC%95%E6%93%8E%E6%B5%81%E7%A8%8B%E5%9B%BE.png" alt="图片"></p>
+<p><img src="/images/%E6%92%AE%E5%90%88%E5%BC%95%E6%93%8E%E6%B5%81%E7%A8%8B%E5%9B%BE.png" alt="图片"></p>
 <p><strong>撮合引擎之Disruptor代码</strong></p>
 <p>为了便于理解，删除了和Disruptor无关的代码，只列举和Disruptor相关联的代码。</p>
 <p><strong>定义事件：用户交易单</strong></p>
@@ -340,7 +340,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://example.com/2024/10/08/Disruptor%E5%9C%A8%E6%92%AE%E5%90%88%E5%BC%95%E6%93%8E%E7%9A%84%E5%AE%9E%E8%B7%B5%EF%BD%9C%E5%BE%97%E7%89%A9%E6%8A%80%E6%9C%AF/" data-id="cm43ylazo00018ksl9oaa47yi" data-title="Disruptor在撮合引擎的实践｜得物技术" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
+      <a data-url="http://example.com/2024/10/08/Disruptor%E5%9C%A8%E6%92%AE%E5%90%88%E5%BC%95%E6%93%8E%E7%9A%84%E5%AE%9E%E8%B7%B5%EF%BD%9C%E5%BE%97%E7%89%A9%E6%8A%80%E6%9C%AF/" data-id="cm43z1hxl0001ycsl4nzi6hvc" data-title="Disruptor在撮合引擎的实践｜得物技术" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
       
       
       
