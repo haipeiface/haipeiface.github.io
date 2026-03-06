@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  
+  <title>消息队列故障兜底方案 | haipeiface.github.io</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="1. 快速分析：MQ故障的影响MQ故障通常导致两类问题：生产者无法发送消息，以及消费者无法拉取消息。最严重的情况是，链路阻断引发的业务逻辑失败，可能直接影响用户体验。 2. 兜底方案核心架构建议采取本地缓冲 + 链路降级 + 数据对账的组合策略。  短期策略（故障发生0-5分钟内）：业务熔断与降级 同步转异步降级：核心业务（如订单支付成功）若MQ不可用，应在代码中捕获异常后，将待处理任务写入数据库">
+<meta property="og:type" content="article">
+<meta property="og:title" content="消息队列故障兜底方案">
+<meta property="og:url" content="http://example.com/2024/11/22/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97%E6%95%85%E9%9A%9C%E5%85%9C%E5%BA%95%E6%96%B9%E6%A1%88/index.html">
+<meta property="og:site_name" content="haipeiface.github.io">
+<meta property="og:description" content="1. 快速分析：MQ故障的影响MQ故障通常导致两类问题：生产者无法发送消息，以及消费者无法拉取消息。最严重的情况是，链路阻断引发的业务逻辑失败，可能直接影响用户体验。 2. 兜底方案核心架构建议采取本地缓冲 + 链路降级 + 数据对账的组合策略。  短期策略（故障发生0-5分钟内）：业务熔断与降级 同步转异步降级：核心业务（如订单支付成功）若MQ不可用，应在代码中捕获异常后，将待处理任务写入数据库">
+<meta property="og:locale">
+<meta property="article:published_time" content="2024-11-22T13:44:42.000Z">
+<meta property="article:modified_time" content="2026-03-06T08:01:22.549Z">
+<meta property="article:author" content="haipeiface">
+<meta name="twitter:card" content="summary">
+  
+    <link rel="alternate" href="/atom.xml" title="haipeiface.github.io" type="application/atom+xml">
+  
+  
+    <link rel="shortcut icon" href="/favicon.png">
+  
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+    
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.min.css">
+
+  
+  
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">haipeiface.github.io</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"><span class="fa fa-bars"></span></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        
+          <a class="nav-icon" href="/atom.xml" title="RSS Feed"><span class="fa fa-rss"></span></a>
+        
+        <a class="nav-icon nav-search-btn" title="Suche"><span class="fa fa-search"></span></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Suche"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://example.com"></form>
+      </div>
+    </div>
+  </div>
+</header>
+
+      <div class="outer">
+        <section id="main"><article id="post-消息队列故障兜底方案" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="article-meta">
+    <a href="/2024/11/22/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97%E6%95%85%E9%9A%9C%E5%85%9C%E5%BA%95%E6%96%B9%E6%A1%88/" class="article-date">
+  <time class="dt-published" datetime="2024-11-22T13:44:42.000Z" itemprop="datePublished">2024-11-22</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="p-name article-title" itemprop="headline name">
+      消息队列故障兜底方案
+    </h1>
+  
+
+      </header>
+    
+    <div class="e-content article-entry" itemprop="articleBody">
+      
+        <h4 id="1-快速分析：MQ故障的影响"><a href="#1-快速分析：MQ故障的影响" class="headerlink" title="1. 快速分析：MQ故障的影响"></a>1. 快速分析：MQ故障的影响</h4><p>MQ故障通常导致两类问题：生产者无法发送消息，以及消费者无法拉取消息。最严重的情况是，链路阻断引发的业务逻辑失败，可能直接影响用户体验。</p>
+<h4 id="2-兜底方案核心架构"><a href="#2-兜底方案核心架构" class="headerlink" title="2. 兜底方案核心架构"></a>2. 兜底方案核心架构</h4><p>建议采取<strong>本地缓冲 + 链路降级 + 数据对账</strong>的组合策略。</p>
+<ul>
+<li><strong>短期策略（故障发生0-5分钟内）：业务熔断与降级</strong><ul>
+<li><strong>同步转异步降级</strong>：核心业务（如订单支付成功）若MQ不可用，应在代码中捕获异常后，将待处理任务<strong>写入数据库本地事务表</strong>，并立即返回成功。随后由定时任务扫表，尝试重新投递。</li>
+<li><strong>功能降级</strong>：非核心业务（如发送积分、日志记录）可直接丢弃或打印告警后忽略。例如，用户浏览商品日志丢失，不影响交易。</li>
+</ul>
+</li>
+<li><strong>中期策略（故障发生5-30分钟内）：本地文件缓冲（高可靠场景）</strong><ul>
+<li><strong>实现原理</strong>：当MQ客户端连续重试失败，触发告警后，系统将消息体序列化后，<strong>追加写入本地的日志文件</strong>（如<code>&#123;timestamp&#125;.bak</code>）。同时，启动一个守护线程监控MQ恢复状况。一旦MQ恢复，立即按顺序读取本地文件，将积压消息重新发送。</li>
+<li><strong>注意</strong>：需考虑磁盘空间占用，并做好文件滚动（如每小时新建一个文件，自动删除7天前的文件）。</li>
+</ul>
+</li>
+<li><strong>长期策略（根本治理）：多链路与对账</strong><ul>
+<li><strong>数据库兜底（最稳妥）</strong>：利用业务数据库作为最终一致性载体。在业务操作的事务中，除了业务数据，还在同一数据库的<strong>消息队列表</strong>里插入一条记录。由专门的<strong>Dispatcher组件</strong>负责从这张表拉取数据，发送到MQ；如果MQ失败，Dispatcher会根据重试次数不断重试。</li>
+<li><strong>异构MQ双活</strong>：同时接入两个MQ集群（如RocketMQ + Kafka，或两个不同机房的RocketMQ）。发送消息时，采用<strong>双写</strong>（主写成功即返回，从异步写），消费时通过<strong>去重机制</strong>防止重复处理。当一个集群彻底宕机，流量自动切换到另一个。</li>
+</ul>
+</li>
+</ul>
+<h4 id="3-推荐架构：数据库事务消息表模式"><a href="#3-推荐架构：数据库事务消息表模式" class="headerlink" title="3. 推荐架构：数据库事务消息表模式"></a>3. 推荐架构：数据库事务消息表模式</h4><p>这是最经典的“只靠MySQL也能顶住”的方案：</p>
+<ol>
+<li><strong>生产端</strong>：在同一个数据库事务中，完成业务操作（如更新订单状态）和向<code>message_queue</code>表插入一条状态为<code>待发送</code>的消息。</li>
+<li><strong>中间件</strong>：一个后台定时任务（Quartz或XXL-JOB），每秒扫描<code>message_queue</code>表中“待发送”且超过一定时间未确认的消息，将其发送至MQ。</li>
+<li><strong>消费端</strong>：消费业务时，先处理业务逻辑，再调用生产端的API（或直接更新数据库）将<code>message_queue</code>表中对应消息的状态更新为<code>已发送</code>或<code>已完成</code>。</li>
+</ol>
+<h4 id="4-方案要点与取舍"><a href="#4-方案要点与取舍" class="headerlink" title="4. 方案要点与取舍"></a>4. 方案要点与取舍</h4><p>在设计兜底方案时，有几个核心原则需要把握：</p>
+<ul>
+<li><strong>最终一致性</strong>：MQ故障期间，系统承诺“最终一定好”，但不保证“立刻好”，以此换取系统的整体可用。</li>
+<li><strong>幂等性</strong>：兜底方案往往涉及重复发送，因此<strong>消费端实现幂等</strong>是保障数据正确的基石。</li>
+<li><strong>监控告警</strong>：无论是本地文件积压还是数据库队列表数据量过大，都必须配备监控，以便故障时人工介入。</li>
+</ul>
+<p>总的来说，如果没有复杂的架构条件，建议优先实现<strong>“本地数据库消息表+定时任务”</strong>方案。如果追求极致的性能与可用性，可以考虑<strong>“双MQ写入+自动降级”</strong>方案。</p>
+<p>需要我为你展开介绍“本地数据库消息表+定时任务”模式的具体代码实现思路吗？</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://example.com/2024/11/22/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97%E6%95%85%E9%9A%9C%E5%85%9C%E5%BA%95%E6%96%B9%E6%A1%88/" data-id="cmmem61qw001he0slfspwdtwc" data-title="消息队列故障兜底方案" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
+      
+      
+      
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2024/11/30/%E5%89%8D%E7%AB%AF-%E6%97%A0%E6%84%9F%E5%88%B7%E6%96%B0token/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Neuer</strong>
+      <div class="article-nav-title">
+        
+          前端-无感刷新token
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2024/11/04/%E7%AA%97%E5%8F%A3%E5%87%BD%E6%95%B0%E8%BF%9E%E7%BB%AD%E7%99%BB%E5%BD%95%E9%97%AE%E9%A2%98/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Älter</strong>
+      <div class="article-nav-title">窗口函数连续登录问题</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tags</h3>
+    <div class="widget">
+      <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="/tags/CSS/" rel="tag">CSS</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/JAVA/" rel="tag">JAVA</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Java/" rel="tag">Java</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Spring/" rel="tag">Spring</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/js/" rel="tag">js</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%89%8D%E7%AB%AF/" rel="tag">前端</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%90%8E%E7%AB%AF/" rel="tag">后端</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E7%BA%BF%E7%A8%8B%E6%B1%A0/" rel="tag">线程池</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E7%BF%BB%E8%AF%91/" rel="tag">翻译</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/" rel="tag">设计模式</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E9%AB%98%E5%B9%B6%E5%8F%91/" rel="tag">高并发</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tag Cloud</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/CSS/" style="font-size: 10px;">CSS</a> <a href="/tags/JAVA/" style="font-size: 16.67px;">JAVA</a> <a href="/tags/Java/" style="font-size: 13.33px;">Java</a> <a href="/tags/Spring/" style="font-size: 10px;">Spring</a> <a href="/tags/js/" style="font-size: 10px;">js</a> <a href="/tags/%E5%89%8D%E7%AB%AF/" style="font-size: 20px;">前端</a> <a href="/tags/%E5%90%8E%E7%AB%AF/" style="font-size: 13.33px;">后端</a> <a href="/tags/%E7%BA%BF%E7%A8%8B%E6%B1%A0/" style="font-size: 10px;">线程池</a> <a href="/tags/%E7%BF%BB%E8%AF%91/" style="font-size: 10px;">翻译</a> <a href="/tags/%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/" style="font-size: 13.33px;">设计模式</a> <a href="/tags/%E9%AB%98%E5%B9%B6%E5%8F%91/" style="font-size: 10px;">高并发</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Archiv</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/02/">February 2026</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/01/">January 2026</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/12/">December 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/11/">November 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/10/">October 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/09/">September 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/08/">August 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/07/">July 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/04/">April 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/03/">March 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/02/">February 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/01/">January 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/12/">December 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/11/">November 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/10/">October 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/07/">July 2024</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">letzter Beitrag</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2026/02/14/%E4%B9%90%E8%A7%82%E9%94%81%E5%AE%9E%E7%8E%B0%E9%AB%98%E5%B9%B6%E5%8F%91%E7%8A%B6%E6%80%81%E4%B8%80%E8%87%B4/">乐观锁实现高并发状态一致</a>
+          </li>
+        
+          <li>
+            <a href="/2026/02/04/%E5%A4%A7%E6%A8%A1%E5%9E%8B%E8%BE%93%E5%87%BA%E6%A0%87%E5%87%86JSON%E8%A7%A3%E5%86%B3%E6%96%B9%E6%B3%95/">大模型输出标准JSON解决方法</a>
+          </li>
+        
+          <li>
+            <a href="/2026/01/23/Java%E7%BA%BF%E7%A8%8B%E6%B1%A0%E5%BC%82%E5%B8%B8%E5%A4%84%E7%90%86%E6%9C%BA%E5%88%B6/">Java线程池异常处理机制</a>
+          </li>
+        
+          <li>
+            <a href="/2026/01/04/%E5%80%9F%E8%AF%81%E4%B8%9A%E5%8A%A1%E7%8A%B6%E6%80%81%E6%9C%BA%E5%BB%BA%E6%A8%A1%E5%8E%9F%E5%AD%90%E6%80%A7/">借证业务状态机建模原子性</a>
+          </li>
+        
+          <li>
+            <a href="/2026/01/04/RAG%E6%B5%81%E7%A8%8B%E8%AF%A6%E8%A7%A3%E4%B8%8E%E5%9B%BE%E8%A7%A3/">RAG流程详解与图解</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      
+      &copy; 2026 haipeiface<br>
+      Powered by <a href="https://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+
+<script src="/js/jquery-3.6.4.min.js"></script>
+
+
+
+  
+<script src="/fancybox/jquery.fancybox.min.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+
+  </div>
+</body>
+</html>

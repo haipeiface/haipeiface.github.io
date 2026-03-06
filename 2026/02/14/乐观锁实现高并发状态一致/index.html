@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  
+  <title>乐观锁实现高并发状态一致 | haipeiface.github.io</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="在高并发场景下，多个线程或服务可能同时尝试修改同一条记录的“状态”字段，导致数据不一致（例如“状态”被错误覆盖或丢失更新）。乐观锁是一种轻量级的并发控制策略，它假设冲突较少，通过版本号或条件更新来保证数据一致性，而不使用数据库的行锁。 乐观锁的实现方式1. 版本号机制在数据库表中增加一个整数类型的版本号字段（如 version），每次读取数据时同时获取 version，更新时检查当前版本号是否与读">
+<meta property="og:type" content="article">
+<meta property="og:title" content="乐观锁实现高并发状态一致">
+<meta property="og:url" content="http://example.com/2026/02/14/%E4%B9%90%E8%A7%82%E9%94%81%E5%AE%9E%E7%8E%B0%E9%AB%98%E5%B9%B6%E5%8F%91%E7%8A%B6%E6%80%81%E4%B8%80%E8%87%B4/index.html">
+<meta property="og:site_name" content="haipeiface.github.io">
+<meta property="og:description" content="在高并发场景下，多个线程或服务可能同时尝试修改同一条记录的“状态”字段，导致数据不一致（例如“状态”被错误覆盖或丢失更新）。乐观锁是一种轻量级的并发控制策略，它假设冲突较少，通过版本号或条件更新来保证数据一致性，而不使用数据库的行锁。 乐观锁的实现方式1. 版本号机制在数据库表中增加一个整数类型的版本号字段（如 version），每次读取数据时同时获取 version，更新时检查当前版本号是否与读">
+<meta property="og:locale">
+<meta property="article:published_time" content="2026-02-14T13:11:32.000Z">
+<meta property="article:modified_time" content="2026-03-06T07:57:07.885Z">
+<meta property="article:author" content="haipeiface">
+<meta name="twitter:card" content="summary">
+  
+    <link rel="alternate" href="/atom.xml" title="haipeiface.github.io" type="application/atom+xml">
+  
+  
+    <link rel="shortcut icon" href="/favicon.png">
+  
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+    
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.min.css">
+
+  
+  
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">haipeiface.github.io</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"><span class="fa fa-bars"></span></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        
+          <a class="nav-icon" href="/atom.xml" title="RSS Feed"><span class="fa fa-rss"></span></a>
+        
+        <a class="nav-icon nav-search-btn" title="Suche"><span class="fa fa-search"></span></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Suche"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://example.com"></form>
+      </div>
+    </div>
+  </div>
+</header>
+
+      <div class="outer">
+        <section id="main"><article id="post-乐观锁实现高并发状态一致" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="article-meta">
+    <a href="/2026/02/14/%E4%B9%90%E8%A7%82%E9%94%81%E5%AE%9E%E7%8E%B0%E9%AB%98%E5%B9%B6%E5%8F%91%E7%8A%B6%E6%80%81%E4%B8%80%E8%87%B4/" class="article-date">
+  <time class="dt-published" datetime="2026-02-14T13:11:32.000Z" itemprop="datePublished">2026-02-14</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="p-name article-title" itemprop="headline name">
+      乐观锁实现高并发状态一致
+    </h1>
+  
+
+      </header>
+    
+    <div class="e-content article-entry" itemprop="articleBody">
+      
+        <p>在高并发场景下，多个线程或服务可能同时尝试修改同一条记录的“状态”字段，导致数据不一致（例如“状态”被错误覆盖或丢失更新）。乐观锁是一种轻量级的并发控制策略，它假设冲突较少，通过版本号或条件更新来保证数据一致性，而不使用数据库的行锁。</p>
+<h3 id="乐观锁的实现方式"><a href="#乐观锁的实现方式" class="headerlink" title="乐观锁的实现方式"></a>乐观锁的实现方式</h3><h4 id="1-版本号机制"><a href="#1-版本号机制" class="headerlink" title="1. 版本号机制"></a>1. 版本号机制</h4><p>在数据库表中增加一个整数类型的版本号字段（如 <code>version</code>），每次读取数据时同时获取 <code>version</code>，更新时检查当前版本号是否与读取时的版本号一致。若一致则执行更新并将 <code>version</code> 加1；若不一致，说明数据已被其他事务修改，当前操作失败，需要重试或报错。</p>
+<p><strong>SQL示例：</strong></p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- 读取数据（包含当前版本号）</span></span><br><span class="line"><span class="keyword">SELECT</span> status, version <span class="keyword">FROM</span> orders <span class="keyword">WHERE</span> id <span class="operator">=</span> <span class="number">100</span>;</span><br><span class="line"></span><br><span class="line"><span class="comment">-- 更新数据，同时检查版本号</span></span><br><span class="line"><span class="keyword">UPDATE</span> orders </span><br><span class="line"><span class="keyword">SET</span> status <span class="operator">=</span> <span class="string">&#x27;PAID&#x27;</span>, version <span class="operator">=</span> version <span class="operator">+</span> <span class="number">1</span> </span><br><span class="line"><span class="keyword">WHERE</span> id <span class="operator">=</span> <span class="number">100</span> <span class="keyword">AND</span> version <span class="operator">=</span> <span class="number">5</span>;  <span class="comment">-- 假设读取到的版本号是5</span></span><br></pre></td></tr></table></figure>
+
+<p>如果更新影响的行数为0，说明版本号已被其他事务改变，此时应重新查询最新状态和版本号，并再次尝试更新（重试机制）。</p>
+<h4 id="2-CAS（Compare-And-Swap）条件更新"><a href="#2-CAS（Compare-And-Swap）条件更新" class="headerlink" title="2. CAS（Compare And Swap）条件更新"></a>2. CAS（Compare And Swap）条件更新</h4><p>直接利用数据库的原子性，在更新时通过 <code>WHERE</code> 条件携带旧的状态值，确保状态未被其他事务修改。这种方式不需要额外的版本字段，但要求状态字段在更新过程中具有业务上的不可重复性（即旧状态唯一确定当前记录）。</p>
+<p><strong>SQL示例：</strong></p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- 更新时要求当前状态必须为 &#x27;PENDING&#x27;</span></span><br><span class="line"><span class="keyword">UPDATE</span> orders </span><br><span class="line"><span class="keyword">SET</span> status <span class="operator">=</span> <span class="string">&#x27;PAID&#x27;</span> </span><br><span class="line"><span class="keyword">WHERE</span> id <span class="operator">=</span> <span class="number">100</span> <span class="keyword">AND</span> status <span class="operator">=</span> <span class="string">&#x27;PENDING&#x27;</span>;</span><br></pre></td></tr></table></figure>
+
+<p>如果影响行数为0，说明状态已不是预期的 <code>PENDING</code>，需要重新查询并根据新状态决定下一步操作。</p>
+<h3 id="应用层示例（Java-重试）"><a href="#应用层示例（Java-重试）" class="headerlink" title="应用层示例（Java + 重试）"></a>应用层示例（Java + 重试）</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="type">boolean</span> <span class="title function_">updateOrderStatus</span><span class="params">(Long orderId, String newStatus, String oldStatus)</span> &#123;</span><br><span class="line">    <span class="type">int</span> <span class="variable">retryCount</span> <span class="operator">=</span> <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">while</span> (retryCount &lt; MAX_RETRY) &#123;</span><br><span class="line">        <span class="type">int</span> <span class="variable">rows</span> <span class="operator">=</span> jdbcTemplate.update(</span><br><span class="line">            <span class="string">&quot;UPDATE orders SET status = ? WHERE id = ? AND status = ?&quot;</span>,</span><br><span class="line">            newStatus, orderId, oldStatus</span><br><span class="line">        );</span><br><span class="line">        <span class="keyword">if</span> (rows &gt; <span class="number">0</span>) &#123;</span><br><span class="line">            <span class="keyword">return</span> <span class="literal">true</span>; <span class="comment">// 更新成功</span></span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">// 更新失败，重新查询当前状态</span></span><br><span class="line">        <span class="type">String</span> <span class="variable">currentStatus</span> <span class="operator">=</span> jdbcTemplate.queryForObject(</span><br><span class="line">            <span class="string">&quot;SELECT status FROM orders WHERE id = ?&quot;</span>, String.class, orderId</span><br><span class="line">        );</span><br><span class="line">        <span class="comment">// 根据业务逻辑决定是否重试（例如如果状态已经是最终态则放弃）</span></span><br><span class="line">        <span class="keyword">if</span> (isFinalStatus(currentStatus)) &#123;</span><br><span class="line">            <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        oldStatus = currentStatus; <span class="comment">// 更新旧状态值，准备重试</span></span><br><span class="line">        retryCount++;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">false</span>; <span class="comment">// 超过重试次数，失败</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="注意事项"><a href="#注意事项" class="headerlink" title="注意事项"></a>注意事项</h3><ul>
+<li><strong>ABA问题</strong>：CAS机制可能遇到ABA问题（值从A变成B又变回A），但状态字段如果业务上允许回环（如订单从“已支付”又回到“待支付”），版本号机制能更好地避免此问题。</li>
+<li><strong>重试策略</strong>：高并发下冲突概率可能较高，需合理设置重试次数和退避策略（如指数退避），避免无限循环。</li>
+<li><strong>最终一致性</strong>：乐观锁适用于冲突较少的场景，若冲突频繁，性能可能下降，此时应考虑悲观锁或其他分布式锁方案。</li>
+</ul>
+<h3 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h3><p>乐观锁通过版本号或条件更新，在不锁定数据库行的情况下保证高并发下“状态”字段的一致性。实现简单，性能较好，但需要应用层处理重试逻辑，适合读多写少的业务场景。</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://example.com/2026/02/14/%E4%B9%90%E8%A7%82%E9%94%81%E5%AE%9E%E7%8E%B0%E9%AB%98%E5%B9%B6%E5%8F%91%E7%8A%B6%E6%80%81%E4%B8%80%E8%87%B4/" data-id="cmmem61qp000ze0sl157aaiyi" data-title="乐观锁实现高并发状态一致" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
+      
+      
+      
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+  
+    <a href="/2026/02/04/%E5%A4%A7%E6%A8%A1%E5%9E%8B%E8%BE%93%E5%87%BA%E6%A0%87%E5%87%86JSON%E8%A7%A3%E5%86%B3%E6%96%B9%E6%B3%95/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Älter</strong>
+      <div class="article-nav-title">大模型输出标准JSON解决方法</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tags</h3>
+    <div class="widget">
+      <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="/tags/CSS/" rel="tag">CSS</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/JAVA/" rel="tag">JAVA</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Java/" rel="tag">Java</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Spring/" rel="tag">Spring</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/js/" rel="tag">js</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%89%8D%E7%AB%AF/" rel="tag">前端</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%90%8E%E7%AB%AF/" rel="tag">后端</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E7%BA%BF%E7%A8%8B%E6%B1%A0/" rel="tag">线程池</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E7%BF%BB%E8%AF%91/" rel="tag">翻译</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/" rel="tag">设计模式</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E9%AB%98%E5%B9%B6%E5%8F%91/" rel="tag">高并发</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tag Cloud</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/CSS/" style="font-size: 10px;">CSS</a> <a href="/tags/JAVA/" style="font-size: 16.67px;">JAVA</a> <a href="/tags/Java/" style="font-size: 13.33px;">Java</a> <a href="/tags/Spring/" style="font-size: 10px;">Spring</a> <a href="/tags/js/" style="font-size: 10px;">js</a> <a href="/tags/%E5%89%8D%E7%AB%AF/" style="font-size: 20px;">前端</a> <a href="/tags/%E5%90%8E%E7%AB%AF/" style="font-size: 13.33px;">后端</a> <a href="/tags/%E7%BA%BF%E7%A8%8B%E6%B1%A0/" style="font-size: 10px;">线程池</a> <a href="/tags/%E7%BF%BB%E8%AF%91/" style="font-size: 10px;">翻译</a> <a href="/tags/%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/" style="font-size: 13.33px;">设计模式</a> <a href="/tags/%E9%AB%98%E5%B9%B6%E5%8F%91/" style="font-size: 10px;">高并发</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Archiv</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/02/">February 2026</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/01/">January 2026</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/12/">December 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/11/">November 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/10/">October 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/09/">September 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/08/">August 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/07/">July 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/04/">April 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/03/">March 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/02/">February 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/01/">January 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/12/">December 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/11/">November 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/10/">October 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/07/">July 2024</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">letzter Beitrag</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2026/02/14/%E4%B9%90%E8%A7%82%E9%94%81%E5%AE%9E%E7%8E%B0%E9%AB%98%E5%B9%B6%E5%8F%91%E7%8A%B6%E6%80%81%E4%B8%80%E8%87%B4/">乐观锁实现高并发状态一致</a>
+          </li>
+        
+          <li>
+            <a href="/2026/02/04/%E5%A4%A7%E6%A8%A1%E5%9E%8B%E8%BE%93%E5%87%BA%E6%A0%87%E5%87%86JSON%E8%A7%A3%E5%86%B3%E6%96%B9%E6%B3%95/">大模型输出标准JSON解决方法</a>
+          </li>
+        
+          <li>
+            <a href="/2026/01/23/Java%E7%BA%BF%E7%A8%8B%E6%B1%A0%E5%BC%82%E5%B8%B8%E5%A4%84%E7%90%86%E6%9C%BA%E5%88%B6/">Java线程池异常处理机制</a>
+          </li>
+        
+          <li>
+            <a href="/2026/01/04/%E5%80%9F%E8%AF%81%E4%B8%9A%E5%8A%A1%E7%8A%B6%E6%80%81%E6%9C%BA%E5%BB%BA%E6%A8%A1%E5%8E%9F%E5%AD%90%E6%80%A7/">借证业务状态机建模原子性</a>
+          </li>
+        
+          <li>
+            <a href="/2026/01/04/RAG%E6%B5%81%E7%A8%8B%E8%AF%A6%E8%A7%A3%E4%B8%8E%E5%9B%BE%E8%A7%A3/">RAG流程详解与图解</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      
+      &copy; 2026 haipeiface<br>
+      Powered by <a href="https://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+
+<script src="/js/jquery-3.6.4.min.js"></script>
+
+
+
+  
+<script src="/fancybox/jquery.fancybox.min.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+
+  </div>
+</body>
+</html>

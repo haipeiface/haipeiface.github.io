@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  
+  <title>SpringBoot请求响应映射机制解析 | haipeiface.github.io</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="思考过程（Thinking）： 我们讨论的是Spring Boot（实际上是Spring MVC）如何处理HTTP请求和响应的一一对应关系。实际上，这是一个关于Spring MVC框架如何工作的问题。 Spring MVC的核心是DispatcherServlet，它充当前端控制器，接收所有的HTTP请求，并将这些请求分发给相应的处理器（Controller）进行处理。然后，处理器会生成响应，最终">
+<meta property="og:type" content="article">
+<meta property="og:title" content="SpringBoot请求响应映射机制解析">
+<meta property="og:url" content="http://example.com/2025/02/06/SpringBoot%E8%AF%B7%E6%B1%82%E5%93%8D%E5%BA%94%E6%98%A0%E5%B0%84%E6%9C%BA%E5%88%B6%E8%A7%A3%E6%9E%90/index.html">
+<meta property="og:site_name" content="haipeiface.github.io">
+<meta property="og:description" content="思考过程（Thinking）： 我们讨论的是Spring Boot（实际上是Spring MVC）如何处理HTTP请求和响应的一一对应关系。实际上，这是一个关于Spring MVC框架如何工作的问题。 Spring MVC的核心是DispatcherServlet，它充当前端控制器，接收所有的HTTP请求，并将这些请求分发给相应的处理器（Controller）进行处理。然后，处理器会生成响应，最终">
+<meta property="og:locale">
+<meta property="article:published_time" content="2025-02-06T07:06:28.000Z">
+<meta property="article:modified_time" content="2026-03-06T07:50:12.925Z">
+<meta property="article:author" content="haipeiface">
+<meta name="twitter:card" content="summary">
+  
+    <link rel="alternate" href="/atom.xml" title="haipeiface.github.io" type="application/atom+xml">
+  
+  
+    <link rel="shortcut icon" href="/favicon.png">
+  
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+    
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.min.css">
+
+  
+  
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">haipeiface.github.io</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"><span class="fa fa-bars"></span></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        
+          <a class="nav-icon" href="/atom.xml" title="RSS Feed"><span class="fa fa-rss"></span></a>
+        
+        <a class="nav-icon nav-search-btn" title="Suche"><span class="fa fa-search"></span></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Suche"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://example.com"></form>
+      </div>
+    </div>
+  </div>
+</header>
+
+      <div class="outer">
+        <section id="main"><article id="post-SpringBoot请求响应映射机制解析" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="article-meta">
+    <a href="/2025/02/06/SpringBoot%E8%AF%B7%E6%B1%82%E5%93%8D%E5%BA%94%E6%98%A0%E5%B0%84%E6%9C%BA%E5%88%B6%E8%A7%A3%E6%9E%90/" class="article-date">
+  <time class="dt-published" datetime="2025-02-06T07:06:28.000Z" itemprop="datePublished">2025-02-06</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="p-name article-title" itemprop="headline name">
+      SpringBoot请求响应映射机制解析
+    </h1>
+  
+
+      </header>
+    
+    <div class="e-content article-entry" itemprop="articleBody">
+      
+        <p>思考过程（Thinking）：</p>
+<p>我们讨论的是Spring Boot（实际上是Spring MVC）如何处理HTTP请求和响应的一一对应关系。实际上，这是一个关于Spring MVC框架如何工作的问题。</p>
+<p>Spring MVC的核心是DispatcherServlet，它充当前端控制器，接收所有的HTTP请求，并将这些请求分发给相应的处理器（Controller）进行处理。然后，处理器会生成响应，最终由DispatcherServlet将响应返回给客户端。</p>
+<p>整个过程可以分为几个步骤：</p>
+<ol>
+<li>请求到达DispatcherServlet：所有的请求都会被DispatcherServlet拦截。</li>
+<li>确定处理器映射：DispatcherServlet会查询处理器映射（HandlerMapping）来确定请求应该由哪个Controller的方法来处理。处理器映射会根据请求的URL、请求方法（GET、POST等）以及其他条件（如请求头、参数等）来匹配。</li>
+<li>调用处理器：一旦找到对应的处理器方法，DispatcherServlet就会调用该方法。在调用之前，可能会先执行一些拦截器（Interceptor）的预处理。</li>
+<li>执行处理器方法：处理器方法会执行相应的业务逻辑，并返回一个模型和视图（ModelAndView）或者一个对象（在RESTful情况下，通常返回的是数据，如JSON或XML）。</li>
+<li>处理返回结果：如果返回的是ModelAndView，那么DispatcherServlet会使用ViewResolver来解析视图，并将模型数据渲染到视图上。如果返回的是数据（比如通过@ResponseBody注解），则使用HttpMessageConverter将返回值转换为HTTP响应体（如JSON字符串）。</li>
+<li>返回响应：最终，DispatcherServlet将响应返回给客户端。</li>
+</ol>
+<p>在这个过程中，Spring MVC通过DispatcherServlet和一系列组件（如HandlerMapping、HandlerAdapter、ViewResolver等）来确保每个请求都能找到对应的处理器方法，并且将处理结果正确地转换为响应。</p>
+<p>具体到请求和响应的一一对应，主要是通过：</p>
+<ul>
+<li>每个请求都是在一个独立的线程中处理的，因此请求和响应对象是线程本地变量，不会混淆。</li>
+<li>在处理器方法中，我们可以通过方法参数（如HttpServletRequest、HttpServletResponse）来访问当前请求和响应对象，Spring会确保这些参数绑定到当前请求的对应对象。</li>
+</ul>
+<p>另外，对于异步请求，Spring MVC也提供了相应的支持，但基本原理类似。</p>
+<p>下面是一个简单的示例，说明Controller如何映射请求和生成响应：</p>
+<p>假设我们有一个Controller：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@RestController</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">MyController</span> &#123;</span><br><span class="line">    <span class="meta">@GetMapping(&quot;/hello&quot;)</span></span><br><span class="line">    <span class="keyword">public</span> String <span class="title function_">hello</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="string">&quot;Hello World&quot;</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>当请求GET &#x2F;hello时，DispatcherServlet会通过HandlerMapping找到这个hello方法，然后调用它。方法返回的字符串”Hello World”会被HttpMessageConverter转换为响应体（默认是文本），并写入HttpServletResponse中。</p>
+<p>因此，Spring Boot（Spring MVC）通过一套完整的组件协作，确保了请求和响应的一一对应。</p>
+<p>这是一个非常好的问题，它触及了SpringBoot（实际上是Spring MVC）处理HTTP请求的核心机制。简单来说，<strong>SpringBoot通过一套精心设计的“映射-分发-处理”机制来确保请求和响应的正确对应</strong>。</p>
+<p>这套机制的核心是 <strong>DispatcherServlet</strong>，它就像一个公司的“总机接线员”，负责协调所有请求和响应。</p>
+<p>下面我详细拆解这个过程：</p>
+<hr>
+<h3 id="核心流程：DispatcherServlet-的工作流"><a href="#核心流程：DispatcherServlet-的工作流" class="headerlink" title="核心流程：DispatcherServlet 的工作流"></a>核心流程：DispatcherServlet 的工作流</h3><p>当一个HTTP请求到达SpringBoot应用时，会经历以下关键步骤：</p>
+<h4 id="1-请求到达：DispatcherServlet"><a href="#1-请求到达：DispatcherServlet" class="headerlink" title="1. 请求到达：DispatcherServlet"></a>1. 请求到达：<code>DispatcherServlet</code></h4><p>所有的请求首先都会被一个名为 <code>DispatcherServlet</code> 的中央Servlet接收。在SpringBoot中，它被自动配置为默认的Servlet，拦截所有请求（通常是 <code>/</code>）。</p>
+<h4 id="2-寻找处理器：HandlerMapping"><a href="#2-寻找处理器：HandlerMapping" class="headerlink" title="2. 寻找处理器：HandlerMapping"></a>2. 寻找处理器：<code>HandlerMapping</code></h4><p><code>DispatcherServlet</code> 自己并不处理业务逻辑，它的第一件事是问：“这个请求应该由谁来处理？”</p>
+<ul>
+<li>它会查询一个或多个 <strong><code>HandlerMapping</code></strong> 组件。</li>
+<li><code>HandlerMapping</code> 维护着一个“路由表”，这个表记录了 <strong>URL模式、HTTP方法（GET, POST等）</strong> 与具体的 <strong>处理器方法（Controller中的方法）</strong> 之间的映射关系。</li>
+<li>常见的<code>HandlerMapping</code>实现包括：<code>RequestMappingHandlerMapping</code>（用于处理<code>@RequestMapping</code>, <code>@GetMapping</code>等注解）。</li>
+</ul>
+<p><strong>示例：</strong></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@RestController</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">UserController</span> &#123;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// HandlerMapping 会记录：GET /users/123 -&gt; getUserById(123)</span></span><br><span class="line">    <span class="meta">@GetMapping(&quot;/users/&#123;id&#125;&quot;)</span></span><br><span class="line">    <span class="keyword">public</span> User <span class="title function_">getUserById</span><span class="params">(<span class="meta">@PathVariable</span> Long id)</span> &#123;</span><br><span class="line">        <span class="comment">// ... 业务逻辑</span></span><br><span class="line">        <span class="keyword">return</span> user;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>在这一步，<code>DispatcherServlet</code> 找到了能处理当前请求的 <code>HandlerMethod</code>（即<code>getUserById</code>方法）以及相关的拦截器。</p>
+<h4 id="3-执行处理器：HandlerAdapter"><a href="#3-执行处理器：HandlerAdapter" class="headerlink" title="3. 执行处理器：HandlerAdapter"></a>3. 执行处理器：<code>HandlerAdapter</code></h4><p>找到处理器方法后，<code>DispatcherServlet</code> 需要找一个能“驱动”或“执行”这个方法的组件。</p>
+<ul>
+<li>它会遍历所有的 **<code>HandlerAdapter</code>**，问：“你能执行这个处理器方法吗？”</li>
+<li>最常用的是 <code>RequestMappingHandlerAdapter</code>，它专门负责执行被<code>@RequestMapping</code>注解的方法。</li>
+<li><code>HandlerAdapter</code> 会做以下几件关键事情：<ul>
+<li><strong>参数解析</strong>：根据方法签名，从请求中提取数据并转换成方法参数。例如，将URL中的<code>&#123;id&#125;</code>解析为<code>Long id</code>参数，将JSON请求体解析为<code>@RequestBody</code>对象等。</li>
+<li><strong>调用方法</strong>：<strong>在同一个线程中</strong>，用解析好的参数实际调用你的Controller方法（如<code>getUserById</code>）。</li>
+<li><strong>返回值处理</strong>：接收Controller方法的返回值。</li>
+</ul>
+</li>
+</ul>
+<h4 id="4-处理返回值并生成响应：HandlerMethodReturnValueHandler"><a href="#4-处理返回值并生成响应：HandlerMethodReturnValueHandler" class="headerlink" title="4. 处理返回值并生成响应：HandlerMethodReturnValueHandler"></a>4. 处理返回值并生成响应：<code>HandlerMethodReturnValueHandler</code></h4><p>Controller方法执行完毕后，会返回一个结果（比如一个<code>User</code>对象、一个视图名<code>&quot;success&quot;</code>等）。</p>
+<ul>
+<li><code>HandlerAdapter</code> 会委托给一系列的 <strong><code>HandlerMethodReturnValueHandler</code></strong> 来处理这个返回值。</li>
+<li>这些处理器根据返回值的类型来决定如何构建响应：<ul>
+<li>如果方法有<code>@ResponseBody</code>注解或是<code>@RestController</code>，则使用<code>RequestResponseBodyMethodProcessor</code>将返回值（如<code>User</code>对象）序列化成JSON，并写入HttpServletResponse的输出流。</li>
+<li>如果返回一个字符串（如<code>&quot;redirect:/home&quot;</code>），则会进行重定向。</li>
+<li>如果返回一个<code>ModelAndView</code>对象，则会进行视图渲染。</li>
+</ul>
+</li>
+</ul>
+<h4 id="5-渲染视图（如果需要）：ViewResolver"><a href="#5-渲染视图（如果需要）：ViewResolver" class="headerlink" title="5. 渲染视图（如果需要）：ViewResolver"></a>5. 渲染视图（如果需要）：<code>ViewResolver</code></h4><p>如果Controller返回的是视图名（在传统的MVC应用中），<code>DispatcherServlet</code> 会使用 <strong><code>ViewResolver</code></strong> 来将逻辑视图名（如<code>&quot;home&quot;</code>）解析为具体的<code>View</code>对象（如JSP、Thymeleaf模板），然后由<code>View</code>对象来渲染最终的HTML页面。</p>
+<h4 id="6-响应返回"><a href="#6-响应返回" class="headerlink" title="6. 响应返回"></a>6. 响应返回</h4><p>最终，所有处理的结果（无论是直接写入的JSON，还是渲染好的HTML）都会通过 <code>HttpServletResponse</code> 对象发送回客户端。</p>
+<hr>
+<h3 id="关键点：如何保证“一一对应”？"><a href="#关键点：如何保证“一一对应”？" class="headerlink" title="关键点：如何保证“一一对应”？"></a>关键点：如何保证“一一对应”？</h3><ol>
+<li><strong>单线程处理</strong>：Spring MVC默认情况下，<strong>一个请求由一个线程从头到尾负责处理</strong>。从进入<code>DispatcherServlet</code>，到调用你的Controller方法，再到写入响应，整个过程都在同一个线程中完成。这意味着，所有相关的对象（如<code>HttpServletRequest</code>, <code>HttpServletResponse</code>, Controller方法参数等）都是该线程的“本地变量”，天然不会与其他请求混淆。</li>
+<li><strong>Servlet容器保障</strong>：底层的Servlet容器（如Tomcat）为每个请求创建一对独立的 <code>HttpServletRequest</code> 和 <code>HttpServletResponse</code> 对象。Spring MVC只是在它的生命周期内使用这对对象。</li>
+<li><strong>清晰的映射规则</strong>：通过注解（<code>@RequestMapping</code>, <code>@GetMapping</code>等）建立的“URL+HTTP方法”到“具体Java方法”的映射关系非常精确。一个请求只能匹配到一个最具体的处理器方法。</li>
+</ol>
+<h3 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h3><p>你可以把整个过程想象成一个高效的流水线：</p>
+<p><strong>请求 -&gt; DispatcherServlet（总机） -&gt; HandlerMapping（查路由表） -&gt; HandlerAdapter（执行者+参数组装师） -&gt; 你的Controller方法（业务逻辑） -&gt; ReturnValueHandler（响应包装师） -&gt; ViewResolver（视图渲染师，如果需要） -&gt; 响应 -&gt; 客户端</strong></p>
+<p>SpringBoot通过这一系列职责分明的组件协同工作，完美地解决了将海量请求分发给正确的Java方法进行处理，并将处理结果构造成正确的响应返回给客户端的问题。这一切都得益于Spring框架强大的<strong>依赖注入</strong>和<strong>可扩展设计</strong>。</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://example.com/2025/02/06/SpringBoot%E8%AF%B7%E6%B1%82%E5%93%8D%E5%BA%94%E6%98%A0%E5%B0%84%E6%9C%BA%E5%88%B6%E8%A7%A3%E6%9E%90/" data-id="cmmem61qo000xe0sl6p5sai5x" data-title="SpringBoot请求响应映射机制解析" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
+      
+      
+      
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2025/02/12/MySQL%E7%AA%97%E5%8F%A3%E5%87%BD%E6%95%B0%E4%BB%8B%E7%BB%8D/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Neuer</strong>
+      <div class="article-nav-title">
+        
+          MySQL窗口函数介绍
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2025/02/03/Kafka%E9%A1%BA%E5%BA%8F%E6%B6%88%E8%B4%B9%E4%B8%8E%E4%B8%80%E6%AC%A1%E6%80%A7%E6%B6%88%E8%B4%B9%E8%A7%A3%E6%9E%90/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Älter</strong>
+      <div class="article-nav-title">Kafka顺序消费与一次性消费解析</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tags</h3>
+    <div class="widget">
+      <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="/tags/CSS/" rel="tag">CSS</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/JAVA/" rel="tag">JAVA</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Java/" rel="tag">Java</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Spring/" rel="tag">Spring</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/js/" rel="tag">js</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%89%8D%E7%AB%AF/" rel="tag">前端</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%90%8E%E7%AB%AF/" rel="tag">后端</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E7%BA%BF%E7%A8%8B%E6%B1%A0/" rel="tag">线程池</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E7%BF%BB%E8%AF%91/" rel="tag">翻译</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/" rel="tag">设计模式</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E9%AB%98%E5%B9%B6%E5%8F%91/" rel="tag">高并发</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tag Cloud</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/CSS/" style="font-size: 10px;">CSS</a> <a href="/tags/JAVA/" style="font-size: 16.67px;">JAVA</a> <a href="/tags/Java/" style="font-size: 13.33px;">Java</a> <a href="/tags/Spring/" style="font-size: 10px;">Spring</a> <a href="/tags/js/" style="font-size: 10px;">js</a> <a href="/tags/%E5%89%8D%E7%AB%AF/" style="font-size: 20px;">前端</a> <a href="/tags/%E5%90%8E%E7%AB%AF/" style="font-size: 13.33px;">后端</a> <a href="/tags/%E7%BA%BF%E7%A8%8B%E6%B1%A0/" style="font-size: 10px;">线程池</a> <a href="/tags/%E7%BF%BB%E8%AF%91/" style="font-size: 10px;">翻译</a> <a href="/tags/%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/" style="font-size: 13.33px;">设计模式</a> <a href="/tags/%E9%AB%98%E5%B9%B6%E5%8F%91/" style="font-size: 10px;">高并发</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Archiv</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/02/">February 2026</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/01/">January 2026</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/12/">December 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/11/">November 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/10/">October 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/09/">September 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/08/">August 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/07/">July 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/04/">April 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/03/">March 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/02/">February 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/01/">January 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/12/">December 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/11/">November 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/10/">October 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/07/">July 2024</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">letzter Beitrag</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2026/02/14/%E4%B9%90%E8%A7%82%E9%94%81%E5%AE%9E%E7%8E%B0%E9%AB%98%E5%B9%B6%E5%8F%91%E7%8A%B6%E6%80%81%E4%B8%80%E8%87%B4/">乐观锁实现高并发状态一致</a>
+          </li>
+        
+          <li>
+            <a href="/2026/02/04/%E5%A4%A7%E6%A8%A1%E5%9E%8B%E8%BE%93%E5%87%BA%E6%A0%87%E5%87%86JSON%E8%A7%A3%E5%86%B3%E6%96%B9%E6%B3%95/">大模型输出标准JSON解决方法</a>
+          </li>
+        
+          <li>
+            <a href="/2026/01/23/Java%E7%BA%BF%E7%A8%8B%E6%B1%A0%E5%BC%82%E5%B8%B8%E5%A4%84%E7%90%86%E6%9C%BA%E5%88%B6/">Java线程池异常处理机制</a>
+          </li>
+        
+          <li>
+            <a href="/2026/01/04/%E5%80%9F%E8%AF%81%E4%B8%9A%E5%8A%A1%E7%8A%B6%E6%80%81%E6%9C%BA%E5%BB%BA%E6%A8%A1%E5%8E%9F%E5%AD%90%E6%80%A7/">借证业务状态机建模原子性</a>
+          </li>
+        
+          <li>
+            <a href="/2026/01/04/RAG%E6%B5%81%E7%A8%8B%E8%AF%A6%E8%A7%A3%E4%B8%8E%E5%9B%BE%E8%A7%A3/">RAG流程详解与图解</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      
+      &copy; 2026 haipeiface<br>
+      Powered by <a href="https://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+
+<script src="/js/jquery-3.6.4.min.js"></script>
+
+
+
+  
+<script src="/fancybox/jquery.fancybox.min.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+
+  </div>
+</body>
+</html>

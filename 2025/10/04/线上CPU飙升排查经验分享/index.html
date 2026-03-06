@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  
+  <title>线上CPU飙升排查经验分享 | haipeiface.github.io</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="回答范例：一次高并发下CPU飙升的排查与解决1. 问题背景与发现（Situation）  时间：某次大促活动期间。 现象：监控系统（如Zabbix、Prometheus）发出告警，显示核心业务服务（如订单服务）的CPU使用率突然从平时的20%飙升到95%以上，且持续不降。部分接口响应时间明显变长，甚至出现超时。  2. 紧急响应与定位过程（Task &amp; Action）我立刻登录到跳板机，">
+<meta property="og:type" content="article">
+<meta property="og:title" content="线上CPU飙升排查经验分享">
+<meta property="og:url" content="http://example.com/2025/10/04/%E7%BA%BF%E4%B8%8ACPU%E9%A3%99%E5%8D%87%E6%8E%92%E6%9F%A5%E7%BB%8F%E9%AA%8C%E5%88%86%E4%BA%AB/index.html">
+<meta property="og:site_name" content="haipeiface.github.io">
+<meta property="og:description" content="回答范例：一次高并发下CPU飙升的排查与解决1. 问题背景与发现（Situation）  时间：某次大促活动期间。 现象：监控系统（如Zabbix、Prometheus）发出告警，显示核心业务服务（如订单服务）的CPU使用率突然从平时的20%飙升到95%以上，且持续不降。部分接口响应时间明显变长，甚至出现超时。  2. 紧急响应与定位过程（Task &amp; Action）我立刻登录到跳板机，">
+<meta property="og:locale">
+<meta property="article:published_time" content="2025-10-04T04:44:46.000Z">
+<meta property="article:modified_time" content="2026-03-06T07:53:01.518Z">
+<meta property="article:author" content="haipeiface">
+<meta name="twitter:card" content="summary">
+  
+    <link rel="alternate" href="/atom.xml" title="haipeiface.github.io" type="application/atom+xml">
+  
+  
+    <link rel="shortcut icon" href="/favicon.png">
+  
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+    
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.min.css">
+
+  
+  
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">haipeiface.github.io</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"><span class="fa fa-bars"></span></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        
+          <a class="nav-icon" href="/atom.xml" title="RSS Feed"><span class="fa fa-rss"></span></a>
+        
+        <a class="nav-icon nav-search-btn" title="Suche"><span class="fa fa-search"></span></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Suche"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://example.com"></form>
+      </div>
+    </div>
+  </div>
+</header>
+
+      <div class="outer">
+        <section id="main"><article id="post-线上CPU飙升排查经验分享" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="article-meta">
+    <a href="/2025/10/04/%E7%BA%BF%E4%B8%8ACPU%E9%A3%99%E5%8D%87%E6%8E%92%E6%9F%A5%E7%BB%8F%E9%AA%8C%E5%88%86%E4%BA%AB/" class="article-date">
+  <time class="dt-published" datetime="2025-10-04T04:44:46.000Z" itemprop="datePublished">2025-10-04</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="p-name article-title" itemprop="headline name">
+      线上CPU飙升排查经验分享
+    </h1>
+  
+
+      </header>
+    
+    <div class="e-content article-entry" itemprop="articleBody">
+      
+        <hr>
+<h3 id="回答范例：一次高并发下CPU飙升的排查与解决"><a href="#回答范例：一次高并发下CPU飙升的排查与解决" class="headerlink" title="回答范例：一次高并发下CPU飙升的排查与解决"></a>回答范例：一次高并发下CPU飙升的排查与解决</h3><p><strong>1. 问题背景与发现（Situation）</strong></p>
+<ul>
+<li><strong>时间</strong>：某次大促活动期间。</li>
+<li><strong>现象</strong>：监控系统（如Zabbix、Prometheus）发出告警，显示核心业务服务（如订单服务）的CPU使用率突然从平时的20%飙升到95%以上，且持续不降。部分接口响应时间明显变长，甚至出现超时。</li>
+</ul>
+<p><strong>2. 紧急响应与定位过程（Task &amp; Action）</strong><br>我立刻登录到跳板机，按照以下步骤进行排查：</p>
+<ul>
+<li><strong>第一步：快速全局定位</strong><ul>
+<li>使用 <code>top</code> 命令查看服务器整体资源，确认是Java进程（PID：12345）占用了最高的CPU。</li>
+<li>接着使用 <code>top -Hp 12345</code> 查看该进程内最耗费CPU的线程。发现有几个线程（如PID：6789）的CPU占用率特别高。</li>
+<li><strong>关键操作</strong>：将线程ID <code>6789</code> 转换为十六进制 <code>1a85</code>（因为线程栈文件里用的是十六进制），命令：<code>printf &quot;%x\n&quot; 6789</code>。</li>
+</ul>
+</li>
+<li><strong>第二步：深入代码层面分析</strong><ul>
+<li>使用 <code>jstack 12345 | grep -A 20 1a85</code> 导出线程栈，并过滤出那个问题线程的堆栈信息。</li>
+<li><strong>发现</strong>：堆栈信息清晰地指向了项目中的一个类 <code>OrderAnalyseHandler</code> 的第38行。</li>
+</ul>
+</li>
+<li><strong>第三步：结合业务与日志分析根因</strong><ul>
+<li>我马上打开对应的业务代码。发现第38行是一个 <strong>正则表达式验证</strong>，用于处理用户输入的备注信息，其正则在极端情况下会触发 <strong>“灾难性回溯”</strong>。</li>
+<li>同时查看该时间点的业务日志（如ELK、Splunk），发现恰好有大量包含特殊字符（如一连串的<code>“AAAAAAAAA”</code>）的请求涌入。这个输入正是触发正则回溯的“导火索”。</li>
+<li>至此，根本原因已定位：<strong>一个低效的正则表达式 + 恶意&#x2F;特殊的用户输入 &#x3D; CPU打满</strong>。</li>
+</ul>
+</li>
+</ul>
+<p><strong>3. 解决方案与实施（Result）</strong></p>
+<ul>
+<li><strong>紧急止血</strong>：由于是线上大促，首要任务是恢复服务。我联系运维同学，将该节点从负载均衡（Nginx&#x2F;F5）上摘除，重启服务后临时恢复。同时，在网关层（如Sentinel、Hystrix）对该接口增加了<strong>限流和熔断</strong>规则，防止流量再次冲击。</li>
+<li><strong>根本解决</strong>：<ol>
+<li><strong>优化代码</strong>：将原正则 <code>(a+)+b</code> 这类写法替换为非回溯模式，或者使用更高效的预编译Pattern，甚至改用字符串遍历的方式替代。</li>
+<li><strong>代码审查</strong>：修复后，与团队成员一起复盘，对所有类似的正则使用场景进行梳理。</li>
+<li><strong>完善监控</strong>：在代码中增加了对方法执行耗时的监控（Metrics），如果某个方法执行超过阈值，会提前发出预警。</li>
+</ol>
+</li>
+</ul>
+<p><strong>4. 事后复盘与总结</strong><br>这个问题让我意识到，代码中一个看似微小的逻辑，在高并发场景下也可能演变成重大故障。之后的开发规范里，我们明确要求<strong>禁止编写复杂且可能回溯的正则，并强调了参数校验的重要性</strong>。</p>
+<hr>
+<h3 id="细节"><a href="#细节" class="headerlink" title="细节"></a>细节</h3><ul>
+<li><strong>为什么用 <code>top -Hp</code> 而不是直接用 <code>jstack</code>？</strong><br>答：<code>top</code>能直观地找出最耗CPU的线程PID，能快速缩小排查范围，避免在海量线程日志里大海捞针。</li>
+<li><strong>除了CPU飙升，你还排查过内存泄漏（OOM）的问题吗？</strong><br>可以准备一个内存泄漏的案例，关键点在于使用 <code>jstat</code> 观察GC情况，以及用 <code>jmap</code> 生成堆转储文件（Heap Dump），然后用MAT或JProfiler分析大对象。</li>
+<li><strong>如果当时没有监控，你怎么发现这个异常？</strong><br>可以从业务感知（用户反馈慢）、日志异常（大量TimeOut日志）以及现场登录服务器查看这三方面来回答。</li>
+</ul>
+<p>希望这个范例能给你一些启发。如果需要，我还可以帮你梳理一个内存泄漏的排查案例。</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://example.com/2025/10/04/%E7%BA%BF%E4%B8%8ACPU%E9%A3%99%E5%8D%87%E6%8E%92%E6%9F%A5%E7%BB%8F%E9%AA%8C%E5%88%86%E4%BA%AB/" data-id="cmmem61r7001qe0sl7hen4js6" data-title="线上CPU飙升排查经验分享" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
+      
+      
+      
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2025/10/24/%E5%88%86%E5%B8%83%E5%BC%8F%E9%93%BE%E8%B7%AF%E8%BF%BD%E8%B8%AA%E6%80%9D%E8%B7%AF%E4%BB%8B%E7%BB%8D/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Neuer</strong>
+      <div class="article-nav-title">
+        
+          分布式链路追踪思路介绍
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2025/09/06/MySQL-EXPLAIN%E5%91%BD%E4%BB%A4%E8%AF%A6%E8%A7%A3%E4%B8%8E%E4%BC%98%E5%8C%96/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Älter</strong>
+      <div class="article-nav-title">MySQL_EXPLAIN命令详解与优化</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tags</h3>
+    <div class="widget">
+      <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="/tags/CSS/" rel="tag">CSS</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/JAVA/" rel="tag">JAVA</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Java/" rel="tag">Java</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Spring/" rel="tag">Spring</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/js/" rel="tag">js</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%89%8D%E7%AB%AF/" rel="tag">前端</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%90%8E%E7%AB%AF/" rel="tag">后端</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E7%BA%BF%E7%A8%8B%E6%B1%A0/" rel="tag">线程池</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E7%BF%BB%E8%AF%91/" rel="tag">翻译</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/" rel="tag">设计模式</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E9%AB%98%E5%B9%B6%E5%8F%91/" rel="tag">高并发</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tag Cloud</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/CSS/" style="font-size: 10px;">CSS</a> <a href="/tags/JAVA/" style="font-size: 16.67px;">JAVA</a> <a href="/tags/Java/" style="font-size: 13.33px;">Java</a> <a href="/tags/Spring/" style="font-size: 10px;">Spring</a> <a href="/tags/js/" style="font-size: 10px;">js</a> <a href="/tags/%E5%89%8D%E7%AB%AF/" style="font-size: 20px;">前端</a> <a href="/tags/%E5%90%8E%E7%AB%AF/" style="font-size: 13.33px;">后端</a> <a href="/tags/%E7%BA%BF%E7%A8%8B%E6%B1%A0/" style="font-size: 10px;">线程池</a> <a href="/tags/%E7%BF%BB%E8%AF%91/" style="font-size: 10px;">翻译</a> <a href="/tags/%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/" style="font-size: 13.33px;">设计模式</a> <a href="/tags/%E9%AB%98%E5%B9%B6%E5%8F%91/" style="font-size: 10px;">高并发</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Archiv</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/02/">February 2026</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/01/">January 2026</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/12/">December 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/11/">November 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/10/">October 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/09/">September 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/08/">August 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/07/">July 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/04/">April 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/03/">March 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/02/">February 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/01/">January 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/12/">December 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/11/">November 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/10/">October 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/07/">July 2024</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">letzter Beitrag</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2026/02/14/%E4%B9%90%E8%A7%82%E9%94%81%E5%AE%9E%E7%8E%B0%E9%AB%98%E5%B9%B6%E5%8F%91%E7%8A%B6%E6%80%81%E4%B8%80%E8%87%B4/">乐观锁实现高并发状态一致</a>
+          </li>
+        
+          <li>
+            <a href="/2026/02/04/%E5%A4%A7%E6%A8%A1%E5%9E%8B%E8%BE%93%E5%87%BA%E6%A0%87%E5%87%86JSON%E8%A7%A3%E5%86%B3%E6%96%B9%E6%B3%95/">大模型输出标准JSON解决方法</a>
+          </li>
+        
+          <li>
+            <a href="/2026/01/23/Java%E7%BA%BF%E7%A8%8B%E6%B1%A0%E5%BC%82%E5%B8%B8%E5%A4%84%E7%90%86%E6%9C%BA%E5%88%B6/">Java线程池异常处理机制</a>
+          </li>
+        
+          <li>
+            <a href="/2026/01/04/%E5%80%9F%E8%AF%81%E4%B8%9A%E5%8A%A1%E7%8A%B6%E6%80%81%E6%9C%BA%E5%BB%BA%E6%A8%A1%E5%8E%9F%E5%AD%90%E6%80%A7/">借证业务状态机建模原子性</a>
+          </li>
+        
+          <li>
+            <a href="/2026/01/04/RAG%E6%B5%81%E7%A8%8B%E8%AF%A6%E8%A7%A3%E4%B8%8E%E5%9B%BE%E8%A7%A3/">RAG流程详解与图解</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      
+      &copy; 2026 haipeiface<br>
+      Powered by <a href="https://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+
+<script src="/js/jquery-3.6.4.min.js"></script>
+
+
+
+  
+<script src="/fancybox/jquery.fancybox.min.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+
+  </div>
+</body>
+</html>

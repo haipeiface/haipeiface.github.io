@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  
+  <title>LangGraph深度研究代理实现 | haipeiface.github.io</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="以下是一个使用 LangGraph 实现的深度研究代理（Deep Research Agent）示例。该代理能够根据用户提出的研究问题，自主规划搜索查询、获取网页内容、总结信息，并最终生成一份综合报告。代码中包含了必要的节点和状态管理，并使用了 Tavily 搜索工具和 OpenAI 的 GPT 模型。 12345678910111213141516171819202122232425262728">
+<meta property="og:type" content="article">
+<meta property="og:title" content="LangGraph深度研究代理实现">
+<meta property="og:url" content="http://example.com/2025/11/04/LangGraph%E6%B7%B1%E5%BA%A6%E7%A0%94%E7%A9%B6%E4%BB%A3%E7%90%86%E5%AE%9E%E7%8E%B0/index.html">
+<meta property="og:site_name" content="haipeiface.github.io">
+<meta property="og:description" content="以下是一个使用 LangGraph 实现的深度研究代理（Deep Research Agent）示例。该代理能够根据用户提出的研究问题，自主规划搜索查询、获取网页内容、总结信息，并最终生成一份综合报告。代码中包含了必要的节点和状态管理，并使用了 Tavily 搜索工具和 OpenAI 的 GPT 模型。 12345678910111213141516171819202122232425262728">
+<meta property="og:locale">
+<meta property="article:published_time" content="2025-11-04T02:44:25.000Z">
+<meta property="article:modified_time" content="2026-03-06T07:54:32.038Z">
+<meta property="article:author" content="haipeiface">
+<meta name="twitter:card" content="summary">
+  
+    <link rel="alternate" href="/atom.xml" title="haipeiface.github.io" type="application/atom+xml">
+  
+  
+    <link rel="shortcut icon" href="/favicon.png">
+  
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+    
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.min.css">
+
+  
+  
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">haipeiface.github.io</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"><span class="fa fa-bars"></span></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        
+          <a class="nav-icon" href="/atom.xml" title="RSS Feed"><span class="fa fa-rss"></span></a>
+        
+        <a class="nav-icon nav-search-btn" title="Suche"><span class="fa fa-search"></span></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Suche"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://example.com"></form>
+      </div>
+    </div>
+  </div>
+</header>
+
+      <div class="outer">
+        <section id="main"><article id="post-LangGraph深度研究代理实现" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="article-meta">
+    <a href="/2025/11/04/LangGraph%E6%B7%B1%E5%BA%A6%E7%A0%94%E7%A9%B6%E4%BB%A3%E7%90%86%E5%AE%9E%E7%8E%B0/" class="article-date">
+  <time class="dt-published" datetime="2025-11-04T02:44:25.000Z" itemprop="datePublished">2025-11-04</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="p-name article-title" itemprop="headline name">
+      LangGraph深度研究代理实现
+    </h1>
+  
+
+      </header>
+    
+    <div class="e-content article-entry" itemprop="articleBody">
+      
+        <p>以下是一个使用 LangGraph 实现的深度研究代理（Deep Research Agent）示例。该代理能够根据用户提出的研究问题，自主规划搜索查询、获取网页内容、总结信息，并最终生成一份综合报告。代码中包含了必要的节点和状态管理，并使用了 Tavily 搜索工具和 OpenAI 的 GPT 模型。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> os</span><br><span class="line"><span class="keyword">from</span> typing <span class="keyword">import</span> TypedDict, <span class="type">List</span>, Annotated</span><br><span class="line"><span class="keyword">import</span> operator</span><br><span class="line"></span><br><span class="line"><span class="keyword">from</span> langchain_openai <span class="keyword">import</span> ChatOpenAI</span><br><span class="line"><span class="keyword">from</span> langchain_community.tools.tavily_search <span class="keyword">import</span> TavilySearchResults</span><br><span class="line"><span class="keyword">from</span> langchain_community.document_loaders <span class="keyword">import</span> WebBaseLoader</span><br><span class="line"><span class="keyword">from</span> langchain_core.messages <span class="keyword">import</span> HumanMessage, SystemMessage</span><br><span class="line"><span class="keyword">from</span> langgraph.graph <span class="keyword">import</span> StateGraph, END</span><br><span class="line"></span><br><span class="line"><span class="comment"># 确保设置了 API 密钥</span></span><br><span class="line">os.environ[<span class="string">&quot;OPENAI_API_KEY&quot;</span>] = <span class="string">&quot;your-openai-api-key&quot;</span></span><br><span class="line">os.environ[<span class="string">&quot;TAVILY_API_KEY&quot;</span>] = <span class="string">&quot;your-tavily-api-key&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 定义状态</span></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">ResearchState</span>(<span class="title class_ inherited__">TypedDict</span>):</span><br><span class="line">    question: <span class="built_in">str</span>                      <span class="comment"># 用户输入的研究问题</span></span><br><span class="line">    queries: <span class="type">List</span>[<span class="built_in">str</span>]                 <span class="comment"># 生成的搜索查询列表</span></span><br><span class="line">    urls: <span class="type">List</span>[<span class="built_in">str</span>]                    <span class="comment"># 从搜索中收集的 URL</span></span><br><span class="line">    contents: Annotated[<span class="type">List</span>[<span class="built_in">str</span>], operator.add]  <span class="comment"># 抓取的网页内容（可累加）</span></span><br><span class="line">    summaries: Annotated[<span class="type">List</span>[<span class="built_in">str</span>], operator.add] <span class="comment"># 生成的摘要（可累加）</span></span><br><span class="line">    report: <span class="built_in">str</span>                         <span class="comment"># 最终生成的报告</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 初始化模型和工具</span></span><br><span class="line">llm = ChatOpenAI(model=<span class="string">&quot;gpt-4-turbo-preview&quot;</span>, temperature=<span class="number">0</span>)</span><br><span class="line">search_tool = TavilySearchResults(max_results=<span class="number">3</span>)  <span class="comment"># 每个查询返回最多3个结果</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 节点函数定义</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">planner</span>(<span class="params">state: ResearchState</span>) -&gt; <span class="built_in">dict</span>:</span><br><span class="line">    <span class="string">&quot;&quot;&quot;根据研究问题生成一组搜索查询&quot;&quot;&quot;</span></span><br><span class="line">    system_prompt = <span class="string">&quot;&quot;&quot;你是一个专业的研究规划员。请根据用户的研究问题，生成最多3个最合适的搜索查询，用于在互联网上查找相关信息。</span></span><br><span class="line"><span class="string">    每个查询应该简洁、具体，能够覆盖问题的不同方面。直接以逗号分隔的列表形式返回查询，不要有其他文字。&quot;&quot;&quot;</span></span><br><span class="line">    messages = [</span><br><span class="line">        SystemMessage(content=system_prompt),</span><br><span class="line">        HumanMessage(content=state[<span class="string">&quot;question&quot;</span>])</span><br><span class="line">    ]</span><br><span class="line">    response = llm.invoke(messages)</span><br><span class="line">    <span class="comment"># 解析响应，假设返回的是逗号分隔的查询列表</span></span><br><span class="line">    queries = [q.strip() <span class="keyword">for</span> q <span class="keyword">in</span> response.content.split(<span class="string">&quot;,&quot;</span>) <span class="keyword">if</span> q.strip()]</span><br><span class="line">    <span class="keyword">return</span> &#123;<span class="string">&quot;queries&quot;</span>: queries&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">searcher</span>(<span class="params">state: ResearchState</span>) -&gt; <span class="built_in">dict</span>:</span><br><span class="line">    <span class="string">&quot;&quot;&quot;对每个查询执行搜索，收集所有结果的 URL&quot;&quot;&quot;</span></span><br><span class="line">    all_urls = []</span><br><span class="line">    <span class="keyword">for</span> query <span class="keyword">in</span> state[<span class="string">&quot;queries&quot;</span>]:</span><br><span class="line">        results = search_tool.invoke(query)</span><br><span class="line">        <span class="keyword">for</span> res <span class="keyword">in</span> results:</span><br><span class="line">            url = res.get(<span class="string">&quot;url&quot;</span>)</span><br><span class="line">            <span class="keyword">if</span> url <span class="keyword">and</span> url <span class="keyword">not</span> <span class="keyword">in</span> all_urls:</span><br><span class="line">                all_urls.append(url)</span><br><span class="line">    <span class="keyword">return</span> &#123;<span class="string">&quot;urls&quot;</span>: all_urls&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">reader</span>(<span class="params">state: ResearchState</span>) -&gt; <span class="built_in">dict</span>:</span><br><span class="line">    <span class="string">&quot;&quot;&quot;读取所有 URL 的内容并生成摘要&quot;&quot;&quot;</span></span><br><span class="line">    summaries = []</span><br><span class="line">    contents = []</span><br><span class="line">    <span class="keyword">for</span> url <span class="keyword">in</span> state[<span class="string">&quot;urls&quot;</span>]:</span><br><span class="line">        <span class="keyword">try</span>:</span><br><span class="line">            loader = WebBaseLoader(url)</span><br><span class="line">            docs = loader.load()</span><br><span class="line">            content = <span class="string">&quot;\n&quot;</span>.join([doc.page_content <span class="keyword">for</span> doc <span class="keyword">in</span> docs])[:<span class="number">5000</span>]  <span class="comment"># 截断长文本</span></span><br><span class="line">            contents.append(<span class="string">f&quot;来源：<span class="subst">&#123;url&#125;</span>\n内容：<span class="subst">&#123;content&#125;</span>&quot;</span>)</span><br><span class="line">            <span class="comment"># 使用 LLM 为每个内容生成摘要</span></span><br><span class="line">            summary_prompt = <span class="string">f&quot;请用中文总结以下网页内容的核心信息（200字以内）：\n\n<span class="subst">&#123;content&#125;</span>&quot;</span></span><br><span class="line">            summary = llm.invoke([HumanMessage(content=summary_prompt)]).content</span><br><span class="line">            summaries.append(<span class="string">f&quot;来源：<span class="subst">&#123;url&#125;</span>\n摘要：<span class="subst">&#123;summary&#125;</span>&quot;</span>)</span><br><span class="line">        <span class="keyword">except</span> Exception <span class="keyword">as</span> e:</span><br><span class="line">            summaries.append(<span class="string">f&quot;来源：<span class="subst">&#123;url&#125;</span>\n摘要：读取失败：<span class="subst">&#123;<span class="built_in">str</span>(e)&#125;</span>&quot;</span>)</span><br><span class="line">    <span class="keyword">return</span> &#123;<span class="string">&quot;contents&quot;</span>: contents, <span class="string">&quot;summaries&quot;</span>: summaries&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">reporter</span>(<span class="params">state: ResearchState</span>) -&gt; <span class="built_in">dict</span>:</span><br><span class="line">    <span class="string">&quot;&quot;&quot;基于所有摘要生成最终的研究报告&quot;&quot;&quot;</span></span><br><span class="line">    all_summaries = <span class="string">&quot;\n\n&quot;</span>.join(state[<span class="string">&quot;summaries&quot;</span>])</span><br><span class="line">    system_prompt = <span class="string">&quot;&quot;&quot;你是一名专业的研究分析师。请根据以下收集到的信息摘要，撰写一份结构清晰、内容详实的研究报告。</span></span><br><span class="line"><span class="string">    报告应包括：引言（研究背景）、主要发现（分点阐述）、结论与建议。使用中文回答，保持客观严谨。&quot;&quot;&quot;</span></span><br><span class="line">    messages = [</span><br><span class="line">        SystemMessage(content=system_prompt),</span><br><span class="line">        HumanMessage(content=<span class="string">f&quot;研究问题：<span class="subst">&#123;state[<span class="string">&#x27;question&#x27;</span>]&#125;</span>\n\n收集的信息：\n<span class="subst">&#123;all_summaries&#125;</span>&quot;</span>)</span><br><span class="line">    ]</span><br><span class="line">    report = llm.invoke(messages).content</span><br><span class="line">    <span class="keyword">return</span> &#123;<span class="string">&quot;report&quot;</span>: report&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment"># 构建状态图</span></span><br><span class="line">workflow = StateGraph(ResearchState)</span><br><span class="line"></span><br><span class="line"><span class="comment"># 添加节点</span></span><br><span class="line">workflow.add_node(<span class="string">&quot;planner&quot;</span>, planner)</span><br><span class="line">workflow.add_node(<span class="string">&quot;searcher&quot;</span>, searcher)</span><br><span class="line">workflow.add_node(<span class="string">&quot;reader&quot;</span>, reader)</span><br><span class="line">workflow.add_node(<span class="string">&quot;reporter&quot;</span>, reporter)</span><br><span class="line"></span><br><span class="line"><span class="comment"># 设置边：从开始到 planner，然后依次执行</span></span><br><span class="line">workflow.set_entry_point(<span class="string">&quot;planner&quot;</span>)</span><br><span class="line">workflow.add_edge(<span class="string">&quot;planner&quot;</span>, <span class="string">&quot;searcher&quot;</span>)</span><br><span class="line">workflow.add_edge(<span class="string">&quot;searcher&quot;</span>, <span class="string">&quot;reader&quot;</span>)</span><br><span class="line">workflow.add_edge(<span class="string">&quot;reader&quot;</span>, <span class="string">&quot;reporter&quot;</span>)</span><br><span class="line">workflow.add_edge(<span class="string">&quot;reporter&quot;</span>, END)</span><br><span class="line"></span><br><span class="line"><span class="comment"># 编译图</span></span><br><span class="line">app = workflow.<span class="built_in">compile</span>()</span><br><span class="line"></span><br><span class="line"><span class="comment"># 运行示例</span></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">run_research</span>(<span class="params">question: <span class="built_in">str</span></span>):</span><br><span class="line">    initial_state = &#123;<span class="string">&quot;question&quot;</span>: question&#125;</span><br><span class="line">    final_state = app.invoke(initial_state)</span><br><span class="line">    <span class="keyword">return</span> final_state[<span class="string">&quot;report&quot;</span>]</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&quot;__main__&quot;</span>:</span><br><span class="line">    question = <span class="string">&quot;2024年全球AI大模型的发展趋势是什么？&quot;</span></span><br><span class="line">    report = run_research(question)</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&quot;=== 研究报告 ===\n&quot;</span>)</span><br><span class="line">    <span class="built_in">print</span>(report)</span><br></pre></td></tr></table></figure>
+
+<h2 id="代码说明"><a href="#代码说明" class="headerlink" title="代码说明"></a>代码说明</h2><ol>
+<li><strong>状态定义</strong>：<code>ResearchState</code> 包含研究问题、查询列表、URL列表、网页内容、摘要列表和最终报告。<code>contents</code> 和 <code>summaries</code> 使用 <code>operator.add</code> 作为注解，支持在图中累加（尽管本示例是顺序执行，但为扩展保留）。</li>
+<li><strong>节点功能</strong>：<ul>
+<li><code>planner</code>：使用 GPT 生成 3 个搜索查询。</li>
+<li><code>searcher</code>：对每个查询调用 Tavily 搜索，收集所有返回的 URL。</li>
+<li><code>reader</code>：使用 <code>WebBaseLoader</code> 加载每个 URL 的网页内容，并让 LLM 生成摘要（同时保留原始内容以备后用）。</li>
+<li><code>reporter</code>：将所有摘要汇总，让 LLM 生成一份完整的研究报告。</li>
+</ul>
+</li>
+<li><strong>图结构</strong>：简单的线性流程，从规划到搜索、阅读、报告，最后结束。</li>
+<li><strong>运行</strong>：给定一个问题，代理将依次执行各节点，最终返回报告。</li>
+</ol>
+<h2 id="扩展与优化"><a href="#扩展与优化" class="headerlink" title="扩展与优化"></a>扩展与优化</h2><ul>
+<li><strong>增加循环</strong>：可以在 <code>reader</code> 后添加一个判断节点，如果信息不足，则重新调用 <code>planner</code> 生成更多查询，形成研究循环。</li>
+<li><strong>并行处理</strong>：可以使用 LangGraph 的 <code>Send</code> 或并行节点同时处理多个 URL 的读取和摘要。</li>
+<li><strong>错误处理</strong>：在 <code>reader</code> 中已加入了简单的异常捕获，可根据需要增强。</li>
+<li><strong>工具增强</strong>：可以集成更多工具，如 Wikipedia、Arxiv 等，丰富信息来源。</li>
+</ul>
+<p>这个示例提供了一个基础框架，你可以根据实际需求调整节点逻辑和图结构，构建更强大的深度研究代理。</p>
+<hr>
+<p>当然有！完全免费的方案确实存在。如果你不想申请API key，最实用的思路是<strong>绕过商业搜索引擎的付费API，直接使用提供免费接口的搜索引擎或自己搭建搜索服务</strong>。</p>
+<p>下面我整理了几个针对你之前LangGraph代码的免费替代方案，你可以根据对“开箱即用”和“可控性”的需求来选择。</p>
+<h3 id="🆓-免费搜索方案对比"><a href="#🆓-免费搜索方案对比" class="headerlink" title="🆓 免费搜索方案对比"></a>🆓 免费搜索方案对比</h3><p>为了方便你快速决策，我把几个核心的免费方案整理成了表格：</p>
+<table>
+<thead>
+<tr>
+<th>方案</th>
+<th>是否需要API Key</th>
+<th>集成方式</th>
+<th>优点</th>
+<th>缺点&#x2F;注意事项</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>open-webSearch MCP</strong></td>
+<td><strong>完全不需要</strong></td>
+<td>本地运行一个服务，你的Python代码可以通过HTTP请求调用它。</td>
+<td>支持多搜索引擎聚合（如DuckDuckGo、Brave等），结果结构化，功能强大，且完全免费、自托管。</td>
+<td>需要本地安装Node.js环境并运行一个服务进程，多了一步部署。</td>
+</tr>
+<tr>
+<td><strong>DuckDuckGo 非官方库</strong></td>
+<td><strong>不需要</strong></td>
+<td>在你的Python代码中直接通过<code>pip</code>安装库来调用。</td>
+<td>集成最简单，几行代码就能替换原有的<code>search_tool</code>，与LangGraph代码无缝衔接。</td>
+<td>依赖第三方库对DuckDuckGo页面的解析，长期运行的稳定性可能不如官方API。</td>
+</tr>
+<tr>
+<td><strong>公共 SearXNG 实例</strong></td>
+<td><strong>不需要</strong></td>
+<td>在你的Python代码中直接向公共实例的URL发送HTTP请求。</td>
+<td>利用的是元搜索引擎的聚合结果，同样无需API Key，信息源广泛。</td>
+<td>需要找一个稳定、快速的公共实例，且依赖外部服务，有失效或限流的可能性。</td>
+</tr>
+</tbody></table>
+<hr>
+<h3 id="🔧-如何修改之前的LangGraph代码"><a href="#🔧-如何修改之前的LangGraph代码" class="headerlink" title="🔧 如何修改之前的LangGraph代码"></a>🔧 如何修改之前的LangGraph代码</h3><p>对于你之前的LangGraph代码，修改起来非常简单。以最轻量的<strong>DuckDuckGo库</strong>为例，只需要把原来使用<code>TavilySearchResults</code>的<code>searcher</code>节点替换掉就可以了。</p>
+<p><strong>第一步：安装库</strong></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">pip install duckduckgo-search</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>注意：这里使用的是<code>duckduckgo-search</code>库，而非上面表格中提到的Node.js库。这是一个流行的Python库，能很好地模拟搜索。</p>
+</blockquote>
+<p><strong>第二步：修改<code>searcher</code>函数</strong><br>将原来调用Tavily的部分，换成使用<code>DDGS</code>（DuckDuckGo Search）的代码。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> duckduckgo_search <span class="keyword">import</span> DDGS</span><br><span class="line"><span class="comment"># ... 其他导入和代码保持不变 ...</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">searcher</span>(<span class="params">state: ResearchState</span>) -&gt; <span class="built_in">dict</span>:</span><br><span class="line">    <span class="string">&quot;&quot;&quot;对每个查询执行搜索，收集所有结果的 URL (使用 DuckDuckGo)&quot;&quot;&quot;</span></span><br><span class="line">    all_urls = []</span><br><span class="line">    <span class="comment"># 使用 DDGS 作为上下文管理器</span></span><br><span class="line">    <span class="keyword">with</span> DDGS() <span class="keyword">as</span> ddgs:</span><br><span class="line">        <span class="keyword">for</span> query <span class="keyword">in</span> state[<span class="string">&quot;queries&quot;</span>]:</span><br><span class="line">            <span class="keyword">try</span>:</span><br><span class="line">                <span class="comment"># 执行搜索，获取结果列表</span></span><br><span class="line">                <span class="comment"># 这里使用 text() 方法获取文本搜索结果，可以设置 max_results</span></span><br><span class="line">                results = <span class="built_in">list</span>(ddgs.text(query, max_results=<span class="number">5</span>))</span><br><span class="line">                <span class="keyword">for</span> res <span class="keyword">in</span> results:</span><br><span class="line">                    url = res.get(<span class="string">&quot;href&quot;</span>)</span><br><span class="line">                    <span class="comment"># 简单的去重</span></span><br><span class="line">                    <span class="keyword">if</span> url <span class="keyword">and</span> url <span class="keyword">not</span> <span class="keyword">in</span> all_urls <span class="keyword">and</span> url.startswith(<span class="string">&quot;http&quot;</span>):</span><br><span class="line">                        all_urls.append(url)</span><br><span class="line">            <span class="keyword">except</span> Exception <span class="keyword">as</span> e:</span><br><span class="line">                <span class="built_in">print</span>(<span class="string">f&quot;搜索查询 &#x27;<span class="subst">&#123;query&#125;</span>&#x27; 时出错: <span class="subst">&#123;e&#125;</span>&quot;</span>)</span><br><span class="line">                <span class="keyword">continue</span></span><br><span class="line">    <span class="keyword">return</span> &#123;<span class="string">&quot;urls&quot;</span>: all_urls&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment"># ... 图的构建和运行代码保持不变 ...</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="💡-更强大的方案：open-webSearch-MCP"><a href="#💡-更强大的方案：open-webSearch-MCP" class="headerlink" title="💡 更强大的方案：open-webSearch MCP"></a>💡 更强大的方案：open-webSearch MCP</h3><p>如果你希望搜索结果更稳定、功能更强大（比如可以指定使用某个搜索引擎，或者获取完整的文章内容），那么 <strong>open-webSearch MCP</strong> 是更好的选择。</p>
+<ol>
+<li><strong>启动服务</strong>：按照项目README，通过Docker或Node.js在本地（或服务器上）启动一个服务。例如用Docker一行命令即可：<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker run -d --name web-search -p 3000:3000 ghcr.io/aas-ee/open-web-search:latest</span><br></pre></td></tr></table></figure></li>
+<li><strong>调用方式</strong>：服务启动后，它会提供一个HTTP接口。你的<code>searcher</code>节点需要改为向这个接口（例如 <code>http://localhost:3000/search</code>）发送POST请求，并把<code>state[&quot;queries&quot;]</code>里的问题作为参数传递过去。</li>
+</ol>
+<h3 id="✍️-总结与建议"><a href="#✍️-总结与建议" class="headerlink" title="✍️ 总结与建议"></a>✍️ 总结与建议</h3><ul>
+<li><strong>追求极简开发</strong>：首选 <strong>DuckDuckGo 非官方库</strong>。它和你现有的Python代码集成度最高，只需修改一个函数即可。</li>
+<li><strong>追求功能与稳定性</strong>：推荐 <strong>open-webSearch MCP</strong>。虽然多了一步部署，但它聚合了多个搜索引擎，返回的数据结构也更规范，适合构建更复杂的Agent。</li>
+<li><strong>作为备选</strong>：<strong>公共 SearXNG 实例</strong> 可以作为备选方案，但在生产环境中使用时需要谨慎评估其可用性。</li>
+</ul>
+<p>这三种方案都能帮你实现完全免费的联网搜索功能。你想先试试哪一种？如果选择DuckDuckGo的方案，我可以直接帮你把完整的新代码贴出来。</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://example.com/2025/11/04/LangGraph%E6%B7%B1%E5%BA%A6%E7%A0%94%E7%A9%B6%E4%BB%A3%E7%90%86%E5%AE%9E%E7%8E%B0/" data-id="cmmem61qk000qe0sl7a7fchy3" data-title="LangGraph深度研究代理实现" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
+      
+      
+      
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2025/11/06/Cursor%E4%BB%A3%E7%A0%81%E5%BA%93%E7%B4%A2%E5%BC%95%E6%8A%80%E6%9C%AF%E8%AF%A6%E8%A7%A3/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Neuer</strong>
+      <div class="article-nav-title">
+        
+          Cursor代码库索引技术详解
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2025/10/24/%E5%88%86%E5%B8%83%E5%BC%8F%E9%93%BE%E8%B7%AF%E8%BF%BD%E8%B8%AA%E6%80%9D%E8%B7%AF%E4%BB%8B%E7%BB%8D/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Älter</strong>
+      <div class="article-nav-title">分布式链路追踪思路介绍</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tags</h3>
+    <div class="widget">
+      <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="/tags/CSS/" rel="tag">CSS</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/JAVA/" rel="tag">JAVA</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Java/" rel="tag">Java</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Spring/" rel="tag">Spring</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/js/" rel="tag">js</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%89%8D%E7%AB%AF/" rel="tag">前端</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%90%8E%E7%AB%AF/" rel="tag">后端</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E7%BA%BF%E7%A8%8B%E6%B1%A0/" rel="tag">线程池</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E7%BF%BB%E8%AF%91/" rel="tag">翻译</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/" rel="tag">设计模式</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E9%AB%98%E5%B9%B6%E5%8F%91/" rel="tag">高并发</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tag Cloud</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/CSS/" style="font-size: 10px;">CSS</a> <a href="/tags/JAVA/" style="font-size: 16.67px;">JAVA</a> <a href="/tags/Java/" style="font-size: 13.33px;">Java</a> <a href="/tags/Spring/" style="font-size: 10px;">Spring</a> <a href="/tags/js/" style="font-size: 10px;">js</a> <a href="/tags/%E5%89%8D%E7%AB%AF/" style="font-size: 20px;">前端</a> <a href="/tags/%E5%90%8E%E7%AB%AF/" style="font-size: 13.33px;">后端</a> <a href="/tags/%E7%BA%BF%E7%A8%8B%E6%B1%A0/" style="font-size: 10px;">线程池</a> <a href="/tags/%E7%BF%BB%E8%AF%91/" style="font-size: 10px;">翻译</a> <a href="/tags/%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/" style="font-size: 13.33px;">设计模式</a> <a href="/tags/%E9%AB%98%E5%B9%B6%E5%8F%91/" style="font-size: 10px;">高并发</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Archiv</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/02/">February 2026</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/01/">January 2026</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/12/">December 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/11/">November 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/10/">October 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/09/">September 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/08/">August 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/07/">July 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/04/">April 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/03/">March 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/02/">February 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/01/">January 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/12/">December 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/11/">November 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/10/">October 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/07/">July 2024</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">letzter Beitrag</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2026/02/14/%E4%B9%90%E8%A7%82%E9%94%81%E5%AE%9E%E7%8E%B0%E9%AB%98%E5%B9%B6%E5%8F%91%E7%8A%B6%E6%80%81%E4%B8%80%E8%87%B4/">乐观锁实现高并发状态一致</a>
+          </li>
+        
+          <li>
+            <a href="/2026/02/04/%E5%A4%A7%E6%A8%A1%E5%9E%8B%E8%BE%93%E5%87%BA%E6%A0%87%E5%87%86JSON%E8%A7%A3%E5%86%B3%E6%96%B9%E6%B3%95/">大模型输出标准JSON解决方法</a>
+          </li>
+        
+          <li>
+            <a href="/2026/01/23/Java%E7%BA%BF%E7%A8%8B%E6%B1%A0%E5%BC%82%E5%B8%B8%E5%A4%84%E7%90%86%E6%9C%BA%E5%88%B6/">Java线程池异常处理机制</a>
+          </li>
+        
+          <li>
+            <a href="/2026/01/04/%E5%80%9F%E8%AF%81%E4%B8%9A%E5%8A%A1%E7%8A%B6%E6%80%81%E6%9C%BA%E5%BB%BA%E6%A8%A1%E5%8E%9F%E5%AD%90%E6%80%A7/">借证业务状态机建模原子性</a>
+          </li>
+        
+          <li>
+            <a href="/2026/01/04/RAG%E6%B5%81%E7%A8%8B%E8%AF%A6%E8%A7%A3%E4%B8%8E%E5%9B%BE%E8%A7%A3/">RAG流程详解与图解</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      
+      &copy; 2026 haipeiface<br>
+      Powered by <a href="https://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+
+<script src="/js/jquery-3.6.4.min.js"></script>
+
+
+
+  
+<script src="/fancybox/jquery.fancybox.min.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+
+  </div>
+</body>
+</html>

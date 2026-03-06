@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  
+  <title>LLM参数原理解析 | haipeiface.github.io</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="1. Temperature（温度系数）作用： 控制概率分布的平滑程度（即高概率词和低概率词之间的差距）。  原理：在应用 Softmax 函数之前，模型会输出每个词的分数（Logits，即未归一化的对数概率）。Temperature 参数 $T$ 会先对 Logits 进行缩放：$$\text{新 Logits} &#x3D; \frac{\text{原始 Logits}}{T}$$然后再将缩放">
+<meta property="og:type" content="article">
+<meta property="og:title" content="LLM参数原理解析">
+<meta property="og:url" content="http://example.com/2025/12/30/LLM%E5%8F%82%E6%95%B0%E5%8E%9F%E7%90%86%E8%A7%A3%E6%9E%90/index.html">
+<meta property="og:site_name" content="haipeiface.github.io">
+<meta property="og:description" content="1. Temperature（温度系数）作用： 控制概率分布的平滑程度（即高概率词和低概率词之间的差距）。  原理：在应用 Softmax 函数之前，模型会输出每个词的分数（Logits，即未归一化的对数概率）。Temperature 参数 $T$ 会先对 Logits 进行缩放：$$\text{新 Logits} &#x3D; \frac{\text{原始 Logits}}{T}$$然后再将缩放">
+<meta property="og:locale">
+<meta property="article:published_time" content="2025-12-30T12:44:26.000Z">
+<meta property="article:modified_time" content="2026-03-06T07:57:51.472Z">
+<meta property="article:author" content="haipeiface">
+<meta name="twitter:card" content="summary">
+  
+    <link rel="alternate" href="/atom.xml" title="haipeiface.github.io" type="application/atom+xml">
+  
+  
+    <link rel="shortcut icon" href="/favicon.png">
+  
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+    
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.min.css">
+
+  
+  
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">haipeiface.github.io</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"><span class="fa fa-bars"></span></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        
+          <a class="nav-icon" href="/atom.xml" title="RSS Feed"><span class="fa fa-rss"></span></a>
+        
+        <a class="nav-icon nav-search-btn" title="Suche"><span class="fa fa-search"></span></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Suche"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://example.com"></form>
+      </div>
+    </div>
+  </div>
+</header>
+
+      <div class="outer">
+        <section id="main"><article id="post-LLM参数原理解析" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="article-meta">
+    <a href="/2025/12/30/LLM%E5%8F%82%E6%95%B0%E5%8E%9F%E7%90%86%E8%A7%A3%E6%9E%90/" class="article-date">
+  <time class="dt-published" datetime="2025-12-30T12:44:26.000Z" itemprop="datePublished">2025-12-30</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="p-name article-title" itemprop="headline name">
+      LLM参数原理解析
+    </h1>
+  
+
+      </header>
+    
+    <div class="e-content article-entry" itemprop="articleBody">
+      
+        <h3 id="1-Temperature（温度系数）"><a href="#1-Temperature（温度系数）" class="headerlink" title="1. Temperature（温度系数）"></a>1. Temperature（温度系数）</h3><p><strong>作用：</strong> 控制概率分布的平滑程度（即高概率词和低概率词之间的差距）。</p>
+<ul>
+<li><strong>原理：</strong><br>在应用 Softmax 函数之前，模型会输出每个词的分数（Logits，即未归一化的对数概率）。<code>Temperature</code> 参数 $T$ 会先对 Logits 进行缩放：<br>$$<br>\text{新 Logits} &#x3D; \frac{\text{原始 Logits}}{T}<br>$$<br>然后再将缩放后的 Logits 输入 Softmax 得到最终的概率分布。</li>
+<li><strong>效果：</strong><ul>
+<li><strong>$T &lt; 1$（例如 0.5）：</strong> Logits 被放大（除以小于1的数）。这会使得原本高概率的词概率变得更高，低概率的词概率变得更低。结果就是模型更加<strong>保守、确定</strong>，倾向于选择最有可能的词。</li>
+<li><strong>$T &#x3D; 1$：</strong> 保持原始分布不变。</li>
+<li><strong>$T &gt; 1$（例如 1.5）：</strong> Logits 被缩小。概率分布变得更加<strong>平坦、均匀</strong>。原本低概率的词被选中的机会大大增加，结果就是模型更加<strong>随机、有创意</strong>，但也更容易跑题或产生语法错误。</li>
+<li><strong>$T \to \infty$：</strong> 所有词的概率趋近于相等，变成了完全随机选择。</li>
+<li><strong>$T \to 0$：</strong> 最高概率的词的概率趋近于 1，这实际上就变成了贪心搜索（Greedy Search）。</li>
+</ul>
+</li>
+</ul>
+<h3 id="2-Top-K"><a href="#2-Top-K" class="headerlink" title="2. Top-K"></a>2. Top-K</h3><p><strong>作用：</strong> 一种<strong>截断策略</strong>，只从概率最高的 <strong>K</strong> 个词中挑选下一个词。</p>
+<ul>
+<li><strong>原理：</strong><ol>
+<li>模型计算出所有词的概率。</li>
+<li>对概率进行排序，只保留概率排名前 <strong>K</strong> 个的词。</li>
+<li>将这 K 个词的概率重新进行归一化（让它们的概率之和等于 1）。</li>
+<li>从这 K 个词中进行随机采样（此时可以结合 Temperature 使用）。</li>
+</ol>
+</li>
+<li><strong>效果：</strong><ul>
+<li><strong>固定值限制：</strong> 它强行排除了长尾的低概率词，防止模型说出特别不合时宜的话。</li>
+<li><strong>缺点：</strong> K 是固定的，但不同语境下的概率分布形状是不同的。有时模型对前3个词都非常确信（分布很尖），Top-K&#x3D;50 时就会把很多实际上不太可能的词也拉进来，增加了噪音。有时模型不太确定，前10个词的概率都差不多（分布很平），Top-K&#x3D;10 可能会把一些原本合理的词（第11名）排除掉。</li>
+</ul>
+</li>
+</ul>
+<h3 id="3-Top-P（核采样）"><a href="#3-Top-P（核采样）" class="headerlink" title="3. Top-P（核采样）"></a>3. Top-P（核采样）</h3><p><strong>作用：</strong> 也是一种截断策略，但它不是固定数量截断，而是选择<strong>累积概率超过阈值 P 的最小集合</strong>。</p>
+<ul>
+<li><strong>原理：</strong><ol>
+<li>模型计算出所有词的概率。</li>
+<li>按概率从高到低排序。</li>
+<li>从最高的词开始累加概率，直到累加的概率和 <strong>超过</strong> 设定的阈值 <strong>P</strong>（例如 0.9）。</li>
+<li>保留被累加的这些词（即累积概率达到 P 的核心词集合），舍弃其余的词。</li>
+<li>将保留下来的词的概率重新归一化，然后进行采样。</li>
+</ol>
+</li>
+<li><strong>效果：</strong><ul>
+<li><strong>动态调整：</strong> Top-P 比 Top-K 更灵活。它会根据当前预测的置信度动态调整候选词的数量。</li>
+<li><strong>举例：</strong><ul>
+<li>如果模型非常确定，前3个词的累积概率已经达到了 0.95（P&#x3D;0.9），那么它只保留这3个词。</li>
+<li>如果模型不太确定，需要保留 100 个词才能累积到 0.9 的概率，那么它就保留这 100 个词。</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<h3 id="四者关系与协同工作"><a href="#四者关系与协同工作" class="headerlink" title="四者关系与协同工作"></a>四者关系与协同工作</h3><p>在实际的模型推理中，它们通常是<strong>组合使用</strong>的：</p>
+<ol>
+<li><strong>计算 Logits</strong>：模型前向传播得到原始分数。</li>
+<li><strong>Temperature 缩放</strong>：先用 $T$ 调整 Logits，改变分布的锐度。</li>
+<li><strong>截断（Top-K 和&#x2F;或 Top-P）</strong>：<ul>
+<li>通常会先执行 Top-K（如果设置了且 $K &gt; 0$），截断到 K 个词。</li>
+<li>然后再对剩下的词执行 Top-P，进一步动态筛选。</li>
+<li>或者只使用 Top-P。</li>
+</ul>
+</li>
+<li><strong>重新归一化</strong>：对最终筛选出的词的概率进行 Softmax（或直接归一化）。</li>
+<li><strong>采样</strong>：从最终的候选集中随机抽取一个词作为输出。</li>
+</ol>
+<h3 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h3><table>
+<thead>
+<tr>
+<th>参数</th>
+<th>控制方式</th>
+<th>核心目的</th>
+<th>对输出的影响</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Temperature</strong></td>
+<td><strong>分布形态</strong></td>
+<td>调整置信度</td>
+<td><strong>低值</strong> -&gt; 稳定、确定；<strong>高值</strong> -&gt; 多样、创造、随机</td>
+</tr>
+<tr>
+<td><strong>Top-K</strong></td>
+<td><strong>数量硬截断</strong></td>
+<td>排除绝对的低频词</td>
+<td><strong>固定候选数</strong>，防止胡说，但缺乏语境适应性</td>
+</tr>
+<tr>
+<td><strong>Top-P</strong></td>
+<td><strong>质量动态截断</strong></td>
+<td>保留主要概率质量</td>
+<td><strong>动态候选数</strong>，平衡质量和多样性，是目前的主流做法</td>
+</tr>
+</tbody></table>
+<p>通常建议，如果不确定怎么调，可以先固定 Temperature（如 0.8-1.0），然后主要调节 <strong>Top-P</strong>（如 0.9-0.95）。如果需要更确定性的回答，可以适当降低 Temperature 或同时降低 Top-P。</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://example.com/2025/12/30/LLM%E5%8F%82%E6%95%B0%E5%8E%9F%E7%90%86%E8%A7%A3%E6%9E%90/" data-id="cmmem61qi000ne0sl5x9p9qpe" data-title="LLM参数原理解析" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
+      
+      
+      
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2026/01/04/RAG%E6%B5%81%E7%A8%8B%E8%AF%A6%E8%A7%A3%E4%B8%8E%E5%9B%BE%E8%A7%A3/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Neuer</strong>
+      <div class="article-nav-title">
+        
+          RAG流程详解与图解
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2025/12/26/AI%E6%99%BA%E8%83%BD%E4%BD%93%E7%B1%BB%E5%9E%8B%E4%BB%8B%E7%BB%8D/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Älter</strong>
+      <div class="article-nav-title">AI智能体类型介绍</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tags</h3>
+    <div class="widget">
+      <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="/tags/CSS/" rel="tag">CSS</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/JAVA/" rel="tag">JAVA</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Java/" rel="tag">Java</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Spring/" rel="tag">Spring</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/js/" rel="tag">js</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%89%8D%E7%AB%AF/" rel="tag">前端</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%90%8E%E7%AB%AF/" rel="tag">后端</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E7%BA%BF%E7%A8%8B%E6%B1%A0/" rel="tag">线程池</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E7%BF%BB%E8%AF%91/" rel="tag">翻译</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/" rel="tag">设计模式</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E9%AB%98%E5%B9%B6%E5%8F%91/" rel="tag">高并发</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tag Cloud</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/CSS/" style="font-size: 10px;">CSS</a> <a href="/tags/JAVA/" style="font-size: 16.67px;">JAVA</a> <a href="/tags/Java/" style="font-size: 13.33px;">Java</a> <a href="/tags/Spring/" style="font-size: 10px;">Spring</a> <a href="/tags/js/" style="font-size: 10px;">js</a> <a href="/tags/%E5%89%8D%E7%AB%AF/" style="font-size: 20px;">前端</a> <a href="/tags/%E5%90%8E%E7%AB%AF/" style="font-size: 13.33px;">后端</a> <a href="/tags/%E7%BA%BF%E7%A8%8B%E6%B1%A0/" style="font-size: 10px;">线程池</a> <a href="/tags/%E7%BF%BB%E8%AF%91/" style="font-size: 10px;">翻译</a> <a href="/tags/%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/" style="font-size: 13.33px;">设计模式</a> <a href="/tags/%E9%AB%98%E5%B9%B6%E5%8F%91/" style="font-size: 10px;">高并发</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Archiv</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/02/">February 2026</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/01/">January 2026</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/12/">December 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/11/">November 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/10/">October 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/09/">September 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/08/">August 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/07/">July 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/04/">April 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/03/">March 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/02/">February 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/01/">January 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/12/">December 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/11/">November 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/10/">October 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/07/">July 2024</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">letzter Beitrag</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2026/02/14/%E4%B9%90%E8%A7%82%E9%94%81%E5%AE%9E%E7%8E%B0%E9%AB%98%E5%B9%B6%E5%8F%91%E7%8A%B6%E6%80%81%E4%B8%80%E8%87%B4/">乐观锁实现高并发状态一致</a>
+          </li>
+        
+          <li>
+            <a href="/2026/02/04/%E5%A4%A7%E6%A8%A1%E5%9E%8B%E8%BE%93%E5%87%BA%E6%A0%87%E5%87%86JSON%E8%A7%A3%E5%86%B3%E6%96%B9%E6%B3%95/">大模型输出标准JSON解决方法</a>
+          </li>
+        
+          <li>
+            <a href="/2026/01/23/Java%E7%BA%BF%E7%A8%8B%E6%B1%A0%E5%BC%82%E5%B8%B8%E5%A4%84%E7%90%86%E6%9C%BA%E5%88%B6/">Java线程池异常处理机制</a>
+          </li>
+        
+          <li>
+            <a href="/2026/01/04/%E5%80%9F%E8%AF%81%E4%B8%9A%E5%8A%A1%E7%8A%B6%E6%80%81%E6%9C%BA%E5%BB%BA%E6%A8%A1%E5%8E%9F%E5%AD%90%E6%80%A7/">借证业务状态机建模原子性</a>
+          </li>
+        
+          <li>
+            <a href="/2026/01/04/RAG%E6%B5%81%E7%A8%8B%E8%AF%A6%E8%A7%A3%E4%B8%8E%E5%9B%BE%E8%A7%A3/">RAG流程详解与图解</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      
+      &copy; 2026 haipeiface<br>
+      Powered by <a href="https://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+
+<script src="/js/jquery-3.6.4.min.js"></script>
+
+
+
+  
+<script src="/fancybox/jquery.fancybox.min.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+
+  </div>
+</body>
+</html>

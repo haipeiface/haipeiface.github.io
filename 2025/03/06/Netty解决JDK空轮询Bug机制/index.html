@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  
+  <title>Netty解决JDK空轮询Bug机制 | haipeiface.github.io</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="思考过程（Thinking）： 嗯，用户问的是Netty源码中如何解决JDK空轮询Bug的。我记得JDK空轮询Bug主要是在使用NIO的时候，Selector在某些情况下会无事件返回，导致CPU空转，占用率高。Netty作为高性能的网络框架，肯定有办法处理这个问题。 首先，我得看看搜索结果里的内容。网页1提到Netty用了Selector类、非阻塞模式、缓冲区和线程池，但看起来有点笼统，可能不是具">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Netty解决JDK空轮询Bug机制">
+<meta property="og:url" content="http://example.com/2025/03/06/Netty%E8%A7%A3%E5%86%B3JDK%E7%A9%BA%E8%BD%AE%E8%AF%A2Bug%E6%9C%BA%E5%88%B6/index.html">
+<meta property="og:site_name" content="haipeiface.github.io">
+<meta property="og:description" content="思考过程（Thinking）： 嗯，用户问的是Netty源码中如何解决JDK空轮询Bug的。我记得JDK空轮询Bug主要是在使用NIO的时候，Selector在某些情况下会无事件返回，导致CPU空转，占用率高。Netty作为高性能的网络框架，肯定有办法处理这个问题。 首先，我得看看搜索结果里的内容。网页1提到Netty用了Selector类、非阻塞模式、缓冲区和线程池，但看起来有点笼统，可能不是具">
+<meta property="og:locale">
+<meta property="article:published_time" content="2025-03-06T07:46:26.000Z">
+<meta property="article:modified_time" content="2026-03-06T07:49:45.409Z">
+<meta property="article:author" content="haipeiface">
+<meta name="twitter:card" content="summary">
+  
+    <link rel="alternate" href="/atom.xml" title="haipeiface.github.io" type="application/atom+xml">
+  
+  
+    <link rel="shortcut icon" href="/favicon.png">
+  
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+    
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.min.css">
+
+  
+  
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">haipeiface.github.io</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"><span class="fa fa-bars"></span></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        
+          <a class="nav-icon" href="/atom.xml" title="RSS Feed"><span class="fa fa-rss"></span></a>
+        
+        <a class="nav-icon nav-search-btn" title="Suche"><span class="fa fa-search"></span></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Suche"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://example.com"></form>
+      </div>
+    </div>
+  </div>
+</header>
+
+      <div class="outer">
+        <section id="main"><article id="post-Netty解决JDK空轮询Bug机制" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="article-meta">
+    <a href="/2025/03/06/Netty%E8%A7%A3%E5%86%B3JDK%E7%A9%BA%E8%BD%AE%E8%AF%A2Bug%E6%9C%BA%E5%88%B6/" class="article-date">
+  <time class="dt-published" datetime="2025-03-06T07:46:26.000Z" itemprop="datePublished">2025-03-06</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="p-name article-title" itemprop="headline name">
+      Netty解决JDK空轮询Bug机制
+    </h1>
+  
+
+      </header>
+    
+    <div class="e-content article-entry" itemprop="articleBody">
+      
+        <p>思考过程（Thinking）：</p>
+<p>嗯，用户问的是Netty源码中如何解决JDK空轮询Bug的。我记得JDK空轮询Bug主要是在使用NIO的时候，Selector在某些情况下会无事件返回，导致CPU空转，占用率高。Netty作为高性能的网络框架，肯定有办法处理这个问题。</p>
+<p>首先，我得看看搜索结果里的内容。网页1提到Netty用了Selector类、非阻塞模式、缓冲区和线程池，但看起来有点笼统，可能不是具体的源码解决方案。网页2和网页3、4、5、7、8都提到了selectCnt计数器和重建Selector的方法。比如网页2的源码片段显示，Netty会记录select的次数，当超过阈值（比如512次）时，调用rebuildSelector方法。网页3和4也提到类似的方法，通过计数器检测空轮询次数，然后重建Selector。</p>
+<p>网页5和7详细解释了重建Selector的步骤：创建新Selector，将旧的事件重新注册到新Selector，关闭旧的。这应该是核心步骤。而网页6提到Netty没有彻底解决而是绕过这个Bug，通过检测到一定次数的空轮询后重建Selector。网页8则提到Netty使用事件驱动模型和自适应阻塞来优化，可能也是解决方案的一部分。</p>
+<p>综合这些信息，Netty解决JDK空轮询Bug的关键点应该包括：检测空轮询的次数，当超过阈值时重建Selector。具体来说，源码中通过selectCnt变量记录空轮询次数，每次select操作后判断是否异常唤醒，如果次数超过阈值（默认512次），则触发Selector重建。重建过程中，旧Selector的注册事件迁移到新Selector，然后关闭旧Selector，避免空轮询继续发生。</p>
+<p>还需要注意，这个阈值可以通过系统参数调整，比如io.netty.selectorAutoRebuildThreshold。此外，源码中的NioEventLoop类里的run方法应该包含这个逻辑，比如在循环中处理select事件，计数，并在满足条件时调用rebuildSelector方法。网页2和7的代码片段展示了selectCnt的递增和重建过程。</p>
+<p>可能还需要提到，Netty的解决方案并没有完全修复JDK的Bug，而是通过这种机制规避了问题，确保在出现空轮询时能及时恢复，避免CPU占用过高。同时，这种处理方式体现了Netty的设计哲学，即在无法根除底层问题时，通过上层逻辑来优雅处理。</p>
+<p>Netty 在源码中通过<strong>检测空轮询次数并重建 Selector</strong>的方式，巧妙地规避了 JDK 的 NIO 空轮询 Bug（即 Selector 在无事件时被异常唤醒导致 CPU 空转的问题）。以下是其核心实现机制：</p>
+<hr>
+<h3 id="1-空轮询检测机制"><a href="#1-空轮询检测机制" class="headerlink" title="1. 空轮询检测机制"></a>1. <strong>空轮询检测机制</strong></h3><p>Netty 在 <code>NioEventLoop</code> 的 <code>run()</code> 方法中，通过计数器 <code>selectCnt</code> 记录每次 <code>Selector.select()</code> 的调用次数。具体逻辑如下：</p>
+<ul>
+<li><strong>计数递增</strong>：每次调用 <code>Selector.select()</code> 后，<code>selectCnt</code> 加 1。</li>
+<li><strong>时间差判断</strong>：计算 <code>select()</code> 方法的实际阻塞时间。若发现 <code>select()</code> 方法未达到预期阻塞时间（例如，设定超时时间为 1 秒，但实际耗时远小于该值），则认为可能触发了空轮询。</li>
+<li><strong>阈值触发</strong>：当 <code>selectCnt</code> 超过默认阈值（512 次）时，Netty 认定发生了空轮询 Bug，需重建 Selector。</li>
+</ul>
+<hr>
+<h3 id="2-Selector-重建（Rebuild）"><a href="#2-Selector-重建（Rebuild）" class="headerlink" title="2. Selector 重建（Rebuild）"></a>2. <strong>Selector 重建（Rebuild）</strong></h3><p>当检测到空轮询后，Netty 执行以下步骤重建 Selector：</p>
+<ol>
+<li><strong>创建新 Selector</strong>：通过 <code>Selector.open()</code> 生成新的 Selector 实例。</li>
+<li><strong>迁移注册事件</strong>：将旧 Selector 上所有已注册的 Channel 及其关联的 SelectionKey（如读写事件）重新注册到新 Selector 上。</li>
+<li><strong>替换并关闭旧 Selector</strong>：将当前使用的 Selector 替换为新实例，并关闭旧 Selector 以释放资源。</li>
+</ol>
+<p>这一过程的关键源码位于 <code>NioEventLoop#rebuildSelector()</code> 方法中，核心代码示例如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">rebuildSelector</span><span class="params">()</span> &#123;</span><br><span class="line">    <span class="comment">// 创建新 Selector</span></span><br><span class="line">    <span class="keyword">final</span> <span class="type">Selector</span> <span class="variable">newSelector</span> <span class="operator">=</span> Selector.open();</span><br><span class="line">    <span class="comment">// 迁移旧 Selector 的注册事件</span></span><br><span class="line">    <span class="keyword">for</span> (SelectionKey key : oldSelector.keys()) &#123;</span><br><span class="line">        <span class="type">Channel</span> <span class="variable">ch</span> <span class="operator">=</span> key.channel();</span><br><span class="line">        ch.register(newSelector, key.interestOps(), key.attachment());</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// 替换并关闭旧 Selector</span></span><br><span class="line">    <span class="built_in">this</span>.selector = newSelector;</span><br><span class="line">    oldSelector.close();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<hr>
+<h3 id="3-阈值配置与自适应调整"><a href="#3-阈值配置与自适应调整" class="headerlink" title="3. 阈值配置与自适应调整"></a>3. <strong>阈值配置与自适应调整</strong></h3><ul>
+<li><strong>默认阈值</strong>：<code>SELECTOR_AUTO_REBUILD_THRESHOLD</code> 默认为 512，可通过系统参数 <code>io.netty.selectorAutoRebuildThreshold</code> 自定义。</li>
+<li><strong>自适应逻辑</strong>：若短时间内多次触发重建，Netty 会记录日志并调整后续处理策略，避免频繁重建影响性能。</li>
+</ul>
+<hr>
+<h3 id="4-设计哲学与优化"><a href="#4-设计哲学与优化" class="headerlink" title="4. 设计哲学与优化"></a>4. <strong>设计哲学与优化</strong></h3><ul>
+<li><strong>绕过而非修复</strong>：Netty 并未彻底解决 JDK Bug，而是通过上层逻辑规避问题。这种思路体现了“解决问题的最高境界是绕过问题”。</li>
+<li><strong>事件驱动模型</strong>：Netty 的单线程事件循环（EventLoop）结合异步任务队列，减少了直接依赖 <code>Selector.select()</code> 的场景，进一步降低空轮询概率。</li>
+</ul>
+<hr>
+<h3 id="源码关键位置"><a href="#源码关键位置" class="headerlink" title="源码关键位置"></a>源码关键位置</h3><ul>
+<li><strong>入口</strong>：<code>NioEventLoop#run()</code> 方法中的循环逻辑。</li>
+<li><strong>检测逻辑</strong>：<code>NioEventLoop#select()</code> 方法内的时间差计算与 <code>selectCnt</code> 统计。</li>
+<li><strong>重建逻辑</strong>：<code>NioEventLoop#rebuildSelector()</code> 方法实现 Selector 的替换。</li>
+</ul>
+<hr>
+<h3 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h3><p>Netty 的解决方案通过<strong>动态检测空轮询次数</strong>和<strong>重建 Selector</strong>，有效规避了 JDK 的底层 Bug。这一机制结合了计数统计、时间差判断和资源迁移，既保证了高性能，又避免了 CPU 资源浪费，是其在高并发场景下稳定性的重要保障。</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://example.com/2025/03/06/Netty%E8%A7%A3%E5%86%B3JDK%E7%A9%BA%E8%BD%AE%E8%AF%A2Bug%E6%9C%BA%E5%88%B6/" data-id="cmmem61qm000te0slgqjmd3lo" data-title="Netty解决JDK空轮询Bug机制" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
+      
+      
+      
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2025/04/06/RabbitMQ%E6%B6%88%E6%81%AF%E7%A7%AF%E5%8E%8B%E5%A4%84%E7%90%86%E4%B8%8E%E4%BC%98%E5%8C%96%E6%96%B9%E6%A1%88/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Neuer</strong>
+      <div class="article-nav-title">
+        
+          RabbitMQ消息积压处理与优化方案
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2025/02/12/MySQL%E7%AA%97%E5%8F%A3%E5%87%BD%E6%95%B0%E4%BB%8B%E7%BB%8D/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Älter</strong>
+      <div class="article-nav-title">MySQL窗口函数介绍</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tags</h3>
+    <div class="widget">
+      <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="/tags/CSS/" rel="tag">CSS</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/JAVA/" rel="tag">JAVA</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Java/" rel="tag">Java</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Spring/" rel="tag">Spring</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/js/" rel="tag">js</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%89%8D%E7%AB%AF/" rel="tag">前端</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%90%8E%E7%AB%AF/" rel="tag">后端</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E7%BA%BF%E7%A8%8B%E6%B1%A0/" rel="tag">线程池</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E7%BF%BB%E8%AF%91/" rel="tag">翻译</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/" rel="tag">设计模式</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E9%AB%98%E5%B9%B6%E5%8F%91/" rel="tag">高并发</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tag Cloud</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/CSS/" style="font-size: 10px;">CSS</a> <a href="/tags/JAVA/" style="font-size: 16.67px;">JAVA</a> <a href="/tags/Java/" style="font-size: 13.33px;">Java</a> <a href="/tags/Spring/" style="font-size: 10px;">Spring</a> <a href="/tags/js/" style="font-size: 10px;">js</a> <a href="/tags/%E5%89%8D%E7%AB%AF/" style="font-size: 20px;">前端</a> <a href="/tags/%E5%90%8E%E7%AB%AF/" style="font-size: 13.33px;">后端</a> <a href="/tags/%E7%BA%BF%E7%A8%8B%E6%B1%A0/" style="font-size: 10px;">线程池</a> <a href="/tags/%E7%BF%BB%E8%AF%91/" style="font-size: 10px;">翻译</a> <a href="/tags/%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/" style="font-size: 13.33px;">设计模式</a> <a href="/tags/%E9%AB%98%E5%B9%B6%E5%8F%91/" style="font-size: 10px;">高并发</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Archiv</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/02/">February 2026</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/01/">January 2026</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/12/">December 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/11/">November 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/10/">October 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/09/">September 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/08/">August 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/07/">July 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/04/">April 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/03/">March 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/02/">February 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/01/">January 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/12/">December 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/11/">November 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/10/">October 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/07/">July 2024</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">letzter Beitrag</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2026/02/14/%E4%B9%90%E8%A7%82%E9%94%81%E5%AE%9E%E7%8E%B0%E9%AB%98%E5%B9%B6%E5%8F%91%E7%8A%B6%E6%80%81%E4%B8%80%E8%87%B4/">乐观锁实现高并发状态一致</a>
+          </li>
+        
+          <li>
+            <a href="/2026/02/04/%E5%A4%A7%E6%A8%A1%E5%9E%8B%E8%BE%93%E5%87%BA%E6%A0%87%E5%87%86JSON%E8%A7%A3%E5%86%B3%E6%96%B9%E6%B3%95/">大模型输出标准JSON解决方法</a>
+          </li>
+        
+          <li>
+            <a href="/2026/01/23/Java%E7%BA%BF%E7%A8%8B%E6%B1%A0%E5%BC%82%E5%B8%B8%E5%A4%84%E7%90%86%E6%9C%BA%E5%88%B6/">Java线程池异常处理机制</a>
+          </li>
+        
+          <li>
+            <a href="/2026/01/04/%E5%80%9F%E8%AF%81%E4%B8%9A%E5%8A%A1%E7%8A%B6%E6%80%81%E6%9C%BA%E5%BB%BA%E6%A8%A1%E5%8E%9F%E5%AD%90%E6%80%A7/">借证业务状态机建模原子性</a>
+          </li>
+        
+          <li>
+            <a href="/2026/01/04/RAG%E6%B5%81%E7%A8%8B%E8%AF%A6%E8%A7%A3%E4%B8%8E%E5%9B%BE%E8%A7%A3/">RAG流程详解与图解</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      
+      &copy; 2026 haipeiface<br>
+      Powered by <a href="https://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+
+<script src="/js/jquery-3.6.4.min.js"></script>
+
+
+
+  
+<script src="/fancybox/jquery.fancybox.min.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+
+  </div>
+</body>
+</html>

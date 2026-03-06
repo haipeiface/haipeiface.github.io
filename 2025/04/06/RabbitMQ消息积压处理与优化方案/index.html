@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  
+  <title>RabbitMQ消息积压处理与优化方案 | haipeiface.github.io</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="思考过程（Thinking）： 嗯，用户的问题很具体，是实际运维中常见的生产问题。用户不仅想知道怎么处理积压，还想了解具体命令、监控指标，特别是如何避免追平消息时拖垮数据库，这显示用户有比较丰富的实践经验。 我需要从多个维度来回答：问题诊断与监控、命令工具、临时缓解方案、根本解决措施，以及用户特别关心的数据库保护策略。根据搜索结果，提供的监控指标非常全面，包含了可消费消息数、内存使用率、磁盘使用率">
+<meta property="og:type" content="article">
+<meta property="og:title" content="RabbitMQ消息积压处理与优化方案">
+<meta property="og:url" content="http://example.com/2025/04/06/RabbitMQ%E6%B6%88%E6%81%AF%E7%A7%AF%E5%8E%8B%E5%A4%84%E7%90%86%E4%B8%8E%E4%BC%98%E5%8C%96%E6%96%B9%E6%A1%88/index.html">
+<meta property="og:site_name" content="haipeiface.github.io">
+<meta property="og:description" content="思考过程（Thinking）： 嗯，用户的问题很具体，是实际运维中常见的生产问题。用户不仅想知道怎么处理积压，还想了解具体命令、监控指标，特别是如何避免追平消息时拖垮数据库，这显示用户有比较丰富的实践经验。 我需要从多个维度来回答：问题诊断与监控、命令工具、临时缓解方案、根本解决措施，以及用户特别关心的数据库保护策略。根据搜索结果，提供的监控指标非常全面，包含了可消费消息数、内存使用率、磁盘使用率">
+<meta property="og:locale">
+<meta property="article:published_time" content="2025-04-06T07:46:27.000Z">
+<meta property="article:modified_time" content="2026-03-06T07:49:57.597Z">
+<meta property="article:author" content="haipeiface">
+<meta name="twitter:card" content="summary">
+  
+    <link rel="alternate" href="/atom.xml" title="haipeiface.github.io" type="application/atom+xml">
+  
+  
+    <link rel="shortcut icon" href="/favicon.png">
+  
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+    
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.min.css">
+
+  
+  
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">haipeiface.github.io</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"><span class="fa fa-bars"></span></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        
+          <a class="nav-icon" href="/atom.xml" title="RSS Feed"><span class="fa fa-rss"></span></a>
+        
+        <a class="nav-icon nav-search-btn" title="Suche"><span class="fa fa-search"></span></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Suche"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://example.com"></form>
+      </div>
+    </div>
+  </div>
+</header>
+
+      <div class="outer">
+        <section id="main"><article id="post-RabbitMQ消息积压处理与优化方案" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="article-meta">
+    <a href="/2025/04/06/RabbitMQ%E6%B6%88%E6%81%AF%E7%A7%AF%E5%8E%8B%E5%A4%84%E7%90%86%E4%B8%8E%E4%BC%98%E5%8C%96%E6%96%B9%E6%A1%88/" class="article-date">
+  <time class="dt-published" datetime="2025-04-06T07:46:27.000Z" itemprop="datePublished">2025-04-06</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="p-name article-title" itemprop="headline name">
+      RabbitMQ消息积压处理与优化方案
+    </h1>
+  
+
+      </header>
+    
+    <div class="e-content article-entry" itemprop="articleBody">
+      
+        <p>思考过程（Thinking）：</p>
+<p>嗯，用户的问题很具体，是实际运维中常见的生产问题。用户不仅想知道怎么处理积压，还想了解具体命令、监控指标，特别是如何避免追平消息时拖垮数据库，这显示用户有比较丰富的实践经验。</p>
+<p>我需要从多个维度来回答：问题诊断与监控、命令工具、临时缓解方案、根本解决措施，以及用户特别关心的数据库保护策略。根据搜索结果，提供的监控指标非常全面，包含了可消费消息数、内存使用率、磁盘使用率等关键指标。中的命令行工具信息很实用，特别是rabbitmqctl list_queues和rabbitmqctl status命令。</p>
+<p>对于惰性队列这个缓解方案，有详细的配置说明，权威性不错。在根本解决方案方面，提到了增加消费者、优化消费者性能等方法，这些都很实用。中关于消息确认机制和重试机制的说明也很有价值。</p>
+<p>特别重要的是用户提到的数据库保护问题，搜索结果中没有直接涉及，但我可以根据消息队列消费模式的设计原则来补充。我会设计一个表格来分类展示监控指标，这样用户能更直观地了解需要关注什么。</p>
+<p>对于数据库保护，我会从消费速率控制、分页查询与批量处理、异步处理和背压机制、以及业务降级几个维度来详细说明。这些都是实践中非常有效的保护下游系统的策略。整个回答结构会按照问题诊断、监控指标、命令工具、缓解方案、根本措施、数据库保护的顺序来组织，这样逻辑清晰，用户也能按步骤操作。</p>
+<p>当RabbitMQ出现消息积压时，需要结合监控诊断、命令分析、紧急处理和长期优化来综合应对，并特别注意在追平积压时保护下游数据库。</p>
+<h3 id="🔍-第一步：诊断与监控关键指标"><a href="#🔍-第一步：诊断与监控关键指标" class="headerlink" title="🔍 第一步：诊断与监控关键指标"></a>🔍 <strong>第一步：诊断与监控关键指标</strong></h3><p>发生积压时，首先应通过监控系统或管理界面查看以下核心指标，以定位瓶颈所在：</p>
+<table>
+<thead>
+<tr>
+<th>监控维度</th>
+<th>关键指标</th>
+<th>说明与告警阈值建议</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>队列状态</strong></td>
+<td><strong>可消费消息数(Ready)</strong></td>
+<td>直接反映消息堆积程度。需根据业务设定阈值，持续增长说明消费能力不足。</td>
+</tr>
+<tr>
+<td></td>
+<td><strong>未确认消息数(Unacked)</strong></td>
+<td>数值过高通常表示消费者正在处理但未确认，可能消费逻辑卡住或过慢。</td>
+</tr>
+<tr>
+<td></td>
+<td><strong>消费者数量(Consumers)</strong></td>
+<td>如果为0，表示没有消费者在监听，消费完全停止。</td>
+</tr>
+<tr>
+<td><strong>节点资源</strong></td>
+<td><strong>内存使用率</strong></td>
+<td>&gt;80%是危险信号。内存过高会触发流控，阻塞生产者。</td>
+</tr>
+<tr>
+<td></td>
+<td><strong>磁盘使用率</strong></td>
+<td>&gt;85%需紧急处理。磁盘写满会导致节点不可用。</td>
+</tr>
+<tr>
+<td></td>
+<td><strong>CPU使用率</strong></td>
+<td>持续 &gt;70% 可能影响消息吞吐。</td>
+</tr>
+<tr>
+<td><strong>整体流量</strong></td>
+<td><strong>消息发布&#x2F;消费速率</strong></td>
+<td>对比两者趋势，可判断是生产激增还是消费变慢。</td>
+</tr>
+<tr>
+<td></td>
+<td><strong>连接数&#x2F;通道数</strong></td>
+<td>突增可能预示客户端异常或流量过大。</td>
+</tr>
+</tbody></table>
+<h3 id="🛠️-第二步：常用的检查与操作命令"><a href="#🛠️-第二步：常用的检查与操作命令" class="headerlink" title="🛠️ 第二步：常用的检查与操作命令"></a>🛠️ <strong>第二步：常用的检查与操作命令</strong></h3><p>您可以通过命令行快速获取上述信息：</p>
+<ol>
+<li><strong>检查队列概况</strong>：查看所有队列的消息数、消费者数。<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">sudo</span> rabbitmqctl list_queues name messages messages_ready messages_unacknowledged consumers</span><br></pre></td></tr></table></figure></li>
+<li><strong>检查节点状态</strong>：查看节点健康状态、资源使用概览。<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">sudo</span> rabbitmqctl status</span><br></pre></td></tr></table></figure></li>
+<li><strong>诊断检查</strong>：检查内存、磁盘警报。<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">sudo</span> rabbitmq-diagnostics alarms</span><br><span class="line"><span class="built_in">sudo</span> rabbitmq-diagnostics check_disk_free</span><br></pre></td></tr></table></figure></li>
+<li><strong>查看连接与通道</strong>：排查是否有异常连接。<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">sudo</span> rabbitmqctl list_connections</span><br><span class="line"><span class="built_in">sudo</span> rabbitmqctl list_channels</span><br></pre></td></tr></table></figure></li>
+</ol>
+<h3 id="⚡-第三步：紧急缓解措施（治标）"><a href="#⚡-第三步：紧急缓解措施（治标）" class="headerlink" title="⚡ 第三步：紧急缓解措施（治标）"></a>⚡ <strong>第三步：紧急缓解措施（治标）</strong></h3><p>当积压已经发生，可采取以下措施临时缓解：</p>
+<ul>
+<li>**启用惰性队列(Lazy Queue)**：这是应对大量积压最有效的临时方案。惰性队列将消息直接存储在磁盘，只在消费时才加载到内存，能极大减少内存压力，防止Broker因内存过高而阻塞。可以通过策略（Policy）或声明队列时设置 <code>x-queue-mode</code> 为 <code>lazy</code> 来启用。</li>
+<li><strong>纵向扩容</strong>：临时提升RabbitMQ节点（尤其是磁盘和内存）和数据库的资源上限，为处理积压争取时间和空间。</li>
+<li><strong>横向扩容消费者</strong>：临时增加消费者应用实例或提高单个消费者的并发线程数，快速提升消费吞吐量。</li>
+</ul>
+<h3 id="🧱-第四步：根本解决与长期优化（治本）"><a href="#🧱-第四步：根本解决与长期优化（治本）" class="headerlink" title="🧱 第四步：根本解决与长期优化（治本）"></a>🧱 <strong>第四步：根本解决与长期优化（治本）</strong></h3><p>临时缓解后，必须从根本优化，防止问题复发：</p>
+<ol>
+<li><strong>优化消费能力</strong><ul>
+<li><strong>提高消费者性能</strong>：检查并优化消费逻辑，例如避免在消费中进行同步RPC调用、简化业务处理。</li>
+<li>**调整预取值(Prefetch Count)**：合理设置 <code>prefetch</code> 值。过小会导致消费者空闲，过大可能使单个消费者负载过重。对于处理慢的任务，建议设为较小值（如10-50）。</li>
+</ul>
+</li>
+<li><strong>保证消息可靠性</strong><ul>
+<li>**使用消费者确认机制(Ack)**：确保业务处理成功后手动发送Ack，处理失败时放入死信队列，避免消息因异常丢失。</li>
+<li>**设置合理的死信队列(DLX)**：将重试多次仍失败的消息转到死信队列，便于后续人工干预或单独处理，不阻塞主队列。</li>
+</ul>
+</li>
+<li><strong>控制生产与积压</strong><ul>
+<li><strong>实施生产端限流</strong>：在生产者端或网关层增加速率限制，防止突发流量冲垮系统。</li>
+<li><strong>设置队列最大长度</strong>：通过 <code>x-max-length</code> 参数限制队列容量，超出的消息会被丢弃或转入死信，这是一种保护机制。</li>
+<li><strong>利用TTL让消息过期</strong>：对非关键消息设置生存时间，避免无用消息无限堆积。</li>
+</ul>
+</li>
+</ol>
+<h3 id="🛡️-第五步：追平积压时如何保护数据库"><a href="#🛡️-第五步：追平积压时如何保护数据库" class="headerlink" title="🛡️ 第五步：追平积压时如何保护数据库"></a>🛡️ <strong>第五步：追平积压时如何保护数据库</strong></h3><p>这是处理积压中最关键的环节。当海量积压消息瞬间涌向数据库时，极易导致数据库连接打满、CPU飙升甚至宕机。必须采用 <strong>“削峰填谷”</strong> 的策略：</p>
+<ol>
+<li><strong>严格控制消费速率</strong>：<strong>这是最核心的措施</strong>。在消费者应用侧实现限流，例如使用令牌桶或漏桶算法，将处理速度稳定在数据库能承受的范围内，即使队列中还有百万消息，也匀速消费。</li>
+<li><strong>采用分页查询与批量操作</strong>：<ul>
+<li>避免在消费逻辑中对单条消息进行“查询-处理-更新”的数据库操作。</li>
+<li>改为<strong>批量获取消息</strong>，在内存中聚合后，使用数据库的 <strong><code>批量插入(INSERT)</code></strong> 或 <strong><code>批量更新(UPDATE ... WHERE ... IN (...))</code></strong> 语句，大幅减少数据库事务和网络往返次数。</li>
+</ul>
+</li>
+<li>**实现异步处理与背压(Backpressure)**：<ul>
+<li>将耗时的数据库操作（如写日志、更新次要状态）放入内存队列，由单独的线程池异步处理，不阻塞核心消费链路。</li>
+<li>当异步队列也积压时，应触发背压机制，反向通知消费者暂停或放缓拉取消息。</li>
+</ul>
+</li>
+<li><strong>考虑业务降级</strong>：<ul>
+<li>对于积压的非核心业务消息（如通知类、统计类），可以制定降级策略，例如只处理最近的数据、抽样处理或直接清理旧数据，优先保障核心交易链路。</li>
+</ul>
+</li>
+</ol>
+<p><strong>总结来说</strong>，处理RabbitMQ消息积压需要遵循 <strong>“先监控定位，再紧急止血，后根治优化”</strong> 的流程。在整个过程中，尤其是在追消费时，<strong>必须将保护下游数据库作为最高优先级</strong>，通过限流、批量和异步化等手段，平稳地消化积压。</p>
+<p>如果你能分享一下目前积压的消息量级、消费逻辑的大致步骤以及数据库的类型，我可以给出更具体的优化建议。</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://example.com/2025/04/06/RabbitMQ%E6%B6%88%E6%81%AF%E7%A7%AF%E5%8E%8B%E5%A4%84%E7%90%86%E4%B8%8E%E4%BC%98%E5%8C%96%E6%96%B9%E6%A1%88/" data-id="cmmem61qn000ve0sl86q36vlk" data-title="RabbitMQ消息积压处理与优化方案" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
+      
+      
+      
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2025/07/04/%E5%BE%AE%E6%9C%8D%E5%8A%A1%E6%B5%81%E9%87%8F%E6%9A%B4%E6%B6%A8%E9%98%B2%E6%8A%A4%E7%AD%96%E7%95%A5/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Neuer</strong>
+      <div class="article-nav-title">
+        
+          微服务流量暴涨防护策略
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2025/03/06/Netty%E8%A7%A3%E5%86%B3JDK%E7%A9%BA%E8%BD%AE%E8%AF%A2Bug%E6%9C%BA%E5%88%B6/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Älter</strong>
+      <div class="article-nav-title">Netty解决JDK空轮询Bug机制</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tags</h3>
+    <div class="widget">
+      <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="/tags/CSS/" rel="tag">CSS</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/JAVA/" rel="tag">JAVA</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Java/" rel="tag">Java</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Spring/" rel="tag">Spring</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/js/" rel="tag">js</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%89%8D%E7%AB%AF/" rel="tag">前端</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%90%8E%E7%AB%AF/" rel="tag">后端</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E7%BA%BF%E7%A8%8B%E6%B1%A0/" rel="tag">线程池</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E7%BF%BB%E8%AF%91/" rel="tag">翻译</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/" rel="tag">设计模式</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E9%AB%98%E5%B9%B6%E5%8F%91/" rel="tag">高并发</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tag Cloud</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/CSS/" style="font-size: 10px;">CSS</a> <a href="/tags/JAVA/" style="font-size: 16.67px;">JAVA</a> <a href="/tags/Java/" style="font-size: 13.33px;">Java</a> <a href="/tags/Spring/" style="font-size: 10px;">Spring</a> <a href="/tags/js/" style="font-size: 10px;">js</a> <a href="/tags/%E5%89%8D%E7%AB%AF/" style="font-size: 20px;">前端</a> <a href="/tags/%E5%90%8E%E7%AB%AF/" style="font-size: 13.33px;">后端</a> <a href="/tags/%E7%BA%BF%E7%A8%8B%E6%B1%A0/" style="font-size: 10px;">线程池</a> <a href="/tags/%E7%BF%BB%E8%AF%91/" style="font-size: 10px;">翻译</a> <a href="/tags/%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/" style="font-size: 13.33px;">设计模式</a> <a href="/tags/%E9%AB%98%E5%B9%B6%E5%8F%91/" style="font-size: 10px;">高并发</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Archiv</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/02/">February 2026</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/01/">January 2026</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/12/">December 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/11/">November 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/10/">October 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/09/">September 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/08/">August 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/07/">July 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/04/">April 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/03/">March 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/02/">February 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/01/">January 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/12/">December 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/11/">November 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/10/">October 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/07/">July 2024</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">letzter Beitrag</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2026/02/14/%E4%B9%90%E8%A7%82%E9%94%81%E5%AE%9E%E7%8E%B0%E9%AB%98%E5%B9%B6%E5%8F%91%E7%8A%B6%E6%80%81%E4%B8%80%E8%87%B4/">乐观锁实现高并发状态一致</a>
+          </li>
+        
+          <li>
+            <a href="/2026/02/04/%E5%A4%A7%E6%A8%A1%E5%9E%8B%E8%BE%93%E5%87%BA%E6%A0%87%E5%87%86JSON%E8%A7%A3%E5%86%B3%E6%96%B9%E6%B3%95/">大模型输出标准JSON解决方法</a>
+          </li>
+        
+          <li>
+            <a href="/2026/01/23/Java%E7%BA%BF%E7%A8%8B%E6%B1%A0%E5%BC%82%E5%B8%B8%E5%A4%84%E7%90%86%E6%9C%BA%E5%88%B6/">Java线程池异常处理机制</a>
+          </li>
+        
+          <li>
+            <a href="/2026/01/04/%E5%80%9F%E8%AF%81%E4%B8%9A%E5%8A%A1%E7%8A%B6%E6%80%81%E6%9C%BA%E5%BB%BA%E6%A8%A1%E5%8E%9F%E5%AD%90%E6%80%A7/">借证业务状态机建模原子性</a>
+          </li>
+        
+          <li>
+            <a href="/2026/01/04/RAG%E6%B5%81%E7%A8%8B%E8%AF%A6%E8%A7%A3%E4%B8%8E%E5%9B%BE%E8%A7%A3/">RAG流程详解与图解</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      
+      &copy; 2026 haipeiface<br>
+      Powered by <a href="https://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+
+<script src="/js/jquery-3.6.4.min.js"></script>
+
+
+
+  
+<script src="/fancybox/jquery.fancybox.min.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+
+  </div>
+</body>
+</html>

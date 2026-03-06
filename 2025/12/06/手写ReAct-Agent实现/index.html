@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  
+  <title>手写ReAct_Agent实现 | haipeiface.github.io</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="思考过程（Thinking）： 我们被要求“画出流程图”，但这是一个文本聊天界面，无法直接画图。不过我们可以用文字描述流程图的结构，或者提供伪代码的流程描述，或者用Mermaid格式的代码块来生成流程图。用户可能期望看到用Mermaid语言描述的流程图，这样可以在支持Mermaid的平台上渲染。因此，我们可以给出Mermaid格式的流程图。 让我们根据前面的伪代码，设计一个ReAct Agent的">
+<meta property="og:type" content="article">
+<meta property="og:title" content="手写ReAct_Agent实现">
+<meta property="og:url" content="http://example.com/2025/12/06/%E6%89%8B%E5%86%99ReAct-Agent%E5%AE%9E%E7%8E%B0/index.html">
+<meta property="og:site_name" content="haipeiface.github.io">
+<meta property="og:description" content="思考过程（Thinking）： 我们被要求“画出流程图”，但这是一个文本聊天界面，无法直接画图。不过我们可以用文字描述流程图的结构，或者提供伪代码的流程描述，或者用Mermaid格式的代码块来生成流程图。用户可能期望看到用Mermaid语言描述的流程图，这样可以在支持Mermaid的平台上渲染。因此，我们可以给出Mermaid格式的流程图。 让我们根据前面的伪代码，设计一个ReAct Agent的">
+<meta property="og:locale">
+<meta property="article:published_time" content="2025-12-06T14:46:30.000Z">
+<meta property="article:modified_time" content="2026-03-06T07:50:29.077Z">
+<meta property="article:author" content="haipeiface">
+<meta name="twitter:card" content="summary">
+  
+    <link rel="alternate" href="/atom.xml" title="haipeiface.github.io" type="application/atom+xml">
+  
+  
+    <link rel="shortcut icon" href="/favicon.png">
+  
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+    
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.min.css">
+
+  
+  
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">haipeiface.github.io</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"><span class="fa fa-bars"></span></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        
+          <a class="nav-icon" href="/atom.xml" title="RSS Feed"><span class="fa fa-rss"></span></a>
+        
+        <a class="nav-icon nav-search-btn" title="Suche"><span class="fa fa-search"></span></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Suche"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://example.com"></form>
+      </div>
+    </div>
+  </div>
+</header>
+
+      <div class="outer">
+        <section id="main"><article id="post-手写ReAct-Agent实现" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="article-meta">
+    <a href="/2025/12/06/%E6%89%8B%E5%86%99ReAct-Agent%E5%AE%9E%E7%8E%B0/" class="article-date">
+  <time class="dt-published" datetime="2025-12-06T14:46:30.000Z" itemprop="datePublished">2025-12-06</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="p-name article-title" itemprop="headline name">
+      手写ReAct_Agent实现
+    </h1>
+  
+
+      </header>
+    
+    <div class="e-content article-entry" itemprop="articleBody">
+      
+        <p>思考过程（Thinking）：</p>
+<p>我们被要求“画出流程图”，但这是一个文本聊天界面，无法直接画图。不过我们可以用文字描述流程图的结构，或者提供伪代码的流程描述，或者用Mermaid格式的代码块来生成流程图。用户可能期望看到用Mermaid语言描述的流程图，这样可以在支持Mermaid的平台上渲染。因此，我们可以给出Mermaid格式的流程图。</p>
+<p>让我们根据前面的伪代码，设计一个ReAct Agent的流程图。它将展示从输入问题开始，循环直到得到最终答案或达到最大步数。</p>
+<p>流程图大致如下：</p>
+<ul>
+<li>开始</li>
+<li>输入问题</li>
+<li>初始化历史记录、步数计数器</li>
+<li>循环（步数&lt;最大步数）<ul>
+<li>构建prompt（包含问题、历史、工具描述）</li>
+<li>调用LLM得到响应</li>
+<li>解析响应</li>
+<li>如果是最终答案 -&gt; 返回答案，结束</li>
+<li>如果是行动 -&gt; 提取行动和输入<ul>
+<li>记录思考</li>
+<li>执行工具得到观察</li>
+<li>记录行动、输入、观察</li>
+<li>步数+1</li>
+</ul>
+</li>
+<li>如果是无法解析 -&gt; 记录错误，步数+1</li>
+</ul>
+</li>
+<li>超过最大步数，返回失败信息</li>
+</ul>
+<p>我们可以用Mermaid语法中的flowchart或graph来表示。注意，我们可能需要在每个决策点进行分支。</p>
+<p>我将给出一个Mermaid格式的流程图。</p>
+<p>以下是 ReAct Agent 核心流程的 Mermaid 流程图，你可以将其复制到支持 Mermaid 的编辑器（如 GitHub、Notion 或在线 Mermaid 工具）中查看：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line">flowchart TD</span><br><span class="line">    A[开始] --&gt; B[输入问题]</span><br><span class="line">    B --&gt; C[初始化历史记录空列表, 步数=0]</span><br><span class="line">    C --&gt; D&#123;步数 &lt; 最大步数?&#125;</span><br><span class="line">    D -- 否 --&gt; E[返回“超过最大步数，无法回答”]</span><br><span class="line">    D -- 是 --&gt; F[构建 Prompt\n(问题 + 历史 + 工具描述)]</span><br><span class="line">    F --&gt; G[调用 LLM 获取响应]</span><br><span class="line">    G --&gt; H[解析响应]</span><br><span class="line">    </span><br><span class="line">    H --&gt; I&#123;包含 Final Answer?&#125;</span><br><span class="line">    I -- 是 --&gt; J[提取最终答案]</span><br><span class="line">    J --&gt; K[返回最终答案]</span><br><span class="line">    </span><br><span class="line">    I -- 否 --&gt; L&#123;包含 Action 和 Action Input?&#125;</span><br><span class="line">    L -- 是 --&gt; M[提取 Thought、Action、Input]</span><br><span class="line">    M --&gt; N[将 Thought 加入历史]</span><br><span class="line">    N --&gt; O&#123;工具是否存在?&#125;</span><br><span class="line">    O -- 是 --&gt; P[执行工具得到 Observation]</span><br><span class="line">    O -- 否 --&gt; Q[Observation = “未知工具”]</span><br><span class="line">    P --&gt; R[将 Action、Input、Observation 加入历史]</span><br><span class="line">    Q --&gt; R</span><br><span class="line">    R --&gt; S[步数 +1]</span><br><span class="line">    S --&gt; D</span><br><span class="line">    </span><br><span class="line">    L -- 否 --&gt; T[将“无法解析的响应”加入历史]</span><br><span class="line">    T --&gt; S</span><br></pre></td></tr></table></figure>
+
+<p><strong>流程说明</strong>：</p>
+<ol>
+<li>开始后，输入问题并初始化历史记录和步数计数器。</li>
+<li>进入循环，检查是否达到最大步数。</li>
+<li>构建提示词（包含问题、历史对话和工具描述）。</li>
+<li>调用大语言模型（LLM）获得响应文本。</li>
+<li>解析响应：<ul>
+<li>如果包含 <code>Final Answer</code>，则提取并返回最终答案，流程结束。</li>
+<li>如果包含 <code>Action</code> 和 <code>Action Input</code>，则提取思考内容（可选）、行动名称和输入参数：<ul>
+<li>将思考内容加入历史。</li>
+<li>检查工具是否存在：若存在则执行工具得到观察结果，否则观察结果为“未知工具”。</li>
+<li>将行动、输入和观察结果加入历史。</li>
+<li>步数加1，继续循环。</li>
+</ul>
+</li>
+<li>如果无法按预期格式解析，则将错误信息加入历史，步数加1，继续循环。</li>
+</ul>
+</li>
+<li>如果循环结束仍未得到最终答案，返回超时提示。</li>
+</ol>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://example.com/2025/12/06/%E6%89%8B%E5%86%99ReAct-Agent%E5%AE%9E%E7%8E%B0/" data-id="cmmem61qu001de0slh2zgdaux" data-title="手写ReAct_Agent实现" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
+      
+      
+      
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2025/12/26/AI%E6%99%BA%E8%83%BD%E4%BD%93%E7%B1%BB%E5%9E%8B%E4%BB%8B%E7%BB%8D/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Neuer</strong>
+      <div class="article-nav-title">
+        
+          AI智能体类型介绍
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2025/12/06/Executor-submit%E4%B8%8Eexecute%E6%96%B9%E6%B3%95%E5%8C%BA%E5%88%AB/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Älter</strong>
+      <div class="article-nav-title">Executor_submit与execute方法区别</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tags</h3>
+    <div class="widget">
+      <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="/tags/CSS/" rel="tag">CSS</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/JAVA/" rel="tag">JAVA</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Java/" rel="tag">Java</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Spring/" rel="tag">Spring</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/js/" rel="tag">js</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%89%8D%E7%AB%AF/" rel="tag">前端</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%90%8E%E7%AB%AF/" rel="tag">后端</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E7%BA%BF%E7%A8%8B%E6%B1%A0/" rel="tag">线程池</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E7%BF%BB%E8%AF%91/" rel="tag">翻译</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/" rel="tag">设计模式</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E9%AB%98%E5%B9%B6%E5%8F%91/" rel="tag">高并发</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tag Cloud</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/CSS/" style="font-size: 10px;">CSS</a> <a href="/tags/JAVA/" style="font-size: 16.67px;">JAVA</a> <a href="/tags/Java/" style="font-size: 13.33px;">Java</a> <a href="/tags/Spring/" style="font-size: 10px;">Spring</a> <a href="/tags/js/" style="font-size: 10px;">js</a> <a href="/tags/%E5%89%8D%E7%AB%AF/" style="font-size: 20px;">前端</a> <a href="/tags/%E5%90%8E%E7%AB%AF/" style="font-size: 13.33px;">后端</a> <a href="/tags/%E7%BA%BF%E7%A8%8B%E6%B1%A0/" style="font-size: 10px;">线程池</a> <a href="/tags/%E7%BF%BB%E8%AF%91/" style="font-size: 10px;">翻译</a> <a href="/tags/%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/" style="font-size: 13.33px;">设计模式</a> <a href="/tags/%E9%AB%98%E5%B9%B6%E5%8F%91/" style="font-size: 10px;">高并发</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Archiv</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/02/">February 2026</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/01/">January 2026</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/12/">December 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/11/">November 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/10/">October 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/09/">September 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/08/">August 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/07/">July 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/04/">April 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/03/">March 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/02/">February 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/01/">January 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/12/">December 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/11/">November 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/10/">October 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/07/">July 2024</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">letzter Beitrag</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2026/02/14/%E4%B9%90%E8%A7%82%E9%94%81%E5%AE%9E%E7%8E%B0%E9%AB%98%E5%B9%B6%E5%8F%91%E7%8A%B6%E6%80%81%E4%B8%80%E8%87%B4/">乐观锁实现高并发状态一致</a>
+          </li>
+        
+          <li>
+            <a href="/2026/02/04/%E5%A4%A7%E6%A8%A1%E5%9E%8B%E8%BE%93%E5%87%BA%E6%A0%87%E5%87%86JSON%E8%A7%A3%E5%86%B3%E6%96%B9%E6%B3%95/">大模型输出标准JSON解决方法</a>
+          </li>
+        
+          <li>
+            <a href="/2026/01/23/Java%E7%BA%BF%E7%A8%8B%E6%B1%A0%E5%BC%82%E5%B8%B8%E5%A4%84%E7%90%86%E6%9C%BA%E5%88%B6/">Java线程池异常处理机制</a>
+          </li>
+        
+          <li>
+            <a href="/2026/01/04/%E5%80%9F%E8%AF%81%E4%B8%9A%E5%8A%A1%E7%8A%B6%E6%80%81%E6%9C%BA%E5%BB%BA%E6%A8%A1%E5%8E%9F%E5%AD%90%E6%80%A7/">借证业务状态机建模原子性</a>
+          </li>
+        
+          <li>
+            <a href="/2026/01/04/RAG%E6%B5%81%E7%A8%8B%E8%AF%A6%E8%A7%A3%E4%B8%8E%E5%9B%BE%E8%A7%A3/">RAG流程详解与图解</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      
+      &copy; 2026 haipeiface<br>
+      Powered by <a href="https://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+
+<script src="/js/jquery-3.6.4.min.js"></script>
+
+
+
+  
+<script src="/fancybox/jquery.fancybox.min.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+
+  </div>
+</body>
+</html>

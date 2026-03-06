@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  
+  <title>RAG流程详解与图解 | haipeiface.github.io</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="RAG（Retrieval-Augmented Generation，检索增强生成）是一种结合信息检索与大语言模型的技术范式，旨在通过外部知识库增强生成内容的准确性和时效性。下面将从核心流程、关键组件以及多种图解视角，对RAG进行详细阐述。  一、RAG 核心流程概述RAG 系统通常分为两个主要阶段：索引阶段（离线） 和 查询阶段（在线）。  索引阶段：将原始文档库分割、向量化并构建可快速检索的索">
+<meta property="og:type" content="article">
+<meta property="og:title" content="RAG流程详解与图解">
+<meta property="og:url" content="http://example.com/2026/01/04/RAG%E6%B5%81%E7%A8%8B%E8%AF%A6%E8%A7%A3%E4%B8%8E%E5%9B%BE%E8%A7%A3/index.html">
+<meta property="og:site_name" content="haipeiface.github.io">
+<meta property="og:description" content="RAG（Retrieval-Augmented Generation，检索增强生成）是一种结合信息检索与大语言模型的技术范式，旨在通过外部知识库增强生成内容的准确性和时效性。下面将从核心流程、关键组件以及多种图解视角，对RAG进行详细阐述。  一、RAG 核心流程概述RAG 系统通常分为两个主要阶段：索引阶段（离线） 和 查询阶段（在线）。  索引阶段：将原始文档库分割、向量化并构建可快速检索的索">
+<meta property="og:locale">
+<meta property="article:published_time" content="2026-01-04T10:13:29.000Z">
+<meta property="article:modified_time" content="2026-03-06T07:57:27.566Z">
+<meta property="article:author" content="haipeiface">
+<meta name="twitter:card" content="summary">
+  
+    <link rel="alternate" href="/atom.xml" title="haipeiface.github.io" type="application/atom+xml">
+  
+  
+    <link rel="shortcut icon" href="/favicon.png">
+  
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+    
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.min.css">
+
+  
+  
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">haipeiface.github.io</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"><span class="fa fa-bars"></span></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        
+          <a class="nav-icon" href="/atom.xml" title="RSS Feed"><span class="fa fa-rss"></span></a>
+        
+        <a class="nav-icon nav-search-btn" title="Suche"><span class="fa fa-search"></span></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Suche"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://example.com"></form>
+      </div>
+    </div>
+  </div>
+</header>
+
+      <div class="outer">
+        <section id="main"><article id="post-RAG流程详解与图解" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="article-meta">
+    <a href="/2026/01/04/RAG%E6%B5%81%E7%A8%8B%E8%AF%A6%E8%A7%A3%E4%B8%8E%E5%9B%BE%E8%A7%A3/" class="article-date">
+  <time class="dt-published" datetime="2026-01-04T10:13:29.000Z" itemprop="datePublished">2026-01-04</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="p-name article-title" itemprop="headline name">
+      RAG流程详解与图解
+    </h1>
+  
+
+      </header>
+    
+    <div class="e-content article-entry" itemprop="articleBody">
+      
+        <p>RAG（Retrieval-Augmented Generation，检索增强生成）是一种结合信息检索与大语言模型的技术范式，旨在通过外部知识库增强生成内容的准确性和时效性。下面将从核心流程、关键组件以及多种图解视角，对RAG进行详细阐述。</p>
+<hr>
+<h2 id="一、RAG-核心流程概述"><a href="#一、RAG-核心流程概述" class="headerlink" title="一、RAG 核心流程概述"></a>一、RAG 核心流程概述</h2><p>RAG 系统通常分为两个主要阶段：<strong>索引阶段（离线）</strong> 和 <strong>查询阶段（在线）</strong>。</p>
+<ol>
+<li><strong>索引阶段</strong>：将原始文档库分割、向量化并构建可快速检索的索引。</li>
+<li><strong>查询阶段</strong>：接收用户问题，检索相关文档片段，并将其与问题一同输入大模型生成答案。</li>
+</ol>
+<p>整个流程的宏观架构如下图所示：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">graph TD</span><br><span class="line">    subgraph 离线索引</span><br><span class="line">    A[原始文档] --&gt; B[文档分割]</span><br><span class="line">    B --&gt; C[向量化 Embedding]</span><br><span class="line">    C --&gt; D[向量数据库]</span><br><span class="line">    end</span><br><span class="line"></span><br><span class="line">    subgraph 在线查询</span><br><span class="line">    E[用户问题] --&gt; F[向量化 Embedding]</span><br><span class="line">    F --&gt; G[相似度检索&lt;br/&gt;（向量数据库）]</span><br><span class="line">    D --&gt; G</span><br><span class="line">    G --&gt; H[检索结果]</span><br><span class="line">    H --&gt; I[提示词组装&lt;br/&gt;（问题 + 上下文）]</span><br><span class="line">    I --&gt; J[大语言模型]</span><br><span class="line">    J --&gt; K[生成答案]</span><br><span class="line">    end</span><br></pre></td></tr></table></figure>
+
+<hr>
+<h2 id="二、详细流程步骤"><a href="#二、详细流程步骤" class="headerlink" title="二、详细流程步骤"></a>二、详细流程步骤</h2><h3 id="1-索引构建（离线）"><a href="#1-索引构建（离线）" class="headerlink" title="1. 索引构建（离线）"></a>1. 索引构建（离线）</h3><ul>
+<li><strong>文档加载与解析</strong>：从多种格式（PDF、网页、数据库等）读取原始数据。</li>
+<li><strong>文本分割（Chunking）</strong>：将长文档切分成适当大小的片段（chunk），通常考虑语义边界（如段落、句子）和 token 限制。</li>
+<li><strong>向量化</strong>：使用 Embedding 模型将每个文本片段转换为稠密向量。</li>
+<li><strong>存储索引</strong>：将向量及其对应的元数据（如原文、来源、位置）存入向量数据库（如 Pinecone、Weaviate、FAISS）。</li>
+</ul>
+<h3 id="2-查询处理（在线）"><a href="#2-查询处理（在线）" class="headerlink" title="2. 查询处理（在线）"></a>2. 查询处理（在线）</h3><ul>
+<li><strong>问题向量化</strong>：将用户问题用相同的 Embedding 模型转换为向量。</li>
+<li><strong>相似性检索</strong>：在向量数据库中执行近似最近邻搜索（ANN），召回与问题最相似的 Top-K 个文本片段。</li>
+<li><strong>结果融合与排序</strong>：可选地对检索结果进行重排序（Rerank），去除冗余，提高相关性。</li>
+<li><strong>提示构造</strong>：将用户问题和检索到的文本片段按特定模板组装成提示词（Prompt），例如：<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">基于以下信息回答问题：</span><br><span class="line">&#123;context&#125;</span><br><span class="line">问题：&#123;question&#125;</span><br><span class="line">答案：</span><br></pre></td></tr></table></figure></li>
+<li><strong>生成</strong>：将提示词输入大语言模型（LLM），生成最终答案。</li>
+<li><strong>输出与溯源</strong>：返回答案，并可附带引用来源（如原文片段）。</li>
+</ul>
+<hr>
+<h2 id="三、多种图解视角"><a href="#三、多种图解视角" class="headerlink" title="三、多种图解视角"></a>三、多种图解视角</h2><h3 id="3-1-数据流图（DFD）"><a href="#3-1-数据流图（DFD）" class="headerlink" title="3.1 数据流图（DFD）"></a>3.1 数据流图（DFD）</h3><p>展示数据在系统各组件间的流动过程：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line">flowchart LR</span><br><span class="line">    subgraph 数据源</span><br><span class="line">        Docs[文档库]</span><br><span class="line">    end</span><br><span class="line"></span><br><span class="line">    subgraph 离线处理</span><br><span class="line">        Load[文档加载器] --&gt; Split[分割器]</span><br><span class="line">        Split --&gt; Embed[Embedding模型]</span><br><span class="line">        Embed --&gt; VectorDB[(向量数据库)]</span><br><span class="line">    end</span><br><span class="line"></span><br><span class="line">    subgraph 在线处理</span><br><span class="line">        Query[用户问题] --&gt; QEmbed[Embedding模型]</span><br><span class="line">        QEmbed --&gt; Retriever[检索器]</span><br><span class="line">        VectorDB --&gt; Retriever</span><br><span class="line">        Retriever --&gt; Context[上下文片段]</span><br><span class="line">        Context --&gt; Prompt[提示词构造器]</span><br><span class="line">        Prompt --&gt; LLM[大语言模型]</span><br><span class="line">        LLM --&gt; Answer[答案]</span><br><span class="line">    end</span><br><span class="line"></span><br><span class="line">    Docs --&gt; Load</span><br></pre></td></tr></table></figure>
+
+<h3 id="3-2-序列图（时序交互）"><a href="#3-2-序列图（时序交互）" class="headerlink" title="3.2 序列图（时序交互）"></a>3.2 序列图（时序交互）</h3><p>展示用户、检索模块、知识库、生成模块之间的交互顺序：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">sequenceDiagram</span><br><span class="line">    participant User</span><br><span class="line">    participant Retriever</span><br><span class="line">    participant VectorDB</span><br><span class="line">    participant LLM</span><br><span class="line"></span><br><span class="line">    User-&gt;&gt;Retriever: 1. 提交问题</span><br><span class="line">    Retriever-&gt;&gt;VectorDB: 2. 向量化并查询</span><br><span class="line">    VectorDB--&gt;&gt;Retriever: 3. 返回相似片段</span><br><span class="line">    Retriever-&gt;&gt;LLM: 4. 组装提示并发送</span><br><span class="line">    LLM--&gt;&gt;Retriever: 5. 生成答案</span><br><span class="line">    Retriever--&gt;&gt;User: 6. 返回答案+来源</span><br></pre></td></tr></table></figure>
+
+<h3 id="3-3-模块化架构图"><a href="#3-3-模块化架构图" class="headerlink" title="3.3 模块化架构图"></a>3.3 模块化架构图</h3><p>突出系统各层组件及其关系：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br></pre></td><td class="code"><pre><span class="line">graph TB</span><br><span class="line">    subgraph 数据层</span><br><span class="line">        DB[(原始文档库)]</span><br><span class="line">    end</span><br><span class="line"></span><br><span class="line">    subgraph 处理层</span><br><span class="line">        Pre[预处理&lt;br/&gt;（解析、清洗）]</span><br><span class="line">        Chunk[分块]</span><br><span class="line">        Embed[Embedding模型]</span><br><span class="line">        Index[索引管理]</span><br><span class="line">    end</span><br><span class="line"></span><br><span class="line">    subgraph 检索层</span><br><span class="line">        QueryEncoder[查询编码器]</span><br><span class="line">        Search[相似度搜索]</span><br><span class="line">        Rerank[重排序]</span><br><span class="line">    end</span><br><span class="line"></span><br><span class="line">    subgraph 生成层</span><br><span class="line">        PromptTemp[提示词模板]</span><br><span class="line">        LLM[大语言模型]</span><br><span class="line">        Post[后处理/验证]</span><br><span class="line">    end</span><br><span class="line"></span><br><span class="line">    subgraph 应用层</span><br><span class="line">        API[API接口]</span><br><span class="line">        UI[用户界面]</span><br><span class="line">    end</span><br><span class="line"></span><br><span class="line">    DB --&gt; Pre --&gt; Chunk --&gt; Embed --&gt; Index</span><br><span class="line">    Index --&gt; Search</span><br><span class="line">    QueryEncoder --&gt; Search</span><br><span class="line">    Search --&gt; Rerank --&gt; PromptTemp</span><br><span class="line">    PromptTemp --&gt; LLM --&gt; Post --&gt; API</span><br><span class="line">    API --&gt; UI</span><br></pre></td></tr></table></figure>
+
+<h3 id="3-4-检索细节流程图（以稠密检索为例）"><a href="#3-4-检索细节流程图（以稠密检索为例）" class="headerlink" title="3.4 检索细节流程图（以稠密检索为例）"></a>3.4 检索细节流程图（以稠密检索为例）</h3><p>展示从问题到检索结果的内部处理细节：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">flowchart TD</span><br><span class="line">    Q[用户问题] --&gt; QVec[Embedding模型&lt;br/&gt;生成问题向量]</span><br><span class="line">    QVec --&gt; ANN[近似最近邻搜索&lt;br/&gt;（如HNSW、IVF）]</span><br><span class="line">    subgraph 向量数据库</span><br><span class="line">        Vecs[(向量库)]</span><br><span class="line">        Meta[(元数据)]</span><br><span class="line">    end</span><br><span class="line">    Vecs --&gt; ANN</span><br><span class="line">    ANN --&gt; TopK[Top-K 候选向量]</span><br><span class="line">    TopK --&gt; Fetch[根据ID获取原文]</span><br><span class="line">    Meta --&gt; Fetch</span><br><span class="line">    Fetch --&gt; Result[检索结果列表&lt;br/&gt;（文本+得分+元数据）]</span><br></pre></td></tr></table></figure>
+
+<hr>
+<h2 id="四、RAG-的变体与优化"><a href="#四、RAG-的变体与优化" class="headerlink" title="四、RAG 的变体与优化"></a>四、RAG 的变体与优化</h2><ul>
+<li><strong>HyDE（Hypothetical Document Embeddings）</strong>：先用 LLM 根据问题生成一个假想文档，再用该文档向量检索，提高召回率。</li>
+<li><strong>递归检索</strong>：对检索结果再递归检索，获取更全面的上下文。</li>
+<li><strong>多路召回</strong>：结合稀疏检索（如 BM25）和稠密检索，融合结果。</li>
+<li><strong>自适应检索</strong>：根据问题复杂度决定是否检索或检索多少次。</li>
+<li><strong>重排序</strong>：使用交叉编码器模型对初筛结果精细排序。</li>
+</ul>
+<hr>
+<h2 id="五、总结"><a href="#五、总结" class="headerlink" title="五、总结"></a>五、总结</h2><p>RAG 流程通过“检索+生成”的协同工作，有效解决了大模型知识截止、幻觉等问题。其核心在于离线构建高质量的向量索引，在线执行高效的语义检索，并将检索结果作为上下文注入提示词，引导模型生成更准确的答案。上述多种图解从不同维度展示了这一流程，可根据实际需求选择或组合使用。</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://example.com/2026/01/04/RAG%E6%B5%81%E7%A8%8B%E8%AF%A6%E8%A7%A3%E4%B8%8E%E5%9B%BE%E8%A7%A3/" data-id="cmmem61qm000ue0sl43w24p49" data-title="RAG流程详解与图解" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
+      
+      
+      
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2026/01/04/%E5%80%9F%E8%AF%81%E4%B8%9A%E5%8A%A1%E7%8A%B6%E6%80%81%E6%9C%BA%E5%BB%BA%E6%A8%A1%E5%8E%9F%E5%AD%90%E6%80%A7/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Neuer</strong>
+      <div class="article-nav-title">
+        
+          借证业务状态机建模原子性
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2025/12/30/LLM%E5%8F%82%E6%95%B0%E5%8E%9F%E7%90%86%E8%A7%A3%E6%9E%90/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Älter</strong>
+      <div class="article-nav-title">LLM参数原理解析</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tags</h3>
+    <div class="widget">
+      <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="/tags/CSS/" rel="tag">CSS</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/JAVA/" rel="tag">JAVA</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Java/" rel="tag">Java</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Spring/" rel="tag">Spring</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/js/" rel="tag">js</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%89%8D%E7%AB%AF/" rel="tag">前端</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%90%8E%E7%AB%AF/" rel="tag">后端</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E7%BA%BF%E7%A8%8B%E6%B1%A0/" rel="tag">线程池</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E7%BF%BB%E8%AF%91/" rel="tag">翻译</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/" rel="tag">设计模式</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E9%AB%98%E5%B9%B6%E5%8F%91/" rel="tag">高并发</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tag Cloud</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/CSS/" style="font-size: 10px;">CSS</a> <a href="/tags/JAVA/" style="font-size: 16.67px;">JAVA</a> <a href="/tags/Java/" style="font-size: 13.33px;">Java</a> <a href="/tags/Spring/" style="font-size: 10px;">Spring</a> <a href="/tags/js/" style="font-size: 10px;">js</a> <a href="/tags/%E5%89%8D%E7%AB%AF/" style="font-size: 20px;">前端</a> <a href="/tags/%E5%90%8E%E7%AB%AF/" style="font-size: 13.33px;">后端</a> <a href="/tags/%E7%BA%BF%E7%A8%8B%E6%B1%A0/" style="font-size: 10px;">线程池</a> <a href="/tags/%E7%BF%BB%E8%AF%91/" style="font-size: 10px;">翻译</a> <a href="/tags/%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/" style="font-size: 13.33px;">设计模式</a> <a href="/tags/%E9%AB%98%E5%B9%B6%E5%8F%91/" style="font-size: 10px;">高并发</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Archiv</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/02/">February 2026</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/01/">January 2026</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/12/">December 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/11/">November 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/10/">October 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/09/">September 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/08/">August 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/07/">July 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/04/">April 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/03/">March 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/02/">February 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/01/">January 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/12/">December 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/11/">November 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/10/">October 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/07/">July 2024</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">letzter Beitrag</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2026/02/14/%E4%B9%90%E8%A7%82%E9%94%81%E5%AE%9E%E7%8E%B0%E9%AB%98%E5%B9%B6%E5%8F%91%E7%8A%B6%E6%80%81%E4%B8%80%E8%87%B4/">乐观锁实现高并发状态一致</a>
+          </li>
+        
+          <li>
+            <a href="/2026/02/04/%E5%A4%A7%E6%A8%A1%E5%9E%8B%E8%BE%93%E5%87%BA%E6%A0%87%E5%87%86JSON%E8%A7%A3%E5%86%B3%E6%96%B9%E6%B3%95/">大模型输出标准JSON解决方法</a>
+          </li>
+        
+          <li>
+            <a href="/2026/01/23/Java%E7%BA%BF%E7%A8%8B%E6%B1%A0%E5%BC%82%E5%B8%B8%E5%A4%84%E7%90%86%E6%9C%BA%E5%88%B6/">Java线程池异常处理机制</a>
+          </li>
+        
+          <li>
+            <a href="/2026/01/04/%E5%80%9F%E8%AF%81%E4%B8%9A%E5%8A%A1%E7%8A%B6%E6%80%81%E6%9C%BA%E5%BB%BA%E6%A8%A1%E5%8E%9F%E5%AD%90%E6%80%A7/">借证业务状态机建模原子性</a>
+          </li>
+        
+          <li>
+            <a href="/2026/01/04/RAG%E6%B5%81%E7%A8%8B%E8%AF%A6%E8%A7%A3%E4%B8%8E%E5%9B%BE%E8%A7%A3/">RAG流程详解与图解</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      
+      &copy; 2026 haipeiface<br>
+      Powered by <a href="https://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+
+<script src="/js/jquery-3.6.4.min.js"></script>
+
+
+
+  
+<script src="/fancybox/jquery.fancybox.min.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+
+  </div>
+</body>
+</html>

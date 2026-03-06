@@ -1,0 +1,1209 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  
+  <title>haipeiface.github.io</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta property="og:type" content="website">
+<meta property="og:title" content="haipeiface.github.io">
+<meta property="og:url" content="http://example.com/page/2/index.html">
+<meta property="og:site_name" content="haipeiface.github.io">
+<meta property="og:locale">
+<meta property="article:author" content="haipeiface">
+<meta name="twitter:card" content="summary">
+  
+    <link rel="alternate" href="/atom.xml" title="haipeiface.github.io" type="application/atom+xml">
+  
+  
+    <link rel="shortcut icon" href="/favicon.png">
+  
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+    
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.min.css">
+
+  
+  
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">haipeiface.github.io</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"><span class="fa fa-bars"></span></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        
+          <a class="nav-icon" href="/atom.xml" title="RSS Feed"><span class="fa fa-rss"></span></a>
+        
+        <a class="nav-icon nav-search-btn" title="Suche"><span class="fa fa-search"></span></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Suche"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://example.com"></form>
+      </div>
+    </div>
+  </div>
+</header>
+
+      <div class="outer">
+        <section id="main">
+  
+    <article id="post-Spring-Cloud-Gateway-500错误排查" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="article-meta">
+    <a href="/2025/12/04/Spring-Cloud-Gateway-500%E9%94%99%E8%AF%AF%E6%8E%92%E6%9F%A5/" class="article-date">
+  <time class="dt-published" datetime="2025-12-04T12:44:30.000Z" itemprop="datePublished">2025-12-04</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="p-name article-title" href="/2025/12/04/Spring-Cloud-Gateway-500%E9%94%99%E8%AF%AF%E6%8E%92%E6%9F%A5/">Spring_Cloud_Gateway_500错误排查</a>
+    </h1>
+  
+
+      </header>
+    
+    <div class="e-content article-entry" itemprop="articleBody">
+      
+        <p>Spring Cloud Gateway 返回 500 错误，通常意味着请求在网关或下游服务的处理过程中出现了异常。虽然 500 是个通用报错，但只要按照正确的步骤排查日志和配置，通常很快能找到原因。</p>
+<p>建议你按照以下思路进行系统性的排查：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line">flowchart TD</span><br><span class="line">    A[发现Spring Cloud Gateway&lt;br&gt;返回500错误] --&gt; B&#123;查看网关日志&lt;br&gt;有无具体异常栈&#125;</span><br><span class="line">    </span><br><span class="line">    B --&gt;|有明确异常| C[根据异常类型定位]</span><br><span class="line">    B --&gt;|无明确异常或日志不足| D[开启更详细的日志级别&lt;br&gt;logging.level.reactor=DEBUG&lt;br&gt;logging.level.org.springframework.cloud.gateway=TRACE]</span><br><span class="line">    </span><br><span class="line">    C --&gt; E&#123;异常类型判断&#125;</span><br><span class="line">    </span><br><span class="line">    E --&gt;|ConnectTimeoutException&lt;br&gt;或连接池相关| F[网络连接/超时问题&lt;br&gt;检查下游服务状态、防火墙&lt;br&gt;调整gateway httpclient超时配置]</span><br><span class="line">    </span><br><span class="line">    E --&gt;|Service Unavailable&lt;br&gt;No binding found| G[服务发现/注册问题&lt;br&gt;检查Eureka/Consul等服务列表&lt;br&gt;确认prefer-ip-address配置]</span><br><span class="line">    </span><br><span class="line">    E --&gt;|ResponseStatusException&lt;br&gt;或自定义异常| H[业务或路由异常&lt;br&gt;检查路由配置是否正确&lt;br&gt;确认GlobalFilter中的逻辑]</span><br><span class="line">    </span><br><span class="line">    E --&gt;|IllegalStateException| I[框架或版本Bug&lt;br&gt;检查是否为SCG 1.0.7之前版本]</span><br><span class="line">    </span><br><span class="line">    F --&gt; J[验证问题是否解决]</span><br><span class="line">    G --&gt; J</span><br><span class="line">    H --&gt; J</span><br><span class="line">    I --&gt; J</span><br><span class="line">    </span><br><span class="line">    D --&gt; J</span><br><span class="line">    </span><br><span class="line">    J --&gt;|未解决| K[自定义ErrorAttributes&lt;br&gt;增强错误日志输出]</span><br><span class="line">    K --&gt; L[最终定位并修复]</span><br></pre></td></tr></table></figure>
+
+<h3 id="🔍-第一步：检查日志，定位异常类型"><a href="#🔍-第一步：检查日志，定位异常类型" class="headerlink" title="🔍 第一步：检查日志，定位异常类型"></a>🔍 第一步：检查日志，定位异常类型</h3><p>排查问题的第一步永远是<strong>查看日志</strong>。500错误只是表象，具体原因藏在异常栈里。</p>
+<ul>
+<li><strong>查看网关日志</strong>：寻找 <code>Caused by</code> 或具体的异常类型，如 <code>ConnectTimeoutException</code>、<code>IllegalStateException</code> 等。</li>
+<li><strong>开启详细日志</strong>：如果日志信息不足，可以在配置文件中增加以下配置，获取更详细的请求和响应信息：<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">logging:</span></span><br><span class="line"><span class="attr">level:</span></span><br><span class="line">  <span class="attr">org.springframework.cloud.gateway:</span> <span class="string">TRACE</span></span><br><span class="line">  <span class="attr">reactor.netty.http.client:</span> <span class="string">DEBUG</span></span><br></pre></td></tr></table></figure></li>
+</ul>
+<h3 id="🛠️-第二步：根据异常，对症下药"><a href="#🛠️-第二步：根据异常，对症下药" class="headerlink" title="🛠️ 第二步：根据异常，对症下药"></a>🛠️ 第二步：根据异常，对症下药</h3><p>根据日志中发现的异常类型，可以对应到以下几种常见原因：</p>
+<ul>
+<li>**连接超时或连接池问题 (<code>ConnectTimeoutException</code>)**：<ul>
+<li><strong>原因</strong>：网关无法连接到下游服务，或者连接池中的连接已失效。</li>
+<li><strong>解决方案</strong>：检查下游服务是否健康；调整网关的超时和连接池配置：<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">spring:</span></span><br><span class="line"><span class="attr">cloud:</span></span><br><span class="line"><span class="attr">gateway:</span></span><br><span class="line">  <span class="attr">httpclient:</span></span><br><span class="line">    <span class="attr">connect-timeout:</span> <span class="number">5000</span></span><br><span class="line">    <span class="attr">response-timeout:</span> <span class="string">10s</span></span><br><span class="line">    <span class="attr">pool:</span></span><br><span class="line">      <span class="attr">type:</span> <span class="string">ELASTIC</span></span><br><span class="line">      <span class="attr">max-connections:</span> <span class="number">500</span></span><br></pre></td></tr></table></figure>
+<blockquote>
+<p>如果是偶发性的连接池问题，可以尝试将 <code>pool.type</code> 设置为 <code>DISABLED</code> 来临时绕过（不推荐生产长期使用）。</p>
+</blockquote>
+</li>
+</ul>
+</li>
+<li>**服务发现与注册问题 (<code>No binding found</code> 或 <code>Unable to find instance</code>)**：<ul>
+<li><strong>原因</strong>：网关无法从注册中心（如Eureka、Consul）获取到目标服务的实例列表，或获取到的IP地址不可达。</li>
+<li><strong>解决方案</strong>：<ul>
+<li>检查注册中心（如Eureka）的服务列表，确认服务是否成功注册且状态为“UP”。</li>
+<li>检查网关的<strong>服务发现配置</strong>，特别是 <code>prefer-ip-address</code> 参数。如果部署在容器中，设为 <code>true</code> 可能导致网关使用容器内部IP，使请求无法路由。<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">eureka:</span></span><br><span class="line"><span class="attr">instance:</span></span><br><span class="line"><span class="attr">prefer-ip-address:</span> <span class="literal">false</span></span><br><span class="line"><span class="attr">hostname:</span> <span class="string">$&#123;spring.application.name&#125;</span></span><br></pre></td></tr></table></figure></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><strong>路由配置错误</strong>：<ul>
+<li><strong>原因</strong>：<code>application.yml</code> 中的路由断言（Predicates）或过滤器（Filters）配置错误，导致无法匹配到正确的下游服务。</li>
+<li><strong>解决方案</strong>：仔细核对路由配置，确保 <code>uri</code> 和断言逻辑正确。</li>
+</ul>
+</li>
+<li>**版本Bug (<code>IllegalStateException</code>)**：<ul>
+<li><strong>原因</strong>：使用了较低版本的Spring Cloud Gateway（如v1.0.7之前），存在已知Bug。</li>
+<li><strong>解决方案</strong>：尝试将Spring Cloud Gateway升级到最新稳定版。</li>
+</ul>
+</li>
+</ul>
+<h3 id="💡-第三步：进阶手段——自定义错误信息"><a href="#💡-第三步：进阶手段——自定义错误信息" class="headerlink" title="💡 第三步：进阶手段——自定义错误信息"></a>💡 第三步：进阶手段——自定义错误信息</h3><p>如果以上步骤都无法定位问题，你可以通过自定义 <code>ErrorAttributes</code> 来捕获更具体的异常信息，并将其返回给客户端或记录到日志中。</p>
+<ul>
+<li><strong>核心原理</strong>：Spring Cloud Gateway 默认的异常处理器 <code>DefaultErrorAttributes</code> 决定了最终返回的 status 和 body。你可以通过继承它来定制行为。</li>
+<li><strong>示例</strong>：创建一个 <code>CustomErrorAttributes</code> 类，区分不同类型的异常（如连接异常），并返回自定义的错误码：<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Component</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">CustomErrorAttributes</span> <span class="keyword">extends</span> <span class="title class_">DefaultErrorAttributes</span> &#123;</span><br><span class="line">  <span class="keyword">private</span> <span class="type">Logger</span> <span class="variable">logger</span> <span class="operator">=</span> LoggerFactory.getLogger(CustomErrorAttributes.class);</span><br><span class="line">  <span class="meta">@Override</span></span><br><span class="line">  <span class="keyword">public</span> Map&lt;String, Object&gt; <span class="title function_">getErrorAttributes</span><span class="params">(ServerRequest request, ErrorAttributeOptions options)</span> &#123;</span><br><span class="line">      <span class="type">Throwable</span> <span class="variable">error</span> <span class="operator">=</span> getError(request);</span><br><span class="line">      Map&lt;String, Object&gt; map = <span class="keyword">new</span> <span class="title class_">HashMap</span>&lt;&gt;();</span><br><span class="line">      <span class="comment">// 根据异常类型添加自定义字段</span></span><br><span class="line">      <span class="keyword">if</span> (error <span class="keyword">instanceof</span> ConnectException) &#123;</span><br><span class="line">          logger.error(<span class="string">&quot;捕获到连接异常: &quot;</span>, error);</span><br><span class="line">          map.put(<span class="string">&quot;code&quot;</span>, <span class="string">&quot;SERVICE_UNAVAILABLE&quot;</span>);</span><br><span class="line">          map.put(<span class="string">&quot;message&quot;</span>, <span class="string">&quot;无法连接到后端服务&quot;</span>);</span><br><span class="line">      &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">          logger.error(<span class="string">&quot;捕获到未知异常: &quot;</span>, error);</span><br><span class="line">          map.put(<span class="string">&quot;code&quot;</span>, <span class="string">&quot;INTERNAL_ERROR&quot;</span>);</span><br><span class="line">          map.put(<span class="string">&quot;message&quot;</span>, error.getMessage());</span><br><span class="line">      &#125;</span><br><span class="line">      <span class="keyword">return</span> map;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></li>
+</ul>
+<p>希望这份排查指南能帮你快速定位问题。如果能从日志里找到具体的异常栈，可以发给我，我帮你一起分析～</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://example.com/2025/12/04/Spring-Cloud-Gateway-500%E9%94%99%E8%AF%AF%E6%8E%92%E6%9F%A5/" data-id="cmmem61qn000we0slesmmdjgu" data-title="Spring_Cloud_Gateway_500错误排查" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
+      
+      
+      
+    </footer>
+  </div>
+  
+</article>
+
+
+
+  
+    <article id="post-DeepWiki网站实现原理解析" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="article-meta">
+    <a href="/2025/12/03/DeepWiki%E7%BD%91%E7%AB%99%E5%AE%9E%E7%8E%B0%E5%8E%9F%E7%90%86%E8%A7%A3%E6%9E%90/" class="article-date">
+  <time class="dt-published" datetime="2025-12-03T08:46:10.000Z" itemprop="datePublished">2025-12-03</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="p-name article-title" href="/2025/12/03/DeepWiki%E7%BD%91%E7%AB%99%E5%AE%9E%E7%8E%B0%E5%8E%9F%E7%90%86%E8%A7%A3%E6%9E%90/">DeepWiki网站实现原理解析</a>
+    </h1>
+  
+
+      </header>
+    
+    <div class="e-content article-entry" itemprop="articleBody">
+      
+        <p>思考过程（Thinking）：</p>
+<p>嗯，用户想了解deepwiki网站的实现原理。这个问题很专业，应该是开发者或技术爱好者想了解这个AI驱动的代码知识库背后的技术机制。</p>
+<p>我看到了很多关于DeepWiki的信息。根据，DeepWiki是Cognition AI开发的一个免费开源的GitHub仓库百科全书，核心功能是通过AI技术将GitHub仓库转化为结构化的技术文档。也提到它是Cognition Labs推出的工具。</p>
+<p>关于其实现原理，我可以从几个方面来分析：</p>
+<p>代码解析层面，提到DeepWiki使用Devin AI代码理解引擎，支持20多种主流语言，通过AST（抽象语法树）与符号表分析代码逻辑。它会解析配置文件如Dockerfile、K8s YAML等，生成部署架构图，并识别代码库中函数调用、类继承与模块引用关系，构建完整知识图谱。</p>
+<p>文档生成技术，指出DeepWiki采用层级化系统分解方法，先将代码库拆解为高阶系统结构（如模块、组件），建立逻辑框架，然后通过分析代码逻辑、依赖关系及配置文件，自动生成包含项目目标、核心模块、架构图的Wiki页面。它还会利用提交历史关联分析，通过代码提交记录追溯功能演进与上下文关联。</p>
+<p>对话系统部分，说明DeepWiki采用RAG（检索增强生成）技术。用户提问后，AI会解析问题意图，在代码库向量数据库中检索相关文件，结合大模型生成回答，并追加代码库上下文引用。</p>
+<p>大规模处理能力，提到DeepWiki已经索引了约3万个GitHub仓库，处理了超过400亿行代码，计算成本超过30万美元。它依赖云端高性能计算，单个代码库文档生成耗时一般小于30秒（复杂项目可能延长至2分钟）。</p>
+<p>用户使用方式上，都提到最简单的使用方法是把GitHub链接中的”github.com”替换为”deepwiki.com”即可访问对应仓库的DeepWiki页面。</p>
+<p>我还注意到提到有一个叫KoalaWiki的开源项目试图复刻DeepWiki，它使用OpenAI通过Semantic Kernel分析代码结构，生成文档目录和内容，这可能从侧面反映了类似系统的实现方式。</p>
+<p>对于回答的组织结构，我会从核心架构、代码解析机制、文档生成技术、对话系统原理、大规模处理能力这几个方面来全面解析DeepWiki的实现原理。准备用分段标题和小标题来组织内容，使结构清晰。也会在关键技术和数据处适当加粗强调，并在每个技术点后面注明引用的搜索结果来源。这样用户既能全面了解DeepWiki的技术原理，又能知道信息的来源依据。</p>
+<p>DeepWiki 的实现原理是一个结合大规模代码解析、AI 语义分析与知识图谱构建的复杂系统，其核心技术可分为以下几个核心模块：</p>
+<hr>
+<h3 id="⚙️-一、代码解析与结构化处理"><a href="#⚙️-一、代码解析与结构化处理" class="headerlink" title="⚙️ 一、代码解析与结构化处理"></a>⚙️ 一、<strong>代码解析与结构化处理</strong></h3><ol>
+<li><strong>跨语言代码扫描与抽象语法树（AST）分析</strong><ul>
+<li>支持 Python、Java、Go 等 20+ 语言，通过 AST 解析代码的语法结构（如函数、类、依赖关系），提取关键符号（如变量、接口定义）。</li>
+<li>配置文件（如 Dockerfile、K8s YAML）被单独解析，生成部署架构图与资源依赖关系。</li>
+</ul>
+</li>
+<li><strong>提交历史关联分析</strong><ul>
+<li>分析 Git 提交记录中的文件修改模式（例如“哪些文件常被一起修改”），构建文件关联图谱，推断模块耦合性与逻辑边界。</li>
+</ul>
+</li>
+<li><strong>层级化系统分解</strong><ul>
+<li>将代码库拆分为高阶系统（如“前端渲染层”“数据存储引擎”），再逐层生成子模块文档，避免直接处理海量代码文件。</li>
+</ul>
+</li>
+</ol>
+<hr>
+<h3 id="🤖-二、AI-驱动的文档生成与知识图谱构建"><a href="#🤖-二、AI-驱动的文档生成与知识图谱构建" class="headerlink" title="🤖 二、AI 驱动的文档生成与知识图谱构建"></a>🤖 二、<strong>AI 驱动的文档生成与知识图谱构建</strong></h3><ol>
+<li><strong>语义理解与文档生成</strong><ul>
+<li>基于 <strong>Devin AI 引擎</strong>（Cognition Labs 自研）或集成 Claude&#x2F;Gemini 等大模型，将代码逻辑转化为自然语言描述。</li>
+<li>生成内容包含：架构图、API 文档、部署指南等，支持中英文双语输出。</li>
+</ul>
+</li>
+<li><strong>交互式可视化图谱</strong><ul>
+<li>使用 <strong>Graphbrain</strong> 等工具生成可点击的依赖图、类关系图，动态展示模块间的调用链与数据流。</li>
+<li>例如：将 LoongCollector 的三大数据处理引擎以流程图形式呈现。</li>
+</ul>
+</li>
+</ol>
+<hr>
+<h3 id="💬-三、对话式问答系统（RAG-增强）"><a href="#💬-三、对话式问答系统（RAG-增强）" class="headerlink" title="💬 三、对话式问答系统（RAG 增强）"></a>💬 三、<strong>对话式问答系统（RAG 增强）</strong></h3><ol>
+<li><strong>检索增强生成（RAG）</strong><ul>
+<li>用户提问 → AI 解析意图 → 在<strong>代码向量数据库</strong>中检索相关片段 → 结合上下文生成回答。</li>
+<li>回答附带源码引用（如“基于 &#96;src&#x2F;utils&#x2F;parser.py 第 42 行”），减少大模型“幻觉”。</li>
+</ul>
+</li>
+<li><strong>深度研究模式</strong><ul>
+<li>针对复杂问题（如性能优化），启动多轮代码扫描与逻辑推理，生成更详尽的报告（耗时更长）。</li>
+</ul>
+</li>
+</ol>
+<hr>
+<h3 id="☁️-四、大规模云端处理与索引"><a href="#☁️-四、大规模云端处理与索引" class="headerlink" title="☁️ 四、大规模云端处理与索引"></a>☁️ 四、<strong>大规模云端处理与索引</strong></h3><ol>
+<li><strong>分布式代码索引</strong><ul>
+<li>依托 AWS EC2&#x2F;GPU 集群，已处理 <strong>3 万个仓库、400 亿行代码</strong>，消耗超 30 万美元算力。</li>
+<li>单个仓库处理时间 <strong>&lt;30 秒</strong>（小型项目）至 <strong>2 分钟</strong>（大型项目如 Kubernetes）。</li>
+</ul>
+</li>
+<li><strong>动态更新同步</strong><ul>
+<li>监控 GitHub 仓库变更，触发增量更新（如仅解析新增提交），降低持续同步成本。</li>
+</ul>
+</li>
+</ol>
+<hr>
+<h3 id="🔧-五、用户交互与扩展性"><a href="#🔧-五、用户交互与扩展性" class="headerlink" title="🔧 五、用户交互与扩展性"></a>🔧 五、<strong>用户交互与扩展性</strong></h3><ol>
+<li><strong>零门槛访问</strong><ul>
+<li>URL 替换机制（<code>github.com</code> → <code>deepwiki.com</code>）直接跳转至 AI 生成的文档页。</li>
+</ul>
+</li>
+<li><strong>企业级扩展</strong><ul>
+<li>提供 API 支持私有代码库接入，未来计划推出本地部署方案。</li>
+</ul>
+</li>
+</ol>
+<hr>
+<h3 id="⚠️-六、技术挑战与局限"><a href="#⚠️-六、技术挑战与局限" class="headerlink" title="⚠️ 六、技术挑战与局限"></a>⚠️ 六、<strong>技术挑战与局限</strong></h3><ul>
+<li><strong>准确性依赖代码质量</strong>：高度抽象或冷门 DSL（领域特定语言）的解析准确率较低。</li>
+<li><strong>维护成本高</strong>：实时同步 GitHub 变更需持续投入算力，免费模式可持续性存疑。</li>
+</ul>
+<hr>
+<h3 id="💎-总结"><a href="#💎-总结" class="headerlink" title="💎 总结"></a>💎 总结</h3><p>DeepWiki 的本质是 <strong>“代码即知识图谱”</strong>：</p>
+<blockquote>
+<p>通过 AST 解析 → 系统分层 → AI 语义关联 → 动态可视化 → RAG 对话，将静态代码转化为可交互、可检索的智能知识库。其核心创新在于<strong>层级化拆解</strong>策略与<strong>提交历史关联分析</strong>，显著降低了海量代码的理解门槛。尽管存在误解析风险和成本压力，它仍代表了代码知识管理的范式革新。</p>
+</blockquote>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://example.com/2025/12/03/DeepWiki%E7%BD%91%E7%AB%99%E5%AE%9E%E7%8E%B0%E5%8E%9F%E7%90%86%E8%A7%A3%E6%9E%90/" data-id="cmmem61qa0005e0sl0cyo4uxs" data-title="DeepWiki网站实现原理解析" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
+      
+      
+      
+    </footer>
+  </div>
+  
+</article>
+
+
+
+  
+    <article id="post-规划执行智能体伪代码" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="article-meta">
+    <a href="/2025/11/16/%E8%A7%84%E5%88%92%E6%89%A7%E8%A1%8C%E6%99%BA%E8%83%BD%E4%BD%93%E4%BC%AA%E4%BB%A3%E7%A0%81/" class="article-date">
+  <time class="dt-published" datetime="2025-11-16T12:12:31.000Z" itemprop="datePublished">2025-11-16</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="p-name article-title" href="/2025/11/16/%E8%A7%84%E5%88%92%E6%89%A7%E8%A1%8C%E6%99%BA%E8%83%BD%E4%BD%93%E4%BC%AA%E4%BB%A3%E7%A0%81/">规划执行智能体伪代码</a>
+    </h1>
+  
+
+      </header>
+    
+    <div class="e-content article-entry" itemprop="articleBody">
+      
+        <p>思考过程（Thinking）：</p>
+<p>我们被要求写一个“关于plan execute agent”的极简伪代码。这里“plan execute agent”指的是一个规划执行智能体，通常是一种智能体架构，其中包含规划模块和执行模块。例如，经典的规划agent：先规划（plan），然后执行（execute）规划中的步骤。可能还需要感知环境、更新状态等。</p>
+<p>要求是“极简伪代码”，所以应该用简单的类似Python的伪代码，描述主要循环。</p>
+<p>典型的plan-execute agent可能如下：</p>
+<ol>
+<li>感知环境得到当前状态。</li>
+<li>如果有目标未达成，则调用规划器生成一个计划（一系列动作）。</li>
+<li>然后按照计划执行动作，同时可能监控执行效果，如果失败则重新规划。</li>
+</ol>
+<p>或者更简单的：agent具有一个规划模块，每次执行前先规划，然后依次执行动作。</p>
+<p>我们写一个简单的循环。</p>
+<p>可能包含：</p>
+<ul>
+<li>目标 goal</li>
+<li>当前状态 state</li>
+<li>规划器 planner</li>
+<li>执行器 executor</li>
+</ul>
+<p>伪代码：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line">class PlanExecuteAgent:</span><br><span class="line">    def __init__(self, goal, planner, executor):</span><br><span class="line">        self.goal = goal</span><br><span class="line">        self.planner = planner</span><br><span class="line">        self.executor = executor</span><br><span class="line">        self.plan = []</span><br><span class="line">        self.step_index = 0</span><br><span class="line"></span><br><span class="line">    def run(self):</span><br><span class="line">        while not self.goal_achieved():</span><br><span class="line">            if self.plan_needs_update():</span><br><span class="line">                self.plan = self.planner.create_plan(self.get_state(), self.goal)</span><br><span class="line">                self.step_index = 0</span><br><span class="line">            if self.step_index &lt; len(self.plan):</span><br><span class="line">                action = self.plan[self.step_index]</span><br><span class="line">                success = self.executor.execute(action)</span><br><span class="line">                if success:</span><br><span class="line">                    self.step_index += 1</span><br><span class="line">                else:</span><br><span class="line">                    # execution failed, replan</span><br><span class="line">                    self.plan = []</span><br><span class="line">            else:</span><br><span class="line">                # plan finished but goal not achieved? replan</span><br><span class="line">                self.plan = []</span><br></pre></td></tr></table></figure>
+
+<p>但这可能有点复杂。也可以更简洁：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">while not goal_reached:</span><br><span class="line">    if plan is empty or execution_failed:</span><br><span class="line">        plan = planner(current_state, goal)</span><br><span class="line">    action = next_action(plan)</span><br><span class="line">    execute(action)</span><br><span class="line">    update_state()</span><br></pre></td></tr></table></figure>
+
+<p>根据“极简”要求，可以给出一个非常简单的版本。注意不要包含太多细节。</p>
+<p>我们最终输出一个伪代码块。</p>
+<p>可以写：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">// Plan-Execute Agent Pseudocode</span><br><span class="line">state = get_initial_state()</span><br><span class="line">goal = get_goal()</span><br><span class="line">plan = []</span><br><span class="line"></span><br><span class="line">while not goal_reached(state, goal):</span><br><span class="line">    if plan is empty:</span><br><span class="line">        plan = planner(state, goal)   // generate a sequence of actions</span><br><span class="line">    if plan is not empty:</span><br><span class="line">        action = plan[0]</span><br><span class="line">        result = execute(action)</span><br><span class="line">        state = update_state(state, result)</span><br><span class="line">        if result == success:</span><br><span class="line">            plan = plan[1:]   // remove executed action</span><br><span class="line">        else:</span><br><span class="line">            plan = []          // replan on failure</span><br><span class="line">    else:</span><br><span class="line">        // no plan found, maybe abort</span><br><span class="line">        break</span><br></pre></td></tr></table></figure>
+
+<p>这样就可以了。</p>
+<p>我们将其输出为文本。注意使用中文还是英文？题目是中文，但伪代码通常用英文。我们混合也可以，但为了清晰，可以用英文。</p>
+<p>在回答中，可以先简要解释，然后给出伪代码。</p>
+<p>我们按此回答。</p>
+<p>以下是一个“规划-执行智能体”的极简伪代码，描述了其核心循环：不断检查目标，若无计划则调用规划器生成，然后依次执行动作，并在失败时重新规划。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line">// 初始化</span><br><span class="line">state = get_current_state()</span><br><span class="line">goal = get_goal()</span><br><span class="line">plan = []</span><br><span class="line"></span><br><span class="line">while not goal_achieved(state, goal):</span><br><span class="line">    if plan is empty:</span><br><span class="line">        // 根据当前状态和目标生成计划（动作序列）</span><br><span class="line">        plan = planner(state, goal)</span><br><span class="line">    </span><br><span class="line">    if plan is not empty:</span><br><span class="line">        action = plan[0]               // 取第一个动作</span><br><span class="line">        result = execute(action)       // 执行动作</span><br><span class="line">        state = update_state(state, result)</span><br><span class="line">        </span><br><span class="line">        if result == success:</span><br><span class="line">            plan = plan[1:]             // 移除已执行的动作</span><br><span class="line">        else:</span><br><span class="line">            plan = []                   // 执行失败，清空计划以便重新规划</span><br><span class="line">    else:</span><br><span class="line">        // 无法生成计划，退出循环</span><br><span class="line">        break</span><br></pre></td></tr></table></figure>
+
+<p><strong>说明</strong>：</p>
+<ul>
+<li><code>planner</code> 负责根据当前状态和目标生成一系列动作。</li>
+<li><code>execute</code> 执行具体动作并返回执行结果（成功&#x2F;失败）。</li>
+<li>当执行失败时，清空计划触发重新规划；若计划为空且无法生成新计划，则终止。</li>
+</ul>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://example.com/2025/11/16/%E8%A7%84%E5%88%92%E6%89%A7%E8%A1%8C%E6%99%BA%E8%83%BD%E4%BD%93%E4%BC%AA%E4%BB%A3%E7%A0%81/" data-id="cmmem61rb0026e0slcsnh6hp1" data-title="规划执行智能体伪代码" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
+      
+      
+      
+    </footer>
+  </div>
+  
+</article>
+
+
+
+  
+    <article id="post-Java线程池参数配置详解" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="article-meta">
+    <a href="/2025/11/13/Java%E7%BA%BF%E7%A8%8B%E6%B1%A0%E5%8F%82%E6%95%B0%E9%85%8D%E7%BD%AE%E8%AF%A6%E8%A7%A3/" class="article-date">
+  <time class="dt-published" datetime="2025-11-13T15:26:16.000Z" itemprop="datePublished">2025-11-13</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="p-name article-title" href="/2025/11/13/Java%E7%BA%BF%E7%A8%8B%E6%B1%A0%E5%8F%82%E6%95%B0%E9%85%8D%E7%BD%AE%E8%AF%A6%E8%A7%A3/">Java线程池参数配置详解</a>
+    </h1>
+  
+
+      </header>
+    
+    <div class="e-content article-entry" itemprop="articleBody">
+      
+        <p>Java线程池的核心参数主要通过<code>ThreadPoolExecutor</code>类进行配置，以下是关键参数详解：</p>
+<h2 id="1-核心参数"><a href="#1-核心参数" class="headerlink" title="1. 核心参数"></a>1. 核心参数</h2><h3 id="corePoolSize（核心线程数）"><a href="#corePoolSize（核心线程数）" class="headerlink" title="corePoolSize（核心线程数）"></a><strong>corePoolSize（核心线程数）</strong></h3><ul>
+<li>线程池中<strong>长期保持</strong>的线程数量</li>
+<li>即使线程空闲也不会被回收（除非设置<code>allowCoreThreadTimeOut=true</code>）</li>
+</ul>
+<h3 id="maximumPoolSize（最大线程数）"><a href="#maximumPoolSize（最大线程数）" class="headerlink" title="maximumPoolSize（最大线程数）"></a><strong>maximumPoolSize（最大线程数）</strong></h3><ul>
+<li>线程池允许创建的<strong>最大线程数量</strong></li>
+<li>当队列满且核心线程都在忙时，会创建新线程直到达到此限制</li>
+</ul>
+<h3 id="workQueue（工作队列）"><a href="#workQueue（工作队列）" class="headerlink" title="workQueue（工作队列）"></a><strong>workQueue（工作队列）</strong></h3><ul>
+<li>用于保存等待执行任务的阻塞队列</li>
+<li>常用队列类型：</li>
+</ul>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 1. 有界队列 - 需要指定容量</span></span><br><span class="line"><span class="keyword">new</span> <span class="title class_">ArrayBlockingQueue</span>&lt;&gt;(<span class="number">100</span>);</span><br><span class="line"></span><br><span class="line"><span class="comment">// 2. 无界队列 - 可能导致内存溢出</span></span><br><span class="line"><span class="keyword">new</span> <span class="title class_">LinkedBlockingQueue</span>&lt;&gt;();  <span class="comment">// 默认Integer.MAX_VALUE</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// 3. 同步移交队列 - 不存储元素</span></span><br><span class="line"><span class="keyword">new</span> <span class="title class_">SynchronousQueue</span>&lt;&gt;();</span><br><span class="line"></span><br><span class="line"><span class="comment">// 4. 优先级队列</span></span><br><span class="line"><span class="keyword">new</span> <span class="title class_">PriorityBlockingQueue</span>&lt;&gt;();</span><br></pre></td></tr></table></figure>
+
+<h3 id="keepAliveTime（线程空闲时间）"><a href="#keepAliveTime（线程空闲时间）" class="headerlink" title="keepAliveTime（线程空闲时间）"></a><strong>keepAliveTime（线程空闲时间）</strong></h3><ul>
+<li>当线程数超过corePoolSize时，多余空闲线程的存活时间</li>
+<li>时间单位由下一个参数指定</li>
+</ul>
+<h3 id="unit（时间单位）"><a href="#unit（时间单位）" class="headerlink" title="unit（时间单位）"></a><strong>unit（时间单位）</strong></h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">TimeUnit.SECONDS  <span class="comment">// 秒</span></span><br><span class="line">TimeUnit.MILLISECONDS  <span class="comment">// 毫秒</span></span><br><span class="line">TimeUnit.MINUTES  <span class="comment">// 分钟</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="threadFactory（线程工厂）"><a href="#threadFactory（线程工厂）" class="headerlink" title="threadFactory（线程工厂）"></a><strong>threadFactory（线程工厂）</strong></h3><ul>
+<li>用于创建新线程</li>
+<li>可自定义线程名、优先级、守护状态等</li>
+</ul>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">ThreadFactory</span> <span class="variable">customFactory</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">ThreadFactory</span>() &#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="type">AtomicInteger</span> <span class="variable">count</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">AtomicInteger</span>(<span class="number">1</span>);</span><br><span class="line">    </span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">public</span> Thread <span class="title function_">newThread</span><span class="params">(Runnable r)</span> &#123;</span><br><span class="line">        <span class="type">Thread</span> <span class="variable">thread</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">Thread</span>(r);</span><br><span class="line">        thread.setName(<span class="string">&quot;my-thread-&quot;</span> + count.getAndIncrement());</span><br><span class="line">        thread.setDaemon(<span class="literal">false</span>);</span><br><span class="line">        <span class="keyword">return</span> thread;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<h3 id="handler（拒绝策略）"><a href="#handler（拒绝策略）" class="headerlink" title="handler（拒绝策略）"></a><strong>handler（拒绝策略）</strong></h3><p>当线程池和队列都满时的处理策略：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 1. 抛出异常（默认）</span></span><br><span class="line"><span class="keyword">new</span> <span class="title class_">ThreadPoolExecutor</span>.AbortPolicy();</span><br><span class="line"></span><br><span class="line"><span class="comment">// 2. 由调用者线程执行任务</span></span><br><span class="line"><span class="keyword">new</span> <span class="title class_">ThreadPoolExecutor</span>.CallerRunsPolicy();</span><br><span class="line"></span><br><span class="line"><span class="comment">// 3. 丢弃队列中最旧的任务</span></span><br><span class="line"><span class="keyword">new</span> <span class="title class_">ThreadPoolExecutor</span>.DiscardOldestPolicy();</span><br><span class="line"></span><br><span class="line"><span class="comment">// 4. 直接丢弃任务</span></span><br><span class="line"><span class="keyword">new</span> <span class="title class_">ThreadPoolExecutor</span>.DiscardPolicy();</span><br></pre></td></tr></table></figure>
+
+<h2 id="2-线程池工作流程"><a href="#2-线程池工作流程" class="headerlink" title="2. 线程池工作流程"></a>2. 线程池工作流程</h2><figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">提交任务 → 核心线程是否满？</span><br><span class="line">    ↓ 否 → 创建核心线程执行</span><br><span class="line">    ↓ 是 → 队列是否满？</span><br><span class="line">        ↓ 否 → 加入队列等待</span><br><span class="line">        ↓ 是 → 线程数是否达到最大？</span><br><span class="line">            ↓ 否 → 创建新线程执行</span><br><span class="line">            ↓ 是 → 执行拒绝策略</span><br></pre></td></tr></table></figure>
+
+<h2 id="3-常见线程池配置示例"><a href="#3-常见线程池配置示例" class="headerlink" title="3. 常见线程池配置示例"></a>3. 常见线程池配置示例</h2><h3 id="CPU密集型任务"><a href="#CPU密集型任务" class="headerlink" title="CPU密集型任务"></a><strong>CPU密集型任务</strong></h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">int</span> <span class="variable">cpuCores</span> <span class="operator">=</span> Runtime.getRuntime().availableProcessors();</span><br><span class="line"><span class="type">ThreadPoolExecutor</span> <span class="variable">executor</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">ThreadPoolExecutor</span>(</span><br><span class="line">    cpuCores,      <span class="comment">// corePoolSize</span></span><br><span class="line">    cpuCores * <span class="number">2</span>,  <span class="comment">// maximumPoolSize</span></span><br><span class="line">    <span class="number">60L</span>, TimeUnit.SECONDS,</span><br><span class="line">    <span class="keyword">new</span> <span class="title class_">LinkedBlockingQueue</span>&lt;&gt;(<span class="number">1000</span>)</span><br><span class="line">);</span><br></pre></td></tr></table></figure>
+
+<h3 id="IO密集型任务"><a href="#IO密集型任务" class="headerlink" title="IO密集型任务"></a><strong>IO密集型任务</strong></h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">ThreadPoolExecutor</span> <span class="variable">executor</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">ThreadPoolExecutor</span>(</span><br><span class="line">    <span class="number">10</span>,            <span class="comment">// corePoolSize</span></span><br><span class="line">    <span class="number">50</span>,            <span class="comment">// maximumPoolSize - 可适当增大</span></span><br><span class="line">    <span class="number">30L</span>, TimeUnit.SECONDS,</span><br><span class="line">    <span class="keyword">new</span> <span class="title class_">LinkedBlockingQueue</span>&lt;&gt;(<span class="number">2000</span>)</span><br><span class="line">);</span><br></pre></td></tr></table></figure>
+
+<h3 id="定时-周期任务"><a href="#定时-周期任务" class="headerlink" title="定时&#x2F;周期任务"></a><strong>定时&#x2F;周期任务</strong></h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">ScheduledThreadPoolExecutor</span> <span class="variable">scheduler</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">ScheduledThreadPoolExecutor</span>(</span><br><span class="line">    <span class="number">5</span>,  <span class="comment">// 核心线程数</span></span><br><span class="line">    <span class="keyword">new</span> <span class="title class_">ThreadPoolExecutor</span>.CallerRunsPolicy()</span><br><span class="line">);</span><br></pre></td></tr></table></figure>
+
+<h2 id="4-Executors工具类的预定义线程池"><a href="#4-Executors工具类的预定义线程池" class="headerlink" title="4. Executors工具类的预定义线程池"></a>4. Executors工具类的预定义线程池</h2><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 1. 固定大小线程池</span></span><br><span class="line"><span class="type">ExecutorService</span> <span class="variable">fixedPool</span> <span class="operator">=</span> Executors.newFixedThreadPool(<span class="number">10</span>);</span><br><span class="line"></span><br><span class="line"><span class="comment">// 2. 单线程池</span></span><br><span class="line"><span class="type">ExecutorService</span> <span class="variable">singleThread</span> <span class="operator">=</span> Executors.newSingleThreadExecutor();</span><br><span class="line"></span><br><span class="line"><span class="comment">// 3. 可缓存线程池（无线程上限）</span></span><br><span class="line"><span class="type">ExecutorService</span> <span class="variable">cachedPool</span> <span class="operator">=</span> Executors.newCachedThreadPool();</span><br><span class="line"></span><br><span class="line"><span class="comment">// 4. 定时任务线程池</span></span><br><span class="line"><span class="type">ScheduledExecutorService</span> <span class="variable">scheduledPool</span> <span class="operator">=</span> Executors.newScheduledThreadPool(<span class="number">5</span>);</span><br></pre></td></tr></table></figure>
+
+<h2 id="5-最佳实践建议"><a href="#5-最佳实践建议" class="headerlink" title="5. 最佳实践建议"></a>5. 最佳实践建议</h2><ol>
+<li><strong>不要使用Executors默认创建</strong>（可能产生无界队列导致OOM）</li>
+<li><strong>合理设置队列容量</strong>，避免内存溢出</li>
+<li><strong>明确指定线程名称</strong>，便于问题排查</li>
+<li><strong>考虑使用自定义拒绝策略</strong>，如记录日志或持久化任务</li>
+<li><strong>合理设置核心&#x2F;最大线程数</strong>：<ul>
+<li>CPU密集型：N+1（N为CPU核心数）</li>
+<li>IO密集型：2N 或更多</li>
+</ul>
+</li>
+</ol>
+<h2 id="6-完整示例"><a href="#6-完整示例" class="headerlink" title="6. 完整示例"></a>6. 完整示例</h2><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">ThreadPoolConfig</span> &#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> ThreadPoolExecutor <span class="title function_">createCustomPool</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="type">int</span> <span class="variable">corePoolSize</span> <span class="operator">=</span> Runtime.getRuntime().availableProcessors();</span><br><span class="line">        <span class="type">int</span> <span class="variable">maxPoolSize</span> <span class="operator">=</span> corePoolSize * <span class="number">2</span>;</span><br><span class="line">        </span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">new</span> <span class="title class_">ThreadPoolExecutor</span>(</span><br><span class="line">            corePoolSize,</span><br><span class="line">            maxPoolSize,</span><br><span class="line">            <span class="number">30L</span>, TimeUnit.SECONDS,</span><br><span class="line">            <span class="keyword">new</span> <span class="title class_">ArrayBlockingQueue</span>&lt;&gt;(<span class="number">1000</span>),</span><br><span class="line">            <span class="keyword">new</span> <span class="title class_">CustomThreadFactory</span>(<span class="string">&quot;business-thread&quot;</span>),</span><br><span class="line">            <span class="keyword">new</span> <span class="title class_">ThreadPoolExecutor</span>.CallerRunsPolicy()</span><br><span class="line">        );</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">static</span> <span class="keyword">class</span> <span class="title class_">CustomThreadFactory</span> <span class="keyword">implements</span> <span class="title class_">ThreadFactory</span> &#123;</span><br><span class="line">        <span class="keyword">private</span> <span class="keyword">final</span> String namePrefix;</span><br><span class="line">        <span class="keyword">private</span> <span class="keyword">final</span> <span class="type">AtomicInteger</span> <span class="variable">threadNumber</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">AtomicInteger</span>(<span class="number">1</span>);</span><br><span class="line">        </span><br><span class="line">        CustomThreadFactory(String poolName) &#123;</span><br><span class="line">            namePrefix = poolName + <span class="string">&quot;-&quot;</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        </span><br><span class="line">        <span class="meta">@Override</span></span><br><span class="line">        <span class="keyword">public</span> Thread <span class="title function_">newThread</span><span class="params">(Runnable r)</span> &#123;</span><br><span class="line">            <span class="type">Thread</span> <span class="variable">t</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">Thread</span>(r, namePrefix + threadNumber.getAndIncrement());</span><br><span class="line">            t.setDaemon(<span class="literal">false</span>);</span><br><span class="line">            t.setPriority(Thread.NORM_PRIORITY);</span><br><span class="line">            <span class="keyword">return</span> t;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>选择合适的线程池参数需要根据具体的业务场景、系统资源和性能要求综合考虑。</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://example.com/2025/11/13/Java%E7%BA%BF%E7%A8%8B%E6%B1%A0%E5%8F%82%E6%95%B0%E9%85%8D%E7%BD%AE%E8%AF%A6%E8%A7%A3/" data-id="cmmem61qg000je0slbspm4n49" data-title="Java线程池参数配置详解" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
+      
+      
+      
+    </footer>
+  </div>
+  
+</article>
+
+
+
+  
+    <article id="post-Claude-Code-LSP-AST支持探讨" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="article-meta">
+    <a href="/2025/11/13/Claude-Code-LSP-AST%E6%94%AF%E6%8C%81%E6%8E%A2%E8%AE%A8/" class="article-date">
+  <time class="dt-published" datetime="2025-11-13T07:46:08.000Z" itemprop="datePublished">2025-11-13</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="p-name article-title" href="/2025/11/13/Claude-Code-LSP-AST%E6%94%AF%E6%8C%81%E6%8E%A2%E8%AE%A8/">Claude_Code_LSP_AST支持探讨</a>
+    </h1>
+  
+
+      </header>
+    
+    <div class="e-content article-entry" itemprop="articleBody">
+      
+        <ul>
+<li><strong>✅ LSP（支持）</strong>：官方插件体系已将 LSP 列为核心扩展能力，配置字段为 <code>.lsp.json</code>。<strong>实测现状</strong>：目前社区反馈实际能用的仅有 <code>getDiagnostics</code>（获取诊断），<strong>核心的跳转&#x2F;引用虽写在 Changelog 里，但功能未完全暴露</strong>，插件装上也是“半成品”状态。</li>
+<li><strong>❓ AST（待确认）</strong>：<strong>无官方证据</strong>支持。注意别混淆——<strong>Emacs 集成 Claude 时用的 Tree-sitter 是 Emacs 自身功能，不是 Claude CLI 的能力</strong>。官方文档强调它是通过<strong>纯文本字符串匹配</strong>来修改文件的，不涉及语法树解析。</li>
+</ul>
+<p><strong>💎 本质差异</strong>：LSP 是 Claude 直接调用的“外部工具”（发请求查结果），而 AST 解析需深度集成到修改引擎底层，目前显然没到这一步。</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://example.com/2025/11/13/Claude-Code-LSP-AST%E6%94%AF%E6%8C%81%E6%8E%A2%E8%AE%A8/" data-id="cmmem61q80003e0sld9rd0cli" data-title="Claude_Code_LSP_AST支持探讨" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
+      
+      
+      
+    </footer>
+  </div>
+  
+</article>
+
+
+
+  
+    <article id="post-Cursor代码库索引技术详解" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="article-meta">
+    <a href="/2025/11/06/Cursor%E4%BB%A3%E7%A0%81%E5%BA%93%E7%B4%A2%E5%BC%95%E6%8A%80%E6%9C%AF%E8%AF%A6%E8%A7%A3/" class="article-date">
+  <time class="dt-published" datetime="2025-11-06T07:26:09.000Z" itemprop="datePublished">2025-11-06</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="p-name article-title" href="/2025/11/06/Cursor%E4%BB%A3%E7%A0%81%E5%BA%93%E7%B4%A2%E5%BC%95%E6%8A%80%E6%9C%AF%E8%AF%A6%E8%A7%A3/">Cursor代码库索引技术详解</a>
+    </h1>
+  
+
+      </header>
+    
+    <div class="e-content article-entry" itemprop="articleBody">
+      
+        <p>思考过程（Thinking）：</p>
+<p>好的，用户想了解Cursor如何为整个项目代码建立索引。这是一个技术性较强的问题，需要我提供清晰、结构化的解释。</p>
+<p>我打算从索引的核心目标入手，先说明它解决了什么问题，然后详细拆解其工作原理和技术实现。根据我看到的搜索结果，有几个高质量的信息来源值得重点参考。来自Cursor官方博客，详细介绍了为大型代码库建立索引的安全机制，特别是Merkle Tree和相似度哈希等关键技术，权威性最高。和来自官方文档，分别介绍了索引的基本设置和工作原理，内容非常可靠。</p>
+<p>虽然不是官方来源，但提供了非常详细的操作指南和核心能力解析，实用性很强。和也是关于代码库索引的说明，可以补充一些细节信息。分析了Cursor和Windsurf等工具的底层算法，有一定参考价值。</p>
+<p>相比之下，和的内容比较基础，相关性一般。主要是一篇学习笔记的简介，没有实质内容。</p>
+<p>基于这些高质量信息，我可以构建一个完整的解释框架。首先说明索引的核心价值是让AI理解项目全局而不仅仅是单个文件。然后详细描述其技术实现流程，包括文件同步、智能分块、向量化处理和存储检索等步骤。</p>
+<p>对于大型项目的优化，提供了关键信息，特别是Merkle Tree用于高效检测变化，以及相似度哈希实现团队内索引复用，这些都能显著提升大项目的索引速度。安全方面也需要特别说明，包括数据加密和隐私保护措施。</p>
+<p>最后我会补充一些实际配置建议，比如如何使用.cursorignore文件控制索引范围，以及索引状态的管理方法。用一个流程图来直观展示从代码到搜索结果的完整过程会很帮助用户理解。</p>
+<p>Cursor的代码库索引（Codebase Indexing）通过将你的代码转化为AI能理解的语义“地图”，使其能跨文件理解项目逻辑、复用已有代码，而非局限于单个文件。其核心流程与关键技术如下：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line">flowchart TD</span><br><span class="line">    A[开始索引项目] --&gt; B[文件同步与处理]</span><br><span class="line">    B --&gt; C&#123;是否为大型项目？&#125;</span><br><span class="line">    </span><br><span class="line">    C -- 是 --&gt; D[应用大型项目优化]</span><br><span class="line">    D --&gt; E[使用 Merkle Tree 检测变化]</span><br><span class="line">    D --&gt; F[计算 Simhash 复用团队索引]</span><br><span class="line">    </span><br><span class="line">    C -- 否 --&gt; G[标准处理流程]</span><br><span class="line">    E --&gt; G</span><br><span class="line">    F --&gt; G</span><br><span class="line">    </span><br><span class="line">    subgraph G [核心索引构建流程]</span><br><span class="line">        H[智能分块&lt;br&gt;（按函数、类等逻辑单元）]</span><br><span class="line">        I[向量化&lt;br&gt;（生成语义嵌入向量）]</span><br><span class="line">        J[安全存储至向量数据库]</span><br><span class="line">    end</span><br><span class="line">    </span><br><span class="line">    G --&gt; K[索引就绪，支持语义搜索]</span><br><span class="line">    </span><br><span class="line">    L[用户进行语义查询] --&gt; M[查询向量化]</span><br><span class="line">    M --&gt; N[在向量数据库中进行相似度匹配]</span><br><span class="line">    N --&gt; O[返回最相关的代码片段及上下文]</span><br></pre></td></tr></table></figure>
+
+<h3 id="🔧-核心流程与技术"><a href="#🔧-核心流程与技术" class="headerlink" title="🔧 核心流程与技术"></a>🔧 核心流程与技术</h3><p>整个索引过程可以概括为以下几个关键步骤：</p>
+<ol>
+<li><strong>文件同步与智能分块</strong><br>当你打开项目时，Cursor会安全地同步工作区文件至服务器以构建索引。它并非简单切割文本，而是将代码按<strong>函数、类或逻辑块</strong>等有意义的片段进行拆分，以便AI更好地理解结构。</li>
+<li><strong>代码向量化</strong><br>每个代码块会通过专门的AI模型转换为<strong>向量</strong>（即一系列数字构成的“指纹”），这个过程称为生成嵌入（Embedding）。向量能捕捉代码的<strong>语义</strong>，使含义相似的代码在数学空间中也彼此接近。</li>
+<li><strong>存储与检索</strong><br>生成的向量存储在<strong>向量数据库</strong>中。当你使用<code>@codebase</code>提问时，你的问题也会被转为向量，系统通过快速比对，从数据库中找出语义最相关的代码片段返回给你。</li>
+</ol>
+<h3 id="⚡-针对大型项目的优化"><a href="#⚡-针对大型项目的优化" class="headerlink" title="⚡ 针对大型项目的优化"></a>⚡ 针对大型项目的优化</h3><p>对于包含数万个文件的大型仓库，Cursor采用了两项关键技术来大幅提升效率：</p>
+<ul>
+<li><strong>Merkle Tree高效同步</strong>：通过为文件和目录计算加密哈希值来构建一棵“默克尔树”。当文件更改时，Cursor能快速定位哈希值变动的分支，<strong>仅同步变化的部分</strong>，避免每次全量上传。</li>
+<li><strong>团队内索引复用</strong>：团队成员的代码库通常高度相似。新成员加入时，Cursor会计算其代码库的“相似度哈希”，并与团队已有的索引进行匹配。如果高度相似，可直接<strong>复用现有索引</strong>，这使得首次索引的等待时间能从数小时缩短至几秒。</li>
+</ul>
+<h3 id="🔒-隐私与安全"><a href="#🔒-隐私与安全" class="headerlink" title="🔒 隐私与安全"></a>🔒 隐私与安全</h3><ul>
+<li><strong>本地文件不受影响</strong>：索引同步过程<strong>不会修改</strong>你本地的任何文件。</li>
+<li><strong>代码安全</strong>：文件路径在服务器端会被加密处理。代码内容不以明文形式永久存储，仅在索引过程中临时驻留内存，生成的嵌入向量也会被加密。</li>
+<li><strong>访问控制</strong>：复用团队索引时，服务器会通过Merkle树验证，确保你<strong>只能搜索到你本地实际拥有的文件</strong>，不会泄露他人的代码。</li>
+</ul>
+<h3 id="⚙️-配置与管理"><a href="#⚙️-配置与管理" class="headerlink" title="⚙️ 配置与管理"></a>⚙️ 配置与管理</h3><ul>
+<li><strong>控制索引范围</strong>：你可以在项目根目录创建 <strong><code>.cursorignore</code></strong> 文件（语法同 <code>.gitignore</code>），来排除 <code>node_modules</code>、<code>dist</code>、<code>.env</code> 等无需索引的目录或文件，这能显著提升索引速度和准确性。</li>
+<li><strong>查看与管理</strong>：索引状态和已索引的文件列表，可以在 <code>Cursor 设置 &gt; 功能 &gt; 代码库索引</code> 中查看。</li>
+<li><strong>自动更新</strong>：Cursor默认会每隔5分钟左右自动检查并同步已更改的文件，以更新索引。</li>
+</ul>
+<h3 id="💡-核心价值与应用场景"><a href="#💡-核心价值与应用场景" class="headerlink" title="💡 核心价值与应用场景"></a>💡 核心价值与应用场景</h3><p>借助这套索引系统，你可以实现：</p>
+<ul>
+<li><strong>跨文件代码生成</strong>：例如，要求“基于<code>api/user.js</code>中的接口，生成一个用户组件”，AI能准确复用已有接口定义。</li>
+<li><strong>全局逻辑查询</strong>：直接提问“项目里哪里用到了<code>formatDate</code>函数？”，AI能定位所有引用位置。</li>
+<li><strong>快速理解新项目</strong>：让AI“总结项目的目录结构和核心功能”，快速建立认知。</li>
+</ul>
+<p>总的来说，Cursor通过将代码语义化、向量化，并利用智能增量同步和团队共享机制，高效地构建了整个项目的“知识图谱”，让AI成为一个真正理解你项目上下文的编程助手。</p>
+<p>如果你正在处理一个特别庞大的单体仓库，或者对忽略某些特定文件有疑问，我可以提供更具体的配置建议。</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://example.com/2025/11/06/Cursor%E4%BB%A3%E7%A0%81%E5%BA%93%E7%B4%A2%E5%BC%95%E6%8A%80%E6%9C%AF%E8%AF%A6%E8%A7%A3/" data-id="cmmem61q90004e0sl1lol789v" data-title="Cursor代码库索引技术详解" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
+      
+      
+      
+    </footer>
+  </div>
+  
+</article>
+
+
+
+  
+    <article id="post-LangGraph深度研究代理实现" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="article-meta">
+    <a href="/2025/11/04/LangGraph%E6%B7%B1%E5%BA%A6%E7%A0%94%E7%A9%B6%E4%BB%A3%E7%90%86%E5%AE%9E%E7%8E%B0/" class="article-date">
+  <time class="dt-published" datetime="2025-11-04T02:44:25.000Z" itemprop="datePublished">2025-11-04</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="p-name article-title" href="/2025/11/04/LangGraph%E6%B7%B1%E5%BA%A6%E7%A0%94%E7%A9%B6%E4%BB%A3%E7%90%86%E5%AE%9E%E7%8E%B0/">LangGraph深度研究代理实现</a>
+    </h1>
+  
+
+      </header>
+    
+    <div class="e-content article-entry" itemprop="articleBody">
+      
+        <p>以下是一个使用 LangGraph 实现的深度研究代理（Deep Research Agent）示例。该代理能够根据用户提出的研究问题，自主规划搜索查询、获取网页内容、总结信息，并最终生成一份综合报告。代码中包含了必要的节点和状态管理，并使用了 Tavily 搜索工具和 OpenAI 的 GPT 模型。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> os</span><br><span class="line"><span class="keyword">from</span> typing <span class="keyword">import</span> TypedDict, <span class="type">List</span>, Annotated</span><br><span class="line"><span class="keyword">import</span> operator</span><br><span class="line"></span><br><span class="line"><span class="keyword">from</span> langchain_openai <span class="keyword">import</span> ChatOpenAI</span><br><span class="line"><span class="keyword">from</span> langchain_community.tools.tavily_search <span class="keyword">import</span> TavilySearchResults</span><br><span class="line"><span class="keyword">from</span> langchain_community.document_loaders <span class="keyword">import</span> WebBaseLoader</span><br><span class="line"><span class="keyword">from</span> langchain_core.messages <span class="keyword">import</span> HumanMessage, SystemMessage</span><br><span class="line"><span class="keyword">from</span> langgraph.graph <span class="keyword">import</span> StateGraph, END</span><br><span class="line"></span><br><span class="line"><span class="comment"># 确保设置了 API 密钥</span></span><br><span class="line">os.environ[<span class="string">&quot;OPENAI_API_KEY&quot;</span>] = <span class="string">&quot;your-openai-api-key&quot;</span></span><br><span class="line">os.environ[<span class="string">&quot;TAVILY_API_KEY&quot;</span>] = <span class="string">&quot;your-tavily-api-key&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 定义状态</span></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">ResearchState</span>(<span class="title class_ inherited__">TypedDict</span>):</span><br><span class="line">    question: <span class="built_in">str</span>                      <span class="comment"># 用户输入的研究问题</span></span><br><span class="line">    queries: <span class="type">List</span>[<span class="built_in">str</span>]                 <span class="comment"># 生成的搜索查询列表</span></span><br><span class="line">    urls: <span class="type">List</span>[<span class="built_in">str</span>]                    <span class="comment"># 从搜索中收集的 URL</span></span><br><span class="line">    contents: Annotated[<span class="type">List</span>[<span class="built_in">str</span>], operator.add]  <span class="comment"># 抓取的网页内容（可累加）</span></span><br><span class="line">    summaries: Annotated[<span class="type">List</span>[<span class="built_in">str</span>], operator.add] <span class="comment"># 生成的摘要（可累加）</span></span><br><span class="line">    report: <span class="built_in">str</span>                         <span class="comment"># 最终生成的报告</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 初始化模型和工具</span></span><br><span class="line">llm = ChatOpenAI(model=<span class="string">&quot;gpt-4-turbo-preview&quot;</span>, temperature=<span class="number">0</span>)</span><br><span class="line">search_tool = TavilySearchResults(max_results=<span class="number">3</span>)  <span class="comment"># 每个查询返回最多3个结果</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 节点函数定义</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">planner</span>(<span class="params">state: ResearchState</span>) -&gt; <span class="built_in">dict</span>:</span><br><span class="line">    <span class="string">&quot;&quot;&quot;根据研究问题生成一组搜索查询&quot;&quot;&quot;</span></span><br><span class="line">    system_prompt = <span class="string">&quot;&quot;&quot;你是一个专业的研究规划员。请根据用户的研究问题，生成最多3个最合适的搜索查询，用于在互联网上查找相关信息。</span></span><br><span class="line"><span class="string">    每个查询应该简洁、具体，能够覆盖问题的不同方面。直接以逗号分隔的列表形式返回查询，不要有其他文字。&quot;&quot;&quot;</span></span><br><span class="line">    messages = [</span><br><span class="line">        SystemMessage(content=system_prompt),</span><br><span class="line">        HumanMessage(content=state[<span class="string">&quot;question&quot;</span>])</span><br><span class="line">    ]</span><br><span class="line">    response = llm.invoke(messages)</span><br><span class="line">    <span class="comment"># 解析响应，假设返回的是逗号分隔的查询列表</span></span><br><span class="line">    queries = [q.strip() <span class="keyword">for</span> q <span class="keyword">in</span> response.content.split(<span class="string">&quot;,&quot;</span>) <span class="keyword">if</span> q.strip()]</span><br><span class="line">    <span class="keyword">return</span> &#123;<span class="string">&quot;queries&quot;</span>: queries&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">searcher</span>(<span class="params">state: ResearchState</span>) -&gt; <span class="built_in">dict</span>:</span><br><span class="line">    <span class="string">&quot;&quot;&quot;对每个查询执行搜索，收集所有结果的 URL&quot;&quot;&quot;</span></span><br><span class="line">    all_urls = []</span><br><span class="line">    <span class="keyword">for</span> query <span class="keyword">in</span> state[<span class="string">&quot;queries&quot;</span>]:</span><br><span class="line">        results = search_tool.invoke(query)</span><br><span class="line">        <span class="keyword">for</span> res <span class="keyword">in</span> results:</span><br><span class="line">            url = res.get(<span class="string">&quot;url&quot;</span>)</span><br><span class="line">            <span class="keyword">if</span> url <span class="keyword">and</span> url <span class="keyword">not</span> <span class="keyword">in</span> all_urls:</span><br><span class="line">                all_urls.append(url)</span><br><span class="line">    <span class="keyword">return</span> &#123;<span class="string">&quot;urls&quot;</span>: all_urls&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">reader</span>(<span class="params">state: ResearchState</span>) -&gt; <span class="built_in">dict</span>:</span><br><span class="line">    <span class="string">&quot;&quot;&quot;读取所有 URL 的内容并生成摘要&quot;&quot;&quot;</span></span><br><span class="line">    summaries = []</span><br><span class="line">    contents = []</span><br><span class="line">    <span class="keyword">for</span> url <span class="keyword">in</span> state[<span class="string">&quot;urls&quot;</span>]:</span><br><span class="line">        <span class="keyword">try</span>:</span><br><span class="line">            loader = WebBaseLoader(url)</span><br><span class="line">            docs = loader.load()</span><br><span class="line">            content = <span class="string">&quot;\n&quot;</span>.join([doc.page_content <span class="keyword">for</span> doc <span class="keyword">in</span> docs])[:<span class="number">5000</span>]  <span class="comment"># 截断长文本</span></span><br><span class="line">            contents.append(<span class="string">f&quot;来源：<span class="subst">&#123;url&#125;</span>\n内容：<span class="subst">&#123;content&#125;</span>&quot;</span>)</span><br><span class="line">            <span class="comment"># 使用 LLM 为每个内容生成摘要</span></span><br><span class="line">            summary_prompt = <span class="string">f&quot;请用中文总结以下网页内容的核心信息（200字以内）：\n\n<span class="subst">&#123;content&#125;</span>&quot;</span></span><br><span class="line">            summary = llm.invoke([HumanMessage(content=summary_prompt)]).content</span><br><span class="line">            summaries.append(<span class="string">f&quot;来源：<span class="subst">&#123;url&#125;</span>\n摘要：<span class="subst">&#123;summary&#125;</span>&quot;</span>)</span><br><span class="line">        <span class="keyword">except</span> Exception <span class="keyword">as</span> e:</span><br><span class="line">            summaries.append(<span class="string">f&quot;来源：<span class="subst">&#123;url&#125;</span>\n摘要：读取失败：<span class="subst">&#123;<span class="built_in">str</span>(e)&#125;</span>&quot;</span>)</span><br><span class="line">    <span class="keyword">return</span> &#123;<span class="string">&quot;contents&quot;</span>: contents, <span class="string">&quot;summaries&quot;</span>: summaries&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">reporter</span>(<span class="params">state: ResearchState</span>) -&gt; <span class="built_in">dict</span>:</span><br><span class="line">    <span class="string">&quot;&quot;&quot;基于所有摘要生成最终的研究报告&quot;&quot;&quot;</span></span><br><span class="line">    all_summaries = <span class="string">&quot;\n\n&quot;</span>.join(state[<span class="string">&quot;summaries&quot;</span>])</span><br><span class="line">    system_prompt = <span class="string">&quot;&quot;&quot;你是一名专业的研究分析师。请根据以下收集到的信息摘要，撰写一份结构清晰、内容详实的研究报告。</span></span><br><span class="line"><span class="string">    报告应包括：引言（研究背景）、主要发现（分点阐述）、结论与建议。使用中文回答，保持客观严谨。&quot;&quot;&quot;</span></span><br><span class="line">    messages = [</span><br><span class="line">        SystemMessage(content=system_prompt),</span><br><span class="line">        HumanMessage(content=<span class="string">f&quot;研究问题：<span class="subst">&#123;state[<span class="string">&#x27;question&#x27;</span>]&#125;</span>\n\n收集的信息：\n<span class="subst">&#123;all_summaries&#125;</span>&quot;</span>)</span><br><span class="line">    ]</span><br><span class="line">    report = llm.invoke(messages).content</span><br><span class="line">    <span class="keyword">return</span> &#123;<span class="string">&quot;report&quot;</span>: report&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment"># 构建状态图</span></span><br><span class="line">workflow = StateGraph(ResearchState)</span><br><span class="line"></span><br><span class="line"><span class="comment"># 添加节点</span></span><br><span class="line">workflow.add_node(<span class="string">&quot;planner&quot;</span>, planner)</span><br><span class="line">workflow.add_node(<span class="string">&quot;searcher&quot;</span>, searcher)</span><br><span class="line">workflow.add_node(<span class="string">&quot;reader&quot;</span>, reader)</span><br><span class="line">workflow.add_node(<span class="string">&quot;reporter&quot;</span>, reporter)</span><br><span class="line"></span><br><span class="line"><span class="comment"># 设置边：从开始到 planner，然后依次执行</span></span><br><span class="line">workflow.set_entry_point(<span class="string">&quot;planner&quot;</span>)</span><br><span class="line">workflow.add_edge(<span class="string">&quot;planner&quot;</span>, <span class="string">&quot;searcher&quot;</span>)</span><br><span class="line">workflow.add_edge(<span class="string">&quot;searcher&quot;</span>, <span class="string">&quot;reader&quot;</span>)</span><br><span class="line">workflow.add_edge(<span class="string">&quot;reader&quot;</span>, <span class="string">&quot;reporter&quot;</span>)</span><br><span class="line">workflow.add_edge(<span class="string">&quot;reporter&quot;</span>, END)</span><br><span class="line"></span><br><span class="line"><span class="comment"># 编译图</span></span><br><span class="line">app = workflow.<span class="built_in">compile</span>()</span><br><span class="line"></span><br><span class="line"><span class="comment"># 运行示例</span></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">run_research</span>(<span class="params">question: <span class="built_in">str</span></span>):</span><br><span class="line">    initial_state = &#123;<span class="string">&quot;question&quot;</span>: question&#125;</span><br><span class="line">    final_state = app.invoke(initial_state)</span><br><span class="line">    <span class="keyword">return</span> final_state[<span class="string">&quot;report&quot;</span>]</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&quot;__main__&quot;</span>:</span><br><span class="line">    question = <span class="string">&quot;2024年全球AI大模型的发展趋势是什么？&quot;</span></span><br><span class="line">    report = run_research(question)</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&quot;=== 研究报告 ===\n&quot;</span>)</span><br><span class="line">    <span class="built_in">print</span>(report)</span><br></pre></td></tr></table></figure>
+
+<h2 id="代码说明"><a href="#代码说明" class="headerlink" title="代码说明"></a>代码说明</h2><ol>
+<li><strong>状态定义</strong>：<code>ResearchState</code> 包含研究问题、查询列表、URL列表、网页内容、摘要列表和最终报告。<code>contents</code> 和 <code>summaries</code> 使用 <code>operator.add</code> 作为注解，支持在图中累加（尽管本示例是顺序执行，但为扩展保留）。</li>
+<li><strong>节点功能</strong>：<ul>
+<li><code>planner</code>：使用 GPT 生成 3 个搜索查询。</li>
+<li><code>searcher</code>：对每个查询调用 Tavily 搜索，收集所有返回的 URL。</li>
+<li><code>reader</code>：使用 <code>WebBaseLoader</code> 加载每个 URL 的网页内容，并让 LLM 生成摘要（同时保留原始内容以备后用）。</li>
+<li><code>reporter</code>：将所有摘要汇总，让 LLM 生成一份完整的研究报告。</li>
+</ul>
+</li>
+<li><strong>图结构</strong>：简单的线性流程，从规划到搜索、阅读、报告，最后结束。</li>
+<li><strong>运行</strong>：给定一个问题，代理将依次执行各节点，最终返回报告。</li>
+</ol>
+<h2 id="扩展与优化"><a href="#扩展与优化" class="headerlink" title="扩展与优化"></a>扩展与优化</h2><ul>
+<li><strong>增加循环</strong>：可以在 <code>reader</code> 后添加一个判断节点，如果信息不足，则重新调用 <code>planner</code> 生成更多查询，形成研究循环。</li>
+<li><strong>并行处理</strong>：可以使用 LangGraph 的 <code>Send</code> 或并行节点同时处理多个 URL 的读取和摘要。</li>
+<li><strong>错误处理</strong>：在 <code>reader</code> 中已加入了简单的异常捕获，可根据需要增强。</li>
+<li><strong>工具增强</strong>：可以集成更多工具，如 Wikipedia、Arxiv 等，丰富信息来源。</li>
+</ul>
+<p>这个示例提供了一个基础框架，你可以根据实际需求调整节点逻辑和图结构，构建更强大的深度研究代理。</p>
+<hr>
+<p>当然有！完全免费的方案确实存在。如果你不想申请API key，最实用的思路是<strong>绕过商业搜索引擎的付费API，直接使用提供免费接口的搜索引擎或自己搭建搜索服务</strong>。</p>
+<p>下面我整理了几个针对你之前LangGraph代码的免费替代方案，你可以根据对“开箱即用”和“可控性”的需求来选择。</p>
+<h3 id="🆓-免费搜索方案对比"><a href="#🆓-免费搜索方案对比" class="headerlink" title="🆓 免费搜索方案对比"></a>🆓 免费搜索方案对比</h3><p>为了方便你快速决策，我把几个核心的免费方案整理成了表格：</p>
+<table>
+<thead>
+<tr>
+<th>方案</th>
+<th>是否需要API Key</th>
+<th>集成方式</th>
+<th>优点</th>
+<th>缺点&#x2F;注意事项</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>open-webSearch MCP</strong></td>
+<td><strong>完全不需要</strong></td>
+<td>本地运行一个服务，你的Python代码可以通过HTTP请求调用它。</td>
+<td>支持多搜索引擎聚合（如DuckDuckGo、Brave等），结果结构化，功能强大，且完全免费、自托管。</td>
+<td>需要本地安装Node.js环境并运行一个服务进程，多了一步部署。</td>
+</tr>
+<tr>
+<td><strong>DuckDuckGo 非官方库</strong></td>
+<td><strong>不需要</strong></td>
+<td>在你的Python代码中直接通过<code>pip</code>安装库来调用。</td>
+<td>集成最简单，几行代码就能替换原有的<code>search_tool</code>，与LangGraph代码无缝衔接。</td>
+<td>依赖第三方库对DuckDuckGo页面的解析，长期运行的稳定性可能不如官方API。</td>
+</tr>
+<tr>
+<td><strong>公共 SearXNG 实例</strong></td>
+<td><strong>不需要</strong></td>
+<td>在你的Python代码中直接向公共实例的URL发送HTTP请求。</td>
+<td>利用的是元搜索引擎的聚合结果，同样无需API Key，信息源广泛。</td>
+<td>需要找一个稳定、快速的公共实例，且依赖外部服务，有失效或限流的可能性。</td>
+</tr>
+</tbody></table>
+<hr>
+<h3 id="🔧-如何修改之前的LangGraph代码"><a href="#🔧-如何修改之前的LangGraph代码" class="headerlink" title="🔧 如何修改之前的LangGraph代码"></a>🔧 如何修改之前的LangGraph代码</h3><p>对于你之前的LangGraph代码，修改起来非常简单。以最轻量的<strong>DuckDuckGo库</strong>为例，只需要把原来使用<code>TavilySearchResults</code>的<code>searcher</code>节点替换掉就可以了。</p>
+<p><strong>第一步：安装库</strong></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">pip install duckduckgo-search</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>注意：这里使用的是<code>duckduckgo-search</code>库，而非上面表格中提到的Node.js库。这是一个流行的Python库，能很好地模拟搜索。</p>
+</blockquote>
+<p><strong>第二步：修改<code>searcher</code>函数</strong><br>将原来调用Tavily的部分，换成使用<code>DDGS</code>（DuckDuckGo Search）的代码。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> duckduckgo_search <span class="keyword">import</span> DDGS</span><br><span class="line"><span class="comment"># ... 其他导入和代码保持不变 ...</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">searcher</span>(<span class="params">state: ResearchState</span>) -&gt; <span class="built_in">dict</span>:</span><br><span class="line">    <span class="string">&quot;&quot;&quot;对每个查询执行搜索，收集所有结果的 URL (使用 DuckDuckGo)&quot;&quot;&quot;</span></span><br><span class="line">    all_urls = []</span><br><span class="line">    <span class="comment"># 使用 DDGS 作为上下文管理器</span></span><br><span class="line">    <span class="keyword">with</span> DDGS() <span class="keyword">as</span> ddgs:</span><br><span class="line">        <span class="keyword">for</span> query <span class="keyword">in</span> state[<span class="string">&quot;queries&quot;</span>]:</span><br><span class="line">            <span class="keyword">try</span>:</span><br><span class="line">                <span class="comment"># 执行搜索，获取结果列表</span></span><br><span class="line">                <span class="comment"># 这里使用 text() 方法获取文本搜索结果，可以设置 max_results</span></span><br><span class="line">                results = <span class="built_in">list</span>(ddgs.text(query, max_results=<span class="number">5</span>))</span><br><span class="line">                <span class="keyword">for</span> res <span class="keyword">in</span> results:</span><br><span class="line">                    url = res.get(<span class="string">&quot;href&quot;</span>)</span><br><span class="line">                    <span class="comment"># 简单的去重</span></span><br><span class="line">                    <span class="keyword">if</span> url <span class="keyword">and</span> url <span class="keyword">not</span> <span class="keyword">in</span> all_urls <span class="keyword">and</span> url.startswith(<span class="string">&quot;http&quot;</span>):</span><br><span class="line">                        all_urls.append(url)</span><br><span class="line">            <span class="keyword">except</span> Exception <span class="keyword">as</span> e:</span><br><span class="line">                <span class="built_in">print</span>(<span class="string">f&quot;搜索查询 &#x27;<span class="subst">&#123;query&#125;</span>&#x27; 时出错: <span class="subst">&#123;e&#125;</span>&quot;</span>)</span><br><span class="line">                <span class="keyword">continue</span></span><br><span class="line">    <span class="keyword">return</span> &#123;<span class="string">&quot;urls&quot;</span>: all_urls&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment"># ... 图的构建和运行代码保持不变 ...</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="💡-更强大的方案：open-webSearch-MCP"><a href="#💡-更强大的方案：open-webSearch-MCP" class="headerlink" title="💡 更强大的方案：open-webSearch MCP"></a>💡 更强大的方案：open-webSearch MCP</h3><p>如果你希望搜索结果更稳定、功能更强大（比如可以指定使用某个搜索引擎，或者获取完整的文章内容），那么 <strong>open-webSearch MCP</strong> 是更好的选择。</p>
+<ol>
+<li><strong>启动服务</strong>：按照项目README，通过Docker或Node.js在本地（或服务器上）启动一个服务。例如用Docker一行命令即可：<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker run -d --name web-search -p 3000:3000 ghcr.io/aas-ee/open-web-search:latest</span><br></pre></td></tr></table></figure></li>
+<li><strong>调用方式</strong>：服务启动后，它会提供一个HTTP接口。你的<code>searcher</code>节点需要改为向这个接口（例如 <code>http://localhost:3000/search</code>）发送POST请求，并把<code>state[&quot;queries&quot;]</code>里的问题作为参数传递过去。</li>
+</ol>
+<h3 id="✍️-总结与建议"><a href="#✍️-总结与建议" class="headerlink" title="✍️ 总结与建议"></a>✍️ 总结与建议</h3><ul>
+<li><strong>追求极简开发</strong>：首选 <strong>DuckDuckGo 非官方库</strong>。它和你现有的Python代码集成度最高，只需修改一个函数即可。</li>
+<li><strong>追求功能与稳定性</strong>：推荐 <strong>open-webSearch MCP</strong>。虽然多了一步部署，但它聚合了多个搜索引擎，返回的数据结构也更规范，适合构建更复杂的Agent。</li>
+<li><strong>作为备选</strong>：<strong>公共 SearXNG 实例</strong> 可以作为备选方案，但在生产环境中使用时需要谨慎评估其可用性。</li>
+</ul>
+<p>这三种方案都能帮你实现完全免费的联网搜索功能。你想先试试哪一种？如果选择DuckDuckGo的方案，我可以直接帮你把完整的新代码贴出来。</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://example.com/2025/11/04/LangGraph%E6%B7%B1%E5%BA%A6%E7%A0%94%E7%A9%B6%E4%BB%A3%E7%90%86%E5%AE%9E%E7%8E%B0/" data-id="cmmem61qk000qe0sl7a7fchy3" data-title="LangGraph深度研究代理实现" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
+      
+      
+      
+    </footer>
+  </div>
+  
+</article>
+
+
+
+  
+    <article id="post-分布式链路追踪思路介绍" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="article-meta">
+    <a href="/2025/10/24/%E5%88%86%E5%B8%83%E5%BC%8F%E9%93%BE%E8%B7%AF%E8%BF%BD%E8%B8%AA%E6%80%9D%E8%B7%AF%E4%BB%8B%E7%BB%8D/" class="article-date">
+  <time class="dt-published" datetime="2025-10-24T12:44:34.000Z" itemprop="datePublished">2025-10-24</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="p-name article-title" href="/2025/10/24/%E5%88%86%E5%B8%83%E5%BC%8F%E9%93%BE%E8%B7%AF%E8%BF%BD%E8%B8%AA%E6%80%9D%E8%B7%AF%E4%BB%8B%E7%BB%8D/">分布式链路追踪思路介绍</a>
+    </h1>
+  
+
+      </header>
+    
+    <div class="e-content article-entry" itemprop="articleBody">
+      
+        <p>分布式链路追踪（Distributed Tracing）是一种用于监控和诊断微服务架构中请求行为的核心技术。其核心思路是通过在服务之间传递唯一标识，记录请求经过的每个组件，从而将一次分布式请求的完整路径还原出来。</p>
+<h3 id="基本概念"><a href="#基本概念" class="headerlink" title="基本概念"></a>基本概念</h3><ul>
+<li><strong>Trace</strong>：代表一次完整的请求或事务，从入口到所有依赖服务的调用结束。由一个全局唯一的 Trace ID 标识。</li>
+<li><strong>Span</strong>：Trace 中的基本工作单元，描述一个特定操作（如 HTTP 请求、数据库查询）。每个 Span 包含 Span ID、父 Span ID（表示调用关系）、操作名称、时间戳、持续时间及标签&#x2F;注解等元数据。</li>
+<li><strong>因果关系</strong>：Span 之间通过父子关系构成树状结构，反映请求的调用层次。</li>
+</ul>
+<h3 id="核心实现思路"><a href="#核心实现思路" class="headerlink" title="核心实现思路"></a>核心实现思路</h3><ol>
+<li><strong>上下文传递</strong><br>当请求进入系统时，生成一个全局 Trace ID 和根 Span。在跨服务调用（如 HTTP、RPC、消息队列）时，将 Trace ID 和当前 Span ID 等信息以协议无关的方式（如 HTTP 头、消息属性）传递给下游服务，下游服务会基于此信息创建子 Span，从而串联整条链路。</li>
+<li><strong>埋点与记录</strong><br>每个服务在关键操作（如接收请求、调用外部服务、执行数据库操作）处埋点，记录 Span 的开始和结束时间，并附加业务相关标签（如 URL、响应码、错误信息）。这些数据被称为 Span 数据。</li>
+<li><strong>数据收集与聚合</strong><ul>
+<li><strong>收集</strong>：各服务将生成的 Span 数据异步发送到集中式的追踪后端（如 Jaeger、Zipkin 等）。</li>
+<li><strong>聚合与存储</strong>：后端根据 Trace ID 将分散在不同服务中的 Span 聚合起来，重新构建完整的调用树，并存储以供查询分析。</li>
+</ul>
+</li>
+<li><strong>采样</strong><br>为避免海量数据对系统和网络造成过大压力，通常采用采样策略（如固定比例采样、基于请求速率或错误率的自适应采样），只保留部分 Trace 数据。</li>
+</ol>
+<h3 id="关键技术挑战"><a href="#关键技术挑战" class="headerlink" title="关键技术挑战"></a>关键技术挑战</h3><ul>
+<li><strong>低开销</strong>：埋点操作必须对业务代码侵入性小且性能损耗极低，常通过框架中间件自动完成。</li>
+<li><strong>跨语言兼容</strong>：微服务可能由不同语言开发，需要统一的数据格式和传播协议（如 W3C Trace Context、OpenTracing、OpenTelemetry）。</li>
+<li><strong>数据存储与查询</strong>：需要高效存储海量 Span 数据，并提供快速检索（按 Trace ID、服务名、标签等过滤）和可视化展示（调用拓扑、时间轴火焰图）。</li>
+</ul>
+<h3 id="典型工具与标准"><a href="#典型工具与标准" class="headerlink" title="典型工具与标准"></a>典型工具与标准</h3><ul>
+<li><strong>OpenTelemetry</strong>：CNCF 项目，提供统一的 API、SDK 和协议，已成为事实标准。</li>
+<li><strong>Jaeger</strong>、<strong>Zipkin</strong>：流行的开源后端系统，支持数据可视化与性能分析。</li>
+<li><strong>SkyWalking</strong>：国产开源 APM 系统，也包含链路追踪功能。</li>
+</ul>
+<h3 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h3><p>分布式链路追踪通过生成全局唯一标识并在服务间传递，结合每个服务的本地记录，实现了对复杂调用链路的监控。它帮助开发者和运维人员快速定位故障、分析性能瓶颈，是保障微服务系统稳定性的重要手段。</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://example.com/2025/10/24/%E5%88%86%E5%B8%83%E5%BC%8F%E9%93%BE%E8%B7%AF%E8%BF%BD%E8%B8%AA%E6%80%9D%E8%B7%AF%E4%BB%8B%E7%BB%8D/" data-id="cmmem61qq0013e0slagge84gf" data-title="分布式链路追踪思路介绍" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
+      
+      
+      
+    </footer>
+  </div>
+  
+</article>
+
+
+
+  
+    <article id="post-线上CPU飙升排查经验分享" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="article-meta">
+    <a href="/2025/10/04/%E7%BA%BF%E4%B8%8ACPU%E9%A3%99%E5%8D%87%E6%8E%92%E6%9F%A5%E7%BB%8F%E9%AA%8C%E5%88%86%E4%BA%AB/" class="article-date">
+  <time class="dt-published" datetime="2025-10-04T04:44:46.000Z" itemprop="datePublished">2025-10-04</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="p-name article-title" href="/2025/10/04/%E7%BA%BF%E4%B8%8ACPU%E9%A3%99%E5%8D%87%E6%8E%92%E6%9F%A5%E7%BB%8F%E9%AA%8C%E5%88%86%E4%BA%AB/">线上CPU飙升排查经验分享</a>
+    </h1>
+  
+
+      </header>
+    
+    <div class="e-content article-entry" itemprop="articleBody">
+      
+        <hr>
+<h3 id="回答范例：一次高并发下CPU飙升的排查与解决"><a href="#回答范例：一次高并发下CPU飙升的排查与解决" class="headerlink" title="回答范例：一次高并发下CPU飙升的排查与解决"></a>回答范例：一次高并发下CPU飙升的排查与解决</h3><p><strong>1. 问题背景与发现（Situation）</strong></p>
+<ul>
+<li><strong>时间</strong>：某次大促活动期间。</li>
+<li><strong>现象</strong>：监控系统（如Zabbix、Prometheus）发出告警，显示核心业务服务（如订单服务）的CPU使用率突然从平时的20%飙升到95%以上，且持续不降。部分接口响应时间明显变长，甚至出现超时。</li>
+</ul>
+<p><strong>2. 紧急响应与定位过程（Task &amp; Action）</strong><br>我立刻登录到跳板机，按照以下步骤进行排查：</p>
+<ul>
+<li><strong>第一步：快速全局定位</strong><ul>
+<li>使用 <code>top</code> 命令查看服务器整体资源，确认是Java进程（PID：12345）占用了最高的CPU。</li>
+<li>接着使用 <code>top -Hp 12345</code> 查看该进程内最耗费CPU的线程。发现有几个线程（如PID：6789）的CPU占用率特别高。</li>
+<li><strong>关键操作</strong>：将线程ID <code>6789</code> 转换为十六进制 <code>1a85</code>（因为线程栈文件里用的是十六进制），命令：<code>printf &quot;%x\n&quot; 6789</code>。</li>
+</ul>
+</li>
+<li><strong>第二步：深入代码层面分析</strong><ul>
+<li>使用 <code>jstack 12345 | grep -A 20 1a85</code> 导出线程栈，并过滤出那个问题线程的堆栈信息。</li>
+<li><strong>发现</strong>：堆栈信息清晰地指向了项目中的一个类 <code>OrderAnalyseHandler</code> 的第38行。</li>
+</ul>
+</li>
+<li><strong>第三步：结合业务与日志分析根因</strong><ul>
+<li>我马上打开对应的业务代码。发现第38行是一个 <strong>正则表达式验证</strong>，用于处理用户输入的备注信息，其正则在极端情况下会触发 <strong>“灾难性回溯”</strong>。</li>
+<li>同时查看该时间点的业务日志（如ELK、Splunk），发现恰好有大量包含特殊字符（如一连串的<code>“AAAAAAAAA”</code>）的请求涌入。这个输入正是触发正则回溯的“导火索”。</li>
+<li>至此，根本原因已定位：<strong>一个低效的正则表达式 + 恶意&#x2F;特殊的用户输入 &#x3D; CPU打满</strong>。</li>
+</ul>
+</li>
+</ul>
+<p><strong>3. 解决方案与实施（Result）</strong></p>
+<ul>
+<li><strong>紧急止血</strong>：由于是线上大促，首要任务是恢复服务。我联系运维同学，将该节点从负载均衡（Nginx&#x2F;F5）上摘除，重启服务后临时恢复。同时，在网关层（如Sentinel、Hystrix）对该接口增加了<strong>限流和熔断</strong>规则，防止流量再次冲击。</li>
+<li><strong>根本解决</strong>：<ol>
+<li><strong>优化代码</strong>：将原正则 <code>(a+)+b</code> 这类写法替换为非回溯模式，或者使用更高效的预编译Pattern，甚至改用字符串遍历的方式替代。</li>
+<li><strong>代码审查</strong>：修复后，与团队成员一起复盘，对所有类似的正则使用场景进行梳理。</li>
+<li><strong>完善监控</strong>：在代码中增加了对方法执行耗时的监控（Metrics），如果某个方法执行超过阈值，会提前发出预警。</li>
+</ol>
+</li>
+</ul>
+<p><strong>4. 事后复盘与总结</strong><br>这个问题让我意识到，代码中一个看似微小的逻辑，在高并发场景下也可能演变成重大故障。之后的开发规范里，我们明确要求<strong>禁止编写复杂且可能回溯的正则，并强调了参数校验的重要性</strong>。</p>
+<hr>
+<h3 id="细节"><a href="#细节" class="headerlink" title="细节"></a>细节</h3><ul>
+<li><strong>为什么用 <code>top -Hp</code> 而不是直接用 <code>jstack</code>？</strong><br>答：<code>top</code>能直观地找出最耗CPU的线程PID，能快速缩小排查范围，避免在海量线程日志里大海捞针。</li>
+<li><strong>除了CPU飙升，你还排查过内存泄漏（OOM）的问题吗？</strong><br>可以准备一个内存泄漏的案例，关键点在于使用 <code>jstat</code> 观察GC情况，以及用 <code>jmap</code> 生成堆转储文件（Heap Dump），然后用MAT或JProfiler分析大对象。</li>
+<li><strong>如果当时没有监控，你怎么发现这个异常？</strong><br>可以从业务感知（用户反馈慢）、日志异常（大量TimeOut日志）以及现场登录服务器查看这三方面来回答。</li>
+</ul>
+<p>希望这个范例能给你一些启发。如果需要，我还可以帮你梳理一个内存泄漏的排查案例。</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://example.com/2025/10/04/%E7%BA%BF%E4%B8%8ACPU%E9%A3%99%E5%8D%87%E6%8E%92%E6%9F%A5%E7%BB%8F%E9%AA%8C%E5%88%86%E4%BA%AB/" data-id="cmmem61r7001qe0sl7hen4js6" data-title="线上CPU飙升排查经验分享" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
+      
+      
+      
+    </footer>
+  </div>
+  
+</article>
+
+
+
+  
+    <article id="post-MySQL-EXPLAIN命令详解与优化" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="article-meta">
+    <a href="/2025/09/06/MySQL-EXPLAIN%E5%91%BD%E4%BB%A4%E8%AF%A6%E8%A7%A3%E4%B8%8E%E4%BC%98%E5%8C%96/" class="article-date">
+  <time class="dt-published" datetime="2025-09-06T07:26:21.000Z" itemprop="datePublished">2025-09-06</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="p-name article-title" href="/2025/09/06/MySQL-EXPLAIN%E5%91%BD%E4%BB%A4%E8%AF%A6%E8%A7%A3%E4%B8%8E%E4%BC%98%E5%8C%96/">MySQL_EXPLAIN命令详解与优化</a>
+    </h1>
+  
+
+      </header>
+    
+    <div class="e-content article-entry" itemprop="articleBody">
+      
+        <p>思考过程（Thinking）：</p>
+<p>MySQL 的 EXPLAIN 命令是分析查询性能的关键工具，用于获取查询执行计划信息。以下是详细说明：</p>
+<h2 id="一、基本用法"><a href="#一、基本用法" class="headerlink" title="一、基本用法"></a>一、基本用法</h2><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">EXPLAIN [EXTENDED <span class="operator">|</span> PARTITIONS <span class="operator">|</span> FORMAT <span class="operator">=</span> format] <span class="keyword">SELECT</span> ...;</span><br></pre></td></tr></table></figure>
+
+<p>常用简化形式：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">EXPLAIN <span class="keyword">SELECT</span> ...;</span><br></pre></td></tr></table></figure>
+
+<h2 id="二、输出列详解"><a href="#二、输出列详解" class="headerlink" title="二、输出列详解"></a>二、输出列详解</h2><p>EXPLAIN 输出结果包含以下重要列：</p>
+<h3 id="1-id"><a href="#1-id" class="headerlink" title="1. id"></a>1. <strong>id</strong></h3><ul>
+<li>查询标识符</li>
+<li>数字越大越先执行，相同则从上到下执行</li>
+</ul>
+<h3 id="2-select-type"><a href="#2-select-type" class="headerlink" title="2. select_type"></a>2. <strong>select_type</strong></h3><ul>
+<li>SIMPLE：简单查询（无子查询或UNION）</li>
+<li>PRIMARY：主查询（最外层）</li>
+<li>SUBQUERY：子查询</li>
+<li>DERIVED：派生表（FROM子句中的子查询）</li>
+<li>UNION：UNION中的第二个及后续查询</li>
+<li>UNION RESULT：UNION结果</li>
+</ul>
+<h3 id="3-table"><a href="#3-table" class="headerlink" title="3. table"></a>3. <strong>table</strong></h3><ul>
+<li>访问的表名（或别名）</li>
+</ul>
+<h3 id="4-type（重要性能指标）"><a href="#4-type（重要性能指标）" class="headerlink" title="4. type（重要性能指标）"></a>4. <strong>type</strong>（重要性能指标）</h3><p>访问类型，性能从好到坏排序：</p>
+<ul>
+<li><strong>system</strong>：表只有一行</li>
+<li><strong>const</strong>：通过主键或唯一索引查找，最多返回一行</li>
+<li><strong>eq_ref</strong>：联表查询时使用主键或唯一索引</li>
+<li><strong>ref</strong>：使用非唯一索引查找</li>
+<li><strong>range</strong>：索引范围扫描</li>
+<li><strong>index</strong>：全索引扫描</li>
+<li><strong>ALL</strong>：全表扫描（应避免）</li>
+</ul>
+<h3 id="5-possible-keys"><a href="#5-possible-keys" class="headerlink" title="5. possible_keys"></a>5. <strong>possible_keys</strong></h3><ul>
+<li>可能使用的索引</li>
+</ul>
+<h3 id="6-key"><a href="#6-key" class="headerlink" title="6. key"></a>6. <strong>key</strong></h3><ul>
+<li>实际使用的索引</li>
+</ul>
+<h3 id="7-key-len"><a href="#7-key-len" class="headerlink" title="7. key_len"></a>7. <strong>key_len</strong></h3><ul>
+<li>使用的索引长度</li>
+</ul>
+<h3 id="8-ref"><a href="#8-ref" class="headerlink" title="8. ref"></a>8. <strong>ref</strong></h3><ul>
+<li>与索引比较的列或常量</li>
+</ul>
+<h3 id="9-rows"><a href="#9-rows" class="headerlink" title="9. rows"></a>9. <strong>rows</strong></h3><ul>
+<li>预估需要读取的行数</li>
+</ul>
+<h3 id="10-Extra（重要优化信息）"><a href="#10-Extra（重要优化信息）" class="headerlink" title="10. Extra（重要优化信息）"></a>10. <strong>Extra</strong>（重要优化信息）</h3><ul>
+<li><strong>Using index</strong>：覆盖索引，无需回表</li>
+<li><strong>Using where</strong>：服务器层过滤</li>
+<li><strong>Using temporary</strong>：使用临时表</li>
+<li><strong>Using filesort</strong>：需要额外排序</li>
+<li><strong>Using join buffer</strong>：使用连接缓冲区</li>
+</ul>
+<h2 id="三、使用示例"><a href="#三、使用示例" class="headerlink" title="三、使用示例"></a>三、使用示例</h2><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- 基本用法</span></span><br><span class="line">EXPLAIN <span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> users <span class="keyword">WHERE</span> id <span class="operator">=</span> <span class="number">1</span>;</span><br><span class="line"></span><br><span class="line"><span class="comment">-- 联表查询分析</span></span><br><span class="line">EXPLAIN <span class="keyword">SELECT</span> u.name, o.order_no </span><br><span class="line"><span class="keyword">FROM</span> users u </span><br><span class="line"><span class="keyword">JOIN</span> orders o <span class="keyword">ON</span> u.id <span class="operator">=</span> o.user_id </span><br><span class="line"><span class="keyword">WHERE</span> u.age <span class="operator">&gt;</span> <span class="number">25</span>;</span><br><span class="line"></span><br><span class="line"><span class="comment">-- 查看详细执行计划</span></span><br><span class="line">EXPLAIN FORMAT <span class="operator">=</span> JSON <span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> products <span class="keyword">WHERE</span> price <span class="operator">&gt;</span> <span class="number">100</span>;</span><br></pre></td></tr></table></figure>
+
+<h2 id="四、高级用法"><a href="#四、高级用法" class="headerlink" title="四、高级用法"></a>四、高级用法</h2><h3 id="1-EXPLAIN-ANALYZE（MySQL-8-0-18-）"><a href="#1-EXPLAIN-ANALYZE（MySQL-8-0-18-）" class="headerlink" title="1. EXPLAIN ANALYZE（MySQL 8.0.18+）"></a>1. <strong>EXPLAIN ANALYZE</strong>（MySQL 8.0.18+）</h3><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">EXPLAIN ANALYZE <span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> large_table <span class="keyword">WHERE</span> category <span class="operator">=</span> <span class="string">&#x27;books&#x27;</span>;</span><br></pre></td></tr></table></figure>
+
+<p>提供实际执行时间和成本统计。</p>
+<h3 id="2-JSON格式输出"><a href="#2-JSON格式输出" class="headerlink" title="2. JSON格式输出"></a>2. <strong>JSON格式输出</strong></h3><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">EXPLAIN FORMAT<span class="operator">=</span>JSON <span class="keyword">SELECT</span> ...;</span><br></pre></td></tr></table></figure>
+
+<p>获取更详细的JSON格式执行计划。</p>
+<h3 id="3-分区表分析"><a href="#3-分区表分析" class="headerlink" title="3. 分区表分析"></a>3. <strong>分区表分析</strong></h3><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">EXPLAIN PARTITIONS <span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> sales <span class="keyword">WHERE</span> <span class="keyword">year</span> <span class="operator">=</span> <span class="number">2023</span>;</span><br></pre></td></tr></table></figure>
+
+<p>显示分区访问情况。</p>
+<h2 id="五、优化建议"><a href="#五、优化建议" class="headerlink" title="五、优化建议"></a>五、优化建议</h2><ol>
+<li><strong>重点关注指标</strong><ul>
+<li><code>type</code> 尽量达到 ref 或 range 以上</li>
+<li><code>rows</code> 值尽可能小</li>
+<li><code>Extra</code> 避免出现 Using temporary 和 Using filesort</li>
+</ul>
+</li>
+<li><strong>常见优化场景</strong><ul>
+<li>全表扫描（type&#x3D;ALL）→ 考虑添加索引</li>
+<li>文件排序（Using filesort）→ 优化ORDER BY子句</li>
+<li>临时表（Using temporary）→ 优化GROUP BY或DISTINCT</li>
+</ul>
+</li>
+<li><strong>索引优化示例</strong></li>
+</ol>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- 优化前</span></span><br><span class="line">EXPLAIN <span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> orders <span class="keyword">WHERE</span> order_date <span class="operator">&gt;</span> <span class="string">&#x27;2023-01-01&#x27;</span>;</span><br><span class="line"><span class="comment">-- 如果type为ALL，添加索引</span></span><br><span class="line"><span class="keyword">CREATE</span> INDEX idx_order_date <span class="keyword">ON</span> orders(order_date);</span><br></pre></td></tr></table></figure>
+
+<h2 id="六、限制说明"><a href="#六、限制说明" class="headerlink" title="六、限制说明"></a>六、限制说明</h2><ol>
+<li>不实际执行查询</li>
+<li>基于统计信息估算</li>
+<li>不显示触发器和存储过程影响</li>
+<li>对于UPDATE&#x2F;DELETE语句，需要先转换为SELECT查看</li>
+</ol>
+<h2 id="七、实际工作流程"><a href="#七、实际工作流程" class="headerlink" title="七、实际工作流程"></a>七、实际工作流程</h2><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- 1. 分析慢查询</span></span><br><span class="line">EXPLAIN <span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> slow_query_table <span class="keyword">WHERE</span> conditions;</span><br><span class="line"></span><br><span class="line"><span class="comment">-- 2. 查看索引使用情况</span></span><br><span class="line">EXPLAIN <span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> <span class="keyword">table</span> USE INDEX (index_name) <span class="keyword">WHERE</span> ...;</span><br><span class="line"></span><br><span class="line"><span class="comment">-- 3. 对比不同写法</span></span><br><span class="line">EXPLAIN <span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> <span class="keyword">table</span> <span class="keyword">WHERE</span> a <span class="operator">=</span> <span class="number">1</span> <span class="keyword">AND</span> b <span class="operator">=</span> <span class="number">2</span>;</span><br><span class="line">EXPLAIN <span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> <span class="keyword">table</span> <span class="keyword">WHERE</span> b <span class="operator">=</span> <span class="number">2</span> <span class="keyword">AND</span> a <span class="operator">=</span> <span class="number">1</span>;</span><br><span class="line"></span><br><span class="line"><span class="comment">-- 4. 验证优化效果</span></span><br></pre></td></tr></table></figure>
+
+<p>通过 EXPLAIN 分析，可以系统性地识别查询性能瓶颈，制定合理的优化策略。</p>
+<h1 id="MySQL-EXPLAIN-命令详解"><a href="#MySQL-EXPLAIN-命令详解" class="headerlink" title="MySQL EXPLAIN 命令详解"></a>MySQL EXPLAIN 命令详解</h1><p>EXPLAIN 是 MySQL 中用于分析查询执行计划的关键工具，它能帮助我们理解查询是如何执行的，从而进行性能优化。</p>
+<h2 id="基本用法"><a href="#基本用法" class="headerlink" title="基本用法"></a>基本用法</h2><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- 基本语法</span></span><br><span class="line">EXPLAIN <span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> users <span class="keyword">WHERE</span> id <span class="operator">=</span> <span class="number">1</span>;</span><br><span class="line"></span><br><span class="line"><span class="comment">-- 也可以用于其他 DML 语句</span></span><br><span class="line">EXPLAIN <span class="keyword">UPDATE</span> users <span class="keyword">SET</span> name <span class="operator">=</span> <span class="string">&#x27;John&#x27;</span> <span class="keyword">WHERE</span> id <span class="operator">=</span> <span class="number">1</span>;</span><br><span class="line">EXPLAIN <span class="keyword">DELETE</span> <span class="keyword">FROM</span> users <span class="keyword">WHERE</span> id <span class="operator">=</span> <span class="number">1</span>;</span><br><span class="line"></span><br><span class="line"><span class="comment">-- 完整语法（MySQL 8.0+）</span></span><br><span class="line">EXPLAIN [FORMAT <span class="operator">=</span> &#123;TRADITIONAL <span class="operator">|</span> JSON <span class="operator">|</span> TREE&#125;] <span class="keyword">SELECT</span> ...;</span><br></pre></td></tr></table></figure>
+
+<h2 id="输出结果详解"><a href="#输出结果详解" class="headerlink" title="输出结果详解"></a>输出结果详解</h2><h3 id="主要字段说明"><a href="#主要字段说明" class="headerlink" title="主要字段说明"></a>主要字段说明</h3><table>
+<thead>
+<tr>
+<th>字段</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>id</strong></td>
+<td>查询标识符，数字越大越先执行</td>
+</tr>
+<tr>
+<td><strong>select_type</strong></td>
+<td>查询类型</td>
+</tr>
+<tr>
+<td><strong>table</strong></td>
+<td>访问的表名</td>
+</tr>
+<tr>
+<td><strong>partitions</strong></td>
+<td>匹配的分区</td>
+</tr>
+<tr>
+<td><strong>type</strong></td>
+<td>访问类型（重要性能指标）</td>
+</tr>
+<tr>
+<td><strong>possible_keys</strong></td>
+<td>可能使用的索引</td>
+</tr>
+<tr>
+<td><strong>key</strong></td>
+<td>实际使用的索引</td>
+</tr>
+<tr>
+<td><strong>key_len</strong></td>
+<td>使用的索引长度</td>
+</tr>
+<tr>
+<td><strong>ref</strong></td>
+<td>与索引比较的列或常量</td>
+</tr>
+<tr>
+<td><strong>rows</strong></td>
+<td>预估需要读取的行数</td>
+</tr>
+<tr>
+<td><strong>filtered</strong></td>
+<td>过滤后的行百分比</td>
+</tr>
+<tr>
+<td><strong>Extra</strong></td>
+<td>额外信息</td>
+</tr>
+</tbody></table>
+<h3 id="1-select-type（查询类型）"><a href="#1-select-type（查询类型）" class="headerlink" title="1. select_type（查询类型）"></a>1. <strong>select_type</strong>（查询类型）</h3><ul>
+<li><strong>SIMPLE</strong>：简单查询（无子查询或UNION）</li>
+<li><strong>PRIMARY</strong>：主查询（最外层）</li>
+<li><strong>SUBQUERY</strong>：子查询</li>
+<li><strong>DERIVED</strong>：派生表（FROM子句中的子查询）</li>
+<li><strong>UNION</strong>：UNION中的第二个及后续查询</li>
+<li><strong>UNION RESULT</strong>：UNION结果</li>
+</ul>
+<h3 id="2-type（访问类型-非常重要！）"><a href="#2-type（访问类型-非常重要！）" class="headerlink" title="2. type（访问类型 - 非常重要！）"></a>2. <strong>type</strong>（访问类型 - 非常重要！）</h3><p>按性能从好到坏排序：</p>
+<ol>
+<li><strong>system</strong>：表只有一行</li>
+<li><strong>const</strong>：通过主键或唯一索引查找，最多返回一行</li>
+<li><strong>eq_ref</strong>：联表查询时使用主键或唯一索引</li>
+<li><strong>ref</strong>：使用非唯一索引查找</li>
+<li><strong>range</strong>：索引范围扫描</li>
+<li><strong>index</strong>：全索引扫描</li>
+<li><strong>ALL</strong>：全表扫描（应避免）</li>
+</ol>
+<h3 id="3-Extra（额外信息）"><a href="#3-Extra（额外信息）" class="headerlink" title="3. Extra（额外信息）"></a>3. <strong>Extra</strong>（额外信息）</h3><ul>
+<li><strong>Using index</strong>：覆盖索引，无需回表</li>
+<li><strong>Using where</strong>：服务器层过滤</li>
+<li><strong>Using temporary</strong>：使用临时表</li>
+<li><strong>Using filesort</strong>：需要额外排序</li>
+<li><strong>Using join buffer</strong>：使用连接缓冲区</li>
+</ul>
+<h2 id="实战示例"><a href="#实战示例" class="headerlink" title="实战示例"></a>实战示例</h2><h3 id="示例1：基本查询分析"><a href="#示例1：基本查询分析" class="headerlink" title="示例1：基本查询分析"></a>示例1：基本查询分析</h3><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">EXPLAIN <span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> orders <span class="keyword">WHERE</span> customer_id <span class="operator">=</span> <span class="number">100</span>;</span><br></pre></td></tr></table></figure>
+
+<h3 id="示例2：连接查询分析"><a href="#示例2：连接查询分析" class="headerlink" title="示例2：连接查询分析"></a>示例2：连接查询分析</h3><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">EXPLAIN <span class="keyword">SELECT</span> o.<span class="operator">*</span>, c.name </span><br><span class="line"><span class="keyword">FROM</span> orders o </span><br><span class="line"><span class="keyword">JOIN</span> customers c <span class="keyword">ON</span> o.customer_id <span class="operator">=</span> c.id </span><br><span class="line"><span class="keyword">WHERE</span> o.amount <span class="operator">&gt;</span> <span class="number">1000</span>;</span><br></pre></td></tr></table></figure>
+
+<h3 id="示例3：JSON格式输出（MySQL-8-0-）"><a href="#示例3：JSON格式输出（MySQL-8-0-）" class="headerlink" title="示例3：JSON格式输出（MySQL 8.0+）"></a>示例3：JSON格式输出（MySQL 8.0+）</h3><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">EXPLAIN FORMAT<span class="operator">=</span>JSON </span><br><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> products <span class="keyword">WHERE</span> category_id <span class="operator">=</span> <span class="number">5</span>;</span><br></pre></td></tr></table></figure>
+
+<p>JSON格式提供更详细的信息，包括成本估算等。</p>
+<h2 id="优化案例"><a href="#优化案例" class="headerlink" title="优化案例"></a>优化案例</h2><h3 id="案例1：识别全表扫描"><a href="#案例1：识别全表扫描" class="headerlink" title="案例1：识别全表扫描"></a>案例1：识别全表扫描</h3><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- 问题查询</span></span><br><span class="line">EXPLAIN <span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> users <span class="keyword">WHERE</span> email <span class="keyword">LIKE</span> <span class="string">&#x27;%@gmail.com&#x27;</span>;</span><br><span class="line"><span class="comment">-- 如果 type = ALL，说明是全表扫描</span></span><br><span class="line"></span><br><span class="line"><span class="comment">-- 优化方案：考虑添加索引或修改查询条件</span></span><br><span class="line"><span class="keyword">CREATE</span> INDEX idx_email <span class="keyword">ON</span> users(email);</span><br></pre></td></tr></table></figure>
+
+<h3 id="案例2：识别文件排序"><a href="#案例2：识别文件排序" class="headerlink" title="案例2：识别文件排序"></a>案例2：识别文件排序</h3><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- 问题查询</span></span><br><span class="line">EXPLAIN <span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> orders <span class="keyword">ORDER</span> <span class="keyword">BY</span> order_date;</span><br><span class="line"><span class="comment">-- 如果 Extra 出现 &quot;Using filesort&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="comment">-- 优化方案：添加合适的索引</span></span><br><span class="line"><span class="keyword">CREATE</span> INDEX idx_order_date <span class="keyword">ON</span> orders(order_date);</span><br></pre></td></tr></table></figure>
+
+<h2 id="高级用法"><a href="#高级用法" class="headerlink" title="高级用法"></a>高级用法</h2><h3 id="1-EXPLAIN-ANALYZE（MySQL-8-0-18-）-1"><a href="#1-EXPLAIN-ANALYZE（MySQL-8-0-18-）-1" class="headerlink" title="1. EXPLAIN ANALYZE（MySQL 8.0.18+）"></a>1. EXPLAIN ANALYZE（MySQL 8.0.18+）</h3><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- 提供实际执行时间和成本统计</span></span><br><span class="line">EXPLAIN ANALYZE <span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> large_table <span class="keyword">WHERE</span> category <span class="operator">=</span> <span class="string">&#x27;books&#x27;</span>;</span><br></pre></td></tr></table></figure>
+
+<h3 id="2-分析分区表"><a href="#2-分析分区表" class="headerlink" title="2. 分析分区表"></a>2. 分析分区表</h3><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- 查看分区访问情况</span></span><br><span class="line">EXPLAIN PARTITIONS </span><br><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> sales <span class="keyword">WHERE</span> sale_date <span class="keyword">BETWEEN</span> <span class="string">&#x27;2023-01-01&#x27;</span> <span class="keyword">AND</span> <span class="string">&#x27;2023-12-31&#x27;</span>;</span><br></pre></td></tr></table></figure>
+
+<h3 id="3-对比不同查询计划"><a href="#3-对比不同查询计划" class="headerlink" title="3. 对比不同查询计划"></a>3. 对比不同查询计划</h3><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- 对比两个查询的性能</span></span><br><span class="line">EXPLAIN <span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> users <span class="keyword">WHERE</span> last_name <span class="operator">=</span> <span class="string">&#x27;Smith&#x27;</span> <span class="keyword">AND</span> first_name <span class="operator">=</span> <span class="string">&#x27;John&#x27;</span>;</span><br><span class="line">EXPLAIN <span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> users USE INDEX (idx_lastname) </span><br><span class="line"><span class="keyword">WHERE</span> last_name <span class="operator">=</span> <span class="string">&#x27;Smith&#x27;</span> <span class="keyword">AND</span> first_name <span class="operator">=</span> <span class="string">&#x27;John&#x27;</span>;</span><br></pre></td></tr></table></figure>
+
+<h2 id="优化建议"><a href="#优化建议" class="headerlink" title="优化建议"></a>优化建议</h2><ol>
+<li><strong>关注关键指标</strong><ul>
+<li>避免 <code>type: ALL</code>（全表扫描）</li>
+<li>尽量减少 <code>rows</code> 的值</li>
+<li>注意 <code>Using filesort</code> 和 <code>Using temporary</code></li>
+</ul>
+</li>
+<li><strong>索引优化</strong><ul>
+<li>确保查询使用了合适的索引</li>
+<li>考虑复合索引的顺序</li>
+<li>利用覆盖索引（Using index）</li>
+</ul>
+</li>
+<li><strong>查询结构调整</strong><ul>
+<li>避免在 WHERE 子句中对列进行函数操作</li>
+<li>减少子查询，改用 JOIN</li>
+<li>合理使用 LIMIT</li>
+</ul>
+</li>
+</ol>
+<h2 id="常用诊断查询"><a href="#常用诊断查询" class="headerlink" title="常用诊断查询"></a>常用诊断查询</h2><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- 查看表的索引情况</span></span><br><span class="line"><span class="keyword">SHOW</span> INDEX <span class="keyword">FROM</span> table_name;</span><br><span class="line"></span><br><span class="line"><span class="comment">-- 分析查询缓存中的执行计划</span></span><br><span class="line">EXPLAIN EXTENDED <span class="keyword">SELECT</span> ...;</span><br><span class="line"><span class="keyword">SHOW</span> WARNINGS;</span><br><span class="line"></span><br><span class="line"><span class="comment">-- 强制使用/忽略索引</span></span><br><span class="line">EXPLAIN <span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> <span class="keyword">table</span> USE INDEX (index_name) <span class="keyword">WHERE</span> ...;</span><br><span class="line">EXPLAIN <span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> <span class="keyword">table</span> IGNORE INDEX (index_name) <span class="keyword">WHERE</span> ...;</span><br></pre></td></tr></table></figure>
+
+<p>EXPLAIN 是 MySQL 性能调优的基础工具，结合慢查询日志、性能模式等工具，可以全面诊断和优化数据库性能。</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://example.com/2025/09/06/MySQL-EXPLAIN%E5%91%BD%E4%BB%A4%E8%AF%A6%E8%A7%A3%E4%B8%8E%E4%BC%98%E5%8C%96/" data-id="cmmem61qj000oe0sl0gwo91sd" data-title="MySQL_EXPLAIN命令详解与优化" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
+      
+      
+      
+    </footer>
+  </div>
+  
+</article>
+
+
+
+  
+
+
+  <nav id="page-nav">
+    
+    <a class="extend prev" rel="prev" href="/">&laquo; zurück</a><a class="page-number" href="/">1</a><span class="page-number current">2</span><a class="page-number" href="/page/3/">3</a><a class="page-number" href="/page/4/">4</a><span class="space">&hellip;</span><a class="page-number" href="/page/6/">6</a><a class="extend next" rel="next" href="/page/3/">weiter &raquo;</a>
+  </nav>
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tags</h3>
+    <div class="widget">
+      <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="/tags/CSS/" rel="tag">CSS</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/JAVA/" rel="tag">JAVA</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Java/" rel="tag">Java</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Spring/" rel="tag">Spring</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/js/" rel="tag">js</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%89%8D%E7%AB%AF/" rel="tag">前端</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%90%8E%E7%AB%AF/" rel="tag">后端</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E7%BA%BF%E7%A8%8B%E6%B1%A0/" rel="tag">线程池</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E7%BF%BB%E8%AF%91/" rel="tag">翻译</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/" rel="tag">设计模式</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E9%AB%98%E5%B9%B6%E5%8F%91/" rel="tag">高并发</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tag Cloud</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/CSS/" style="font-size: 10px;">CSS</a> <a href="/tags/JAVA/" style="font-size: 16.67px;">JAVA</a> <a href="/tags/Java/" style="font-size: 13.33px;">Java</a> <a href="/tags/Spring/" style="font-size: 10px;">Spring</a> <a href="/tags/js/" style="font-size: 10px;">js</a> <a href="/tags/%E5%89%8D%E7%AB%AF/" style="font-size: 20px;">前端</a> <a href="/tags/%E5%90%8E%E7%AB%AF/" style="font-size: 13.33px;">后端</a> <a href="/tags/%E7%BA%BF%E7%A8%8B%E6%B1%A0/" style="font-size: 10px;">线程池</a> <a href="/tags/%E7%BF%BB%E8%AF%91/" style="font-size: 10px;">翻译</a> <a href="/tags/%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/" style="font-size: 13.33px;">设计模式</a> <a href="/tags/%E9%AB%98%E5%B9%B6%E5%8F%91/" style="font-size: 10px;">高并发</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Archiv</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/02/">February 2026</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/01/">January 2026</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/12/">December 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/11/">November 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/10/">October 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/09/">September 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/08/">August 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/07/">July 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/04/">April 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/03/">March 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/02/">February 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/01/">January 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/12/">December 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/11/">November 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/10/">October 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/07/">July 2024</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">letzter Beitrag</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2026/02/14/%E4%B9%90%E8%A7%82%E9%94%81%E5%AE%9E%E7%8E%B0%E9%AB%98%E5%B9%B6%E5%8F%91%E7%8A%B6%E6%80%81%E4%B8%80%E8%87%B4/">乐观锁实现高并发状态一致</a>
+          </li>
+        
+          <li>
+            <a href="/2026/02/04/%E5%A4%A7%E6%A8%A1%E5%9E%8B%E8%BE%93%E5%87%BA%E6%A0%87%E5%87%86JSON%E8%A7%A3%E5%86%B3%E6%96%B9%E6%B3%95/">大模型输出标准JSON解决方法</a>
+          </li>
+        
+          <li>
+            <a href="/2026/01/23/Java%E7%BA%BF%E7%A8%8B%E6%B1%A0%E5%BC%82%E5%B8%B8%E5%A4%84%E7%90%86%E6%9C%BA%E5%88%B6/">Java线程池异常处理机制</a>
+          </li>
+        
+          <li>
+            <a href="/2026/01/04/%E5%80%9F%E8%AF%81%E4%B8%9A%E5%8A%A1%E7%8A%B6%E6%80%81%E6%9C%BA%E5%BB%BA%E6%A8%A1%E5%8E%9F%E5%AD%90%E6%80%A7/">借证业务状态机建模原子性</a>
+          </li>
+        
+          <li>
+            <a href="/2026/01/04/RAG%E6%B5%81%E7%A8%8B%E8%AF%A6%E8%A7%A3%E4%B8%8E%E5%9B%BE%E8%A7%A3/">RAG流程详解与图解</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      
+      &copy; 2026 haipeiface<br>
+      Powered by <a href="https://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+
+<script src="/js/jquery-3.6.4.min.js"></script>
+
+
+
+  
+<script src="/fancybox/jquery.fancybox.min.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+
+  </div>
+</body>
+</html>

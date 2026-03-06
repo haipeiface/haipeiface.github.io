@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  
+  <title>Spring_Cloud_Gateway_500错误排查 | haipeiface.github.io</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="Spring Cloud Gateway 返回 500 错误，通常意味着请求在网关或下游服务的处理过程中出现了异常。虽然 500 是个通用报错，但只要按照正确的步骤排查日志和配置，通常很快能找到原因。 建议你按照以下思路进行系统性的排查： 12345678910111213141516171819202122232425flowchart TD    A[发现Spring Cloud Gatewa">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Spring_Cloud_Gateway_500错误排查">
+<meta property="og:url" content="http://example.com/2025/12/04/Spring-Cloud-Gateway-500%E9%94%99%E8%AF%AF%E6%8E%92%E6%9F%A5/index.html">
+<meta property="og:site_name" content="haipeiface.github.io">
+<meta property="og:description" content="Spring Cloud Gateway 返回 500 错误，通常意味着请求在网关或下游服务的处理过程中出现了异常。虽然 500 是个通用报错，但只要按照正确的步骤排查日志和配置，通常很快能找到原因。 建议你按照以下思路进行系统性的排查： 12345678910111213141516171819202122232425flowchart TD    A[发现Spring Cloud Gatewa">
+<meta property="og:locale">
+<meta property="article:published_time" content="2025-12-04T12:44:30.000Z">
+<meta property="article:modified_time" content="2026-03-06T07:56:32.534Z">
+<meta property="article:author" content="haipeiface">
+<meta name="twitter:card" content="summary">
+  
+    <link rel="alternate" href="/atom.xml" title="haipeiface.github.io" type="application/atom+xml">
+  
+  
+    <link rel="shortcut icon" href="/favicon.png">
+  
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+    
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.min.css">
+
+  
+  
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">haipeiface.github.io</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"><span class="fa fa-bars"></span></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        
+          <a class="nav-icon" href="/atom.xml" title="RSS Feed"><span class="fa fa-rss"></span></a>
+        
+        <a class="nav-icon nav-search-btn" title="Suche"><span class="fa fa-search"></span></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Suche"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://example.com"></form>
+      </div>
+    </div>
+  </div>
+</header>
+
+      <div class="outer">
+        <section id="main"><article id="post-Spring-Cloud-Gateway-500错误排查" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="article-meta">
+    <a href="/2025/12/04/Spring-Cloud-Gateway-500%E9%94%99%E8%AF%AF%E6%8E%92%E6%9F%A5/" class="article-date">
+  <time class="dt-published" datetime="2025-12-04T12:44:30.000Z" itemprop="datePublished">2025-12-04</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="p-name article-title" itemprop="headline name">
+      Spring_Cloud_Gateway_500错误排查
+    </h1>
+  
+
+      </header>
+    
+    <div class="e-content article-entry" itemprop="articleBody">
+      
+        <p>Spring Cloud Gateway 返回 500 错误，通常意味着请求在网关或下游服务的处理过程中出现了异常。虽然 500 是个通用报错，但只要按照正确的步骤排查日志和配置，通常很快能找到原因。</p>
+<p>建议你按照以下思路进行系统性的排查：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line">flowchart TD</span><br><span class="line">    A[发现Spring Cloud Gateway&lt;br&gt;返回500错误] --&gt; B&#123;查看网关日志&lt;br&gt;有无具体异常栈&#125;</span><br><span class="line">    </span><br><span class="line">    B --&gt;|有明确异常| C[根据异常类型定位]</span><br><span class="line">    B --&gt;|无明确异常或日志不足| D[开启更详细的日志级别&lt;br&gt;logging.level.reactor=DEBUG&lt;br&gt;logging.level.org.springframework.cloud.gateway=TRACE]</span><br><span class="line">    </span><br><span class="line">    C --&gt; E&#123;异常类型判断&#125;</span><br><span class="line">    </span><br><span class="line">    E --&gt;|ConnectTimeoutException&lt;br&gt;或连接池相关| F[网络连接/超时问题&lt;br&gt;检查下游服务状态、防火墙&lt;br&gt;调整gateway httpclient超时配置]</span><br><span class="line">    </span><br><span class="line">    E --&gt;|Service Unavailable&lt;br&gt;No binding found| G[服务发现/注册问题&lt;br&gt;检查Eureka/Consul等服务列表&lt;br&gt;确认prefer-ip-address配置]</span><br><span class="line">    </span><br><span class="line">    E --&gt;|ResponseStatusException&lt;br&gt;或自定义异常| H[业务或路由异常&lt;br&gt;检查路由配置是否正确&lt;br&gt;确认GlobalFilter中的逻辑]</span><br><span class="line">    </span><br><span class="line">    E --&gt;|IllegalStateException| I[框架或版本Bug&lt;br&gt;检查是否为SCG 1.0.7之前版本]</span><br><span class="line">    </span><br><span class="line">    F --&gt; J[验证问题是否解决]</span><br><span class="line">    G --&gt; J</span><br><span class="line">    H --&gt; J</span><br><span class="line">    I --&gt; J</span><br><span class="line">    </span><br><span class="line">    D --&gt; J</span><br><span class="line">    </span><br><span class="line">    J --&gt;|未解决| K[自定义ErrorAttributes&lt;br&gt;增强错误日志输出]</span><br><span class="line">    K --&gt; L[最终定位并修复]</span><br></pre></td></tr></table></figure>
+
+<h3 id="🔍-第一步：检查日志，定位异常类型"><a href="#🔍-第一步：检查日志，定位异常类型" class="headerlink" title="🔍 第一步：检查日志，定位异常类型"></a>🔍 第一步：检查日志，定位异常类型</h3><p>排查问题的第一步永远是<strong>查看日志</strong>。500错误只是表象，具体原因藏在异常栈里。</p>
+<ul>
+<li><strong>查看网关日志</strong>：寻找 <code>Caused by</code> 或具体的异常类型，如 <code>ConnectTimeoutException</code>、<code>IllegalStateException</code> 等。</li>
+<li><strong>开启详细日志</strong>：如果日志信息不足，可以在配置文件中增加以下配置，获取更详细的请求和响应信息：<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">logging:</span></span><br><span class="line"><span class="attr">level:</span></span><br><span class="line">  <span class="attr">org.springframework.cloud.gateway:</span> <span class="string">TRACE</span></span><br><span class="line">  <span class="attr">reactor.netty.http.client:</span> <span class="string">DEBUG</span></span><br></pre></td></tr></table></figure></li>
+</ul>
+<h3 id="🛠️-第二步：根据异常，对症下药"><a href="#🛠️-第二步：根据异常，对症下药" class="headerlink" title="🛠️ 第二步：根据异常，对症下药"></a>🛠️ 第二步：根据异常，对症下药</h3><p>根据日志中发现的异常类型，可以对应到以下几种常见原因：</p>
+<ul>
+<li>**连接超时或连接池问题 (<code>ConnectTimeoutException</code>)**：<ul>
+<li><strong>原因</strong>：网关无法连接到下游服务，或者连接池中的连接已失效。</li>
+<li><strong>解决方案</strong>：检查下游服务是否健康；调整网关的超时和连接池配置：<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">spring:</span></span><br><span class="line"><span class="attr">cloud:</span></span><br><span class="line"><span class="attr">gateway:</span></span><br><span class="line">  <span class="attr">httpclient:</span></span><br><span class="line">    <span class="attr">connect-timeout:</span> <span class="number">5000</span></span><br><span class="line">    <span class="attr">response-timeout:</span> <span class="string">10s</span></span><br><span class="line">    <span class="attr">pool:</span></span><br><span class="line">      <span class="attr">type:</span> <span class="string">ELASTIC</span></span><br><span class="line">      <span class="attr">max-connections:</span> <span class="number">500</span></span><br></pre></td></tr></table></figure>
+<blockquote>
+<p>如果是偶发性的连接池问题，可以尝试将 <code>pool.type</code> 设置为 <code>DISABLED</code> 来临时绕过（不推荐生产长期使用）。</p>
+</blockquote>
+</li>
+</ul>
+</li>
+<li>**服务发现与注册问题 (<code>No binding found</code> 或 <code>Unable to find instance</code>)**：<ul>
+<li><strong>原因</strong>：网关无法从注册中心（如Eureka、Consul）获取到目标服务的实例列表，或获取到的IP地址不可达。</li>
+<li><strong>解决方案</strong>：<ul>
+<li>检查注册中心（如Eureka）的服务列表，确认服务是否成功注册且状态为“UP”。</li>
+<li>检查网关的<strong>服务发现配置</strong>，特别是 <code>prefer-ip-address</code> 参数。如果部署在容器中，设为 <code>true</code> 可能导致网关使用容器内部IP，使请求无法路由。<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">eureka:</span></span><br><span class="line"><span class="attr">instance:</span></span><br><span class="line"><span class="attr">prefer-ip-address:</span> <span class="literal">false</span></span><br><span class="line"><span class="attr">hostname:</span> <span class="string">$&#123;spring.application.name&#125;</span></span><br></pre></td></tr></table></figure></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><strong>路由配置错误</strong>：<ul>
+<li><strong>原因</strong>：<code>application.yml</code> 中的路由断言（Predicates）或过滤器（Filters）配置错误，导致无法匹配到正确的下游服务。</li>
+<li><strong>解决方案</strong>：仔细核对路由配置，确保 <code>uri</code> 和断言逻辑正确。</li>
+</ul>
+</li>
+<li>**版本Bug (<code>IllegalStateException</code>)**：<ul>
+<li><strong>原因</strong>：使用了较低版本的Spring Cloud Gateway（如v1.0.7之前），存在已知Bug。</li>
+<li><strong>解决方案</strong>：尝试将Spring Cloud Gateway升级到最新稳定版。</li>
+</ul>
+</li>
+</ul>
+<h3 id="💡-第三步：进阶手段——自定义错误信息"><a href="#💡-第三步：进阶手段——自定义错误信息" class="headerlink" title="💡 第三步：进阶手段——自定义错误信息"></a>💡 第三步：进阶手段——自定义错误信息</h3><p>如果以上步骤都无法定位问题，你可以通过自定义 <code>ErrorAttributes</code> 来捕获更具体的异常信息，并将其返回给客户端或记录到日志中。</p>
+<ul>
+<li><strong>核心原理</strong>：Spring Cloud Gateway 默认的异常处理器 <code>DefaultErrorAttributes</code> 决定了最终返回的 status 和 body。你可以通过继承它来定制行为。</li>
+<li><strong>示例</strong>：创建一个 <code>CustomErrorAttributes</code> 类，区分不同类型的异常（如连接异常），并返回自定义的错误码：<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Component</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">CustomErrorAttributes</span> <span class="keyword">extends</span> <span class="title class_">DefaultErrorAttributes</span> &#123;</span><br><span class="line">  <span class="keyword">private</span> <span class="type">Logger</span> <span class="variable">logger</span> <span class="operator">=</span> LoggerFactory.getLogger(CustomErrorAttributes.class);</span><br><span class="line">  <span class="meta">@Override</span></span><br><span class="line">  <span class="keyword">public</span> Map&lt;String, Object&gt; <span class="title function_">getErrorAttributes</span><span class="params">(ServerRequest request, ErrorAttributeOptions options)</span> &#123;</span><br><span class="line">      <span class="type">Throwable</span> <span class="variable">error</span> <span class="operator">=</span> getError(request);</span><br><span class="line">      Map&lt;String, Object&gt; map = <span class="keyword">new</span> <span class="title class_">HashMap</span>&lt;&gt;();</span><br><span class="line">      <span class="comment">// 根据异常类型添加自定义字段</span></span><br><span class="line">      <span class="keyword">if</span> (error <span class="keyword">instanceof</span> ConnectException) &#123;</span><br><span class="line">          logger.error(<span class="string">&quot;捕获到连接异常: &quot;</span>, error);</span><br><span class="line">          map.put(<span class="string">&quot;code&quot;</span>, <span class="string">&quot;SERVICE_UNAVAILABLE&quot;</span>);</span><br><span class="line">          map.put(<span class="string">&quot;message&quot;</span>, <span class="string">&quot;无法连接到后端服务&quot;</span>);</span><br><span class="line">      &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">          logger.error(<span class="string">&quot;捕获到未知异常: &quot;</span>, error);</span><br><span class="line">          map.put(<span class="string">&quot;code&quot;</span>, <span class="string">&quot;INTERNAL_ERROR&quot;</span>);</span><br><span class="line">          map.put(<span class="string">&quot;message&quot;</span>, error.getMessage());</span><br><span class="line">      &#125;</span><br><span class="line">      <span class="keyword">return</span> map;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></li>
+</ul>
+<p>希望这份排查指南能帮你快速定位问题。如果能从日志里找到具体的异常栈，可以发给我，我帮你一起分析～</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://example.com/2025/12/04/Spring-Cloud-Gateway-500%E9%94%99%E8%AF%AF%E6%8E%92%E6%9F%A5/" data-id="cmmem61qn000we0slesmmdjgu" data-title="Spring_Cloud_Gateway_500错误排查" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
+      
+      
+      
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2025/12/06/Java-Synchronized%E5%BA%95%E5%B1%82%E5%AE%9E%E7%8E%B0%E6%9C%BA%E5%88%B6%E8%AF%A6%E8%A7%A3/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Neuer</strong>
+      <div class="article-nav-title">
+        
+          Java_Synchronized底层实现机制详解
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2025/12/03/DeepWiki%E7%BD%91%E7%AB%99%E5%AE%9E%E7%8E%B0%E5%8E%9F%E7%90%86%E8%A7%A3%E6%9E%90/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Älter</strong>
+      <div class="article-nav-title">DeepWiki网站实现原理解析</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tags</h3>
+    <div class="widget">
+      <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="/tags/CSS/" rel="tag">CSS</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/JAVA/" rel="tag">JAVA</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Java/" rel="tag">Java</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Spring/" rel="tag">Spring</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/js/" rel="tag">js</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%89%8D%E7%AB%AF/" rel="tag">前端</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%90%8E%E7%AB%AF/" rel="tag">后端</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E7%BA%BF%E7%A8%8B%E6%B1%A0/" rel="tag">线程池</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E7%BF%BB%E8%AF%91/" rel="tag">翻译</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/" rel="tag">设计模式</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E9%AB%98%E5%B9%B6%E5%8F%91/" rel="tag">高并发</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tag Cloud</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/CSS/" style="font-size: 10px;">CSS</a> <a href="/tags/JAVA/" style="font-size: 16.67px;">JAVA</a> <a href="/tags/Java/" style="font-size: 13.33px;">Java</a> <a href="/tags/Spring/" style="font-size: 10px;">Spring</a> <a href="/tags/js/" style="font-size: 10px;">js</a> <a href="/tags/%E5%89%8D%E7%AB%AF/" style="font-size: 20px;">前端</a> <a href="/tags/%E5%90%8E%E7%AB%AF/" style="font-size: 13.33px;">后端</a> <a href="/tags/%E7%BA%BF%E7%A8%8B%E6%B1%A0/" style="font-size: 10px;">线程池</a> <a href="/tags/%E7%BF%BB%E8%AF%91/" style="font-size: 10px;">翻译</a> <a href="/tags/%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/" style="font-size: 13.33px;">设计模式</a> <a href="/tags/%E9%AB%98%E5%B9%B6%E5%8F%91/" style="font-size: 10px;">高并发</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Archiv</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/02/">February 2026</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/01/">January 2026</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/12/">December 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/11/">November 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/10/">October 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/09/">September 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/08/">August 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/07/">July 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/04/">April 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/03/">March 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/02/">February 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/01/">January 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/12/">December 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/11/">November 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/10/">October 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/07/">July 2024</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">letzter Beitrag</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2026/02/14/%E4%B9%90%E8%A7%82%E9%94%81%E5%AE%9E%E7%8E%B0%E9%AB%98%E5%B9%B6%E5%8F%91%E7%8A%B6%E6%80%81%E4%B8%80%E8%87%B4/">乐观锁实现高并发状态一致</a>
+          </li>
+        
+          <li>
+            <a href="/2026/02/04/%E5%A4%A7%E6%A8%A1%E5%9E%8B%E8%BE%93%E5%87%BA%E6%A0%87%E5%87%86JSON%E8%A7%A3%E5%86%B3%E6%96%B9%E6%B3%95/">大模型输出标准JSON解决方法</a>
+          </li>
+        
+          <li>
+            <a href="/2026/01/23/Java%E7%BA%BF%E7%A8%8B%E6%B1%A0%E5%BC%82%E5%B8%B8%E5%A4%84%E7%90%86%E6%9C%BA%E5%88%B6/">Java线程池异常处理机制</a>
+          </li>
+        
+          <li>
+            <a href="/2026/01/04/%E5%80%9F%E8%AF%81%E4%B8%9A%E5%8A%A1%E7%8A%B6%E6%80%81%E6%9C%BA%E5%BB%BA%E6%A8%A1%E5%8E%9F%E5%AD%90%E6%80%A7/">借证业务状态机建模原子性</a>
+          </li>
+        
+          <li>
+            <a href="/2026/01/04/RAG%E6%B5%81%E7%A8%8B%E8%AF%A6%E8%A7%A3%E4%B8%8E%E5%9B%BE%E8%A7%A3/">RAG流程详解与图解</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      
+      &copy; 2026 haipeiface<br>
+      Powered by <a href="https://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+
+<script src="/js/jquery-3.6.4.min.js"></script>
+
+
+
+  
+<script src="/fancybox/jquery.fancybox.min.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+
+  </div>
+</body>
+</html>

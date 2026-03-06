@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  
+  <title>MySQL事务隔离级别详解 | haipeiface.github.io</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="思考过程（Thinking）： MySQL 数据库支持多种事务隔离级别，而不是多种事务类型。事务隔离级别定义了事务之间的隔离程度，包括读未提交、读已提交、可重复读和串行化。默认的隔离级别是可重复读（REPEATABLE READ）。但是，需要注意的是，虽然MySQL默认隔离级别是可重复读，但在某些情况下，比如使用InnoDB引擎时，通过多版本并发控制（MVCC）实现了非阻塞读，从而在可重复读级别下">
+<meta property="og:type" content="article">
+<meta property="og:title" content="MySQL事务隔离级别详解">
+<meta property="og:url" content="http://example.com/2024/10/06/MySQL%E4%BA%8B%E5%8A%A1%E9%9A%94%E7%A6%BB%E7%BA%A7%E5%88%AB%E8%AF%A6%E8%A7%A3/index.html">
+<meta property="og:site_name" content="haipeiface.github.io">
+<meta property="og:description" content="思考过程（Thinking）： MySQL 数据库支持多种事务隔离级别，而不是多种事务类型。事务隔离级别定义了事务之间的隔离程度，包括读未提交、读已提交、可重复读和串行化。默认的隔离级别是可重复读（REPEATABLE READ）。但是，需要注意的是，虽然MySQL默认隔离级别是可重复读，但在某些情况下，比如使用InnoDB引擎时，通过多版本并发控制（MVCC）实现了非阻塞读，从而在可重复读级别下">
+<meta property="og:locale">
+<meta property="article:published_time" content="2024-10-06T02:52:23.000Z">
+<meta property="article:modified_time" content="2026-03-06T08:08:18.644Z">
+<meta property="article:author" content="haipeiface">
+<meta name="twitter:card" content="summary">
+  
+    <link rel="alternate" href="/atom.xml" title="haipeiface.github.io" type="application/atom+xml">
+  
+  
+    <link rel="shortcut icon" href="/favicon.png">
+  
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+    
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.min.css">
+
+  
+  
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">haipeiface.github.io</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"><span class="fa fa-bars"></span></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        
+          <a class="nav-icon" href="/atom.xml" title="RSS Feed"><span class="fa fa-rss"></span></a>
+        
+        <a class="nav-icon nav-search-btn" title="Suche"><span class="fa fa-search"></span></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Suche"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://example.com"></form>
+      </div>
+    </div>
+  </div>
+</header>
+
+      <div class="outer">
+        <section id="main"><article id="post-MySQL事务隔离级别详解" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="article-meta">
+    <a href="/2024/10/06/MySQL%E4%BA%8B%E5%8A%A1%E9%9A%94%E7%A6%BB%E7%BA%A7%E5%88%AB%E8%AF%A6%E8%A7%A3/" class="article-date">
+  <time class="dt-published" datetime="2024-10-06T02:52:23.000Z" itemprop="datePublished">2024-10-06</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="p-name article-title" itemprop="headline name">
+      MySQL事务隔离级别详解
+    </h1>
+  
+
+      </header>
+    
+    <div class="e-content article-entry" itemprop="articleBody">
+      
+        <p>思考过程（Thinking）：</p>
+<p>MySQL 数据库支持多种事务隔离级别，而不是多种事务类型。事务隔离级别定义了事务之间的隔离程度，包括读未提交、读已提交、可重复读和串行化。<br>默认的隔离级别是可重复读（REPEATABLE READ）。<br>但是，需要注意的是，虽然MySQL默认隔离级别是可重复读，但在某些情况下，比如使用InnoDB引擎时，通过多版本并发控制（MVCC）实现了非阻塞读，从而在可重复读级别下避免了幻读问题。<br>另外，事务的默认行为是自动提交（autocommit），即每条SQL语句都会自动作为一个事务提交。可以通过设置autocommit变量来改变这一行为。</p>
+<p>下面我将详细说明MySQL的事务隔离级别以及默认设置，并给出相关命令。</p>
+<p>MySQL 中的事务主要涉及 <strong>事务隔离级别</strong>，它定义了事务之间的隔离程度，而不是有多种“事务类型”。以下是 MySQL 支持的事务隔离级别：</p>
+<h2 id="一、4种事务隔离级别"><a href="#一、4种事务隔离级别" class="headerlink" title="一、4种事务隔离级别"></a>一、4种事务隔离级别</h2><h3 id="1-READ-UNCOMMITTED（读未提交）"><a href="#1-READ-UNCOMMITTED（读未提交）" class="headerlink" title="1. READ UNCOMMITTED（读未提交）"></a>1. <strong>READ UNCOMMITTED（读未提交）</strong></h3><ul>
+<li>最低的隔离级别</li>
+<li>事务可以读取其他事务未提交的数据</li>
+<li>可能出现 <strong>脏读、不可重复读、幻读</strong></li>
+</ul>
+<h3 id="2-READ-COMMITTED（读已提交）"><a href="#2-READ-COMMITTED（读已提交）" class="headerlink" title="2. READ COMMITTED（读已提交）"></a>2. <strong>READ COMMITTED（读已提交）</strong></h3><ul>
+<li>事务只能读取其他事务已提交的数据</li>
+<li>解决了脏读问题</li>
+<li>仍可能出现 <strong>不可重复读、幻读</strong></li>
+</ul>
+<h3 id="3-REPEATABLE-READ（可重复读）✅-默认"><a href="#3-REPEATABLE-READ（可重复读）✅-默认" class="headerlink" title="3. REPEATABLE READ（可重复读）✅ 默认"></a>3. <strong>REPEATABLE READ（可重复读）✅ 默认</strong></h3><ul>
+<li><strong>MySQL InnoDB 引擎的默认隔离级别</strong></li>
+<li>保证在同一个事务中多次读取同一数据的结果是一致的</li>
+<li>解决了脏读和不可重复读</li>
+<li>通过 MVCC（多版本并发控制）部分解决了幻读</li>
+</ul>
+<h3 id="4-SERIALIZABLE（串行化）"><a href="#4-SERIALIZABLE（串行化）" class="headerlink" title="4. SERIALIZABLE（串行化）"></a>4. <strong>SERIALIZABLE（串行化）</strong></h3><ul>
+<li>最高的隔离级别</li>
+<li>所有事务串行执行</li>
+<li>完全解决了脏读、不可重复读、幻读</li>
+<li>性能最差，并发性最低</li>
+</ul>
+<h2 id="二、检查当前隔离级别"><a href="#二、检查当前隔离级别" class="headerlink" title="二、检查当前隔离级别"></a>二、检查当前隔离级别</h2><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- 查看当前会话的隔离级别</span></span><br><span class="line"><span class="keyword">SELECT</span> @<span class="variable">@transaction_isolation</span>;</span><br><span class="line"></span><br><span class="line"><span class="comment">-- 查看全局隔离级别</span></span><br><span class="line"><span class="keyword">SELECT</span> @<span class="variable">@global</span>.transaction_isolation;</span><br><span class="line"></span><br><span class="line"><span class="comment">-- 8.0之前的版本使用</span></span><br><span class="line"><span class="keyword">SELECT</span> @<span class="variable">@tx_isolation</span>;</span><br></pre></td></tr></table></figure>
+
+<h2 id="三、设置隔离级别"><a href="#三、设置隔离级别" class="headerlink" title="三、设置隔离级别"></a>三、设置隔离级别</h2><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- 设置当前会话的隔离级别</span></span><br><span class="line"><span class="keyword">SET</span> SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED;</span><br><span class="line"></span><br><span class="line"><span class="comment">-- 设置全局隔离级别</span></span><br><span class="line"><span class="keyword">SET</span> <span class="keyword">GLOBAL</span> TRANSACTION ISOLATION LEVEL REPEATABLE READ;</span><br><span class="line"></span><br><span class="line"><span class="comment">-- 设置下一个事务的隔离级别</span></span><br><span class="line"><span class="keyword">SET</span> TRANSACTION ISOLATION LEVEL SERIALIZABLE;</span><br></pre></td></tr></table></figure>
+
+<h2 id="四、在配置文件中设置"><a href="#四、在配置文件中设置" class="headerlink" title="四、在配置文件中设置"></a>四、在配置文件中设置</h2><figure class="highlight ini"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># my.cnf 或 my.ini</span></span><br><span class="line"><span class="section">[mysqld]</span></span><br><span class="line"><span class="attr">transaction-isolation</span> = REPEATABLE-READ</span><br><span class="line"><span class="comment"># 可选值：READ-UNCOMMITTED, READ-COMMITTED, </span></span><br><span class="line"><span class="comment"># REPEATABLE-READ, SERIALIZABLE</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="五、InnoDB-对-REPEATABLE-READ-的增强"><a href="#五、InnoDB-对-REPEATABLE-READ-的增强" class="headerlink" title="五、InnoDB 对 REPEATABLE READ 的增强"></a>五、InnoDB 对 REPEATABLE READ 的增强</h2><p>MySQL 的 InnoDB 引擎在 <strong>REPEATABLE READ</strong> 级别下，通过以下机制提供了更好的隔离性：</p>
+<ol>
+<li><strong>MVCC（多版本并发控制）</strong><ul>
+<li>为每行数据维护多个版本</li>
+<li>读取时根据事务开始时间返回相应的数据版本</li>
+</ul>
+</li>
+<li><strong>Next-Key Locking（临键锁）</strong><ul>
+<li>结合记录锁和间隙锁</li>
+<li>有效防止幻读的发生</li>
+</ul>
+</li>
+</ol>
+<h2 id="六、实际应用建议"><a href="#六、实际应用建议" class="headerlink" title="六、实际应用建议"></a>六、实际应用建议</h2><table>
+<thead>
+<tr>
+<th>场景</th>
+<th>推荐隔离级别</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>大多数应用</td>
+<td>REPEATABLE READ（默认）</td>
+</tr>
+<tr>
+<td>高并发读写，对数据一致性要求不高</td>
+<td>READ COMMITTED</td>
+</tr>
+<tr>
+<td>财务、交易系统</td>
+<td>SERIALIZABLE 或 REPEATABLE READ</td>
+</tr>
+<tr>
+<td>数据仓库，只读查询</td>
+<td>READ UNCOMMITTED</td>
+</tr>
+</tbody></table>
+<h2 id="七、示例对比"><a href="#七、示例对比" class="headerlink" title="七、示例对比"></a>七、示例对比</h2><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- 会话1</span></span><br><span class="line"><span class="keyword">BEGIN</span>;</span><br><span class="line"><span class="keyword">UPDATE</span> users <span class="keyword">SET</span> balance <span class="operator">=</span> balance <span class="operator">-</span> <span class="number">100</span> <span class="keyword">WHERE</span> id <span class="operator">=</span> <span class="number">1</span>;</span><br><span class="line"></span><br><span class="line"><span class="comment">-- 会话2，不同隔离级别的表现：</span></span><br><span class="line"><span class="comment">-- READ UNCOMMITTED: 能看到会话1未提交的修改（脏读）</span></span><br><span class="line"><span class="comment">-- READ COMMITTED: 看不到未提交的修改</span></span><br><span class="line"><span class="comment">-- REPEATABLE READ: 看不到未提交的修改，且多次读取结果一致</span></span><br><span class="line"><span class="comment">-- SERIALIZABLE: 会等待会话1的事务完成</span></span><br><span class="line"><span class="keyword">SELECT</span> balance <span class="keyword">FROM</span> users <span class="keyword">WHERE</span> id <span class="operator">=</span> <span class="number">1</span>;</span><br></pre></td></tr></table></figure>
+
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><ul>
+<li><strong>MySQL 默认事务隔离级别是 REPEATABLE READ</strong></li>
+<li>这是 InnoDB 引擎在性能和数据一致性之间的良好平衡</li>
+<li>大多数应用使用默认级别即可满足需求</li>
+<li>需要根据具体业务场景选择合适的隔离级别</li>
+</ul>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://example.com/2024/10/06/MySQL%E4%BA%8B%E5%8A%A1%E9%9A%94%E7%A6%BB%E7%BA%A7%E5%88%AB%E8%AF%A6%E8%A7%A3/" data-id="cmmem61ql000re0sl6iope0mw" data-title="MySQL事务隔离级别详解" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
+      
+      
+      
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2024/10/07/%E7%AD%96%E7%95%A5+%E5%B7%A5%E5%8E%82%E6%A8%A1%E5%BC%8F%E8%A7%A3%E5%86%B3if-else/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Neuer</strong>
+      <div class="article-nav-title">
+        
+          策略+工厂模式解决if-else
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2024/10/06/8%20%E4%B8%AA%E7%BA%BF%E7%A8%8B%E6%B1%A0%E6%9C%80%E4%BD%B3%E5%AE%9E%E8%B7%B5%E5%92%8C%E5%9D%91%EF%BC%81%E4%BD%BF%E7%94%A8%E4%B8%8D%E5%BD%93%E7%9B%B4%E6%8E%A5%E7%94%9F%E4%BA%A7%E4%BA%8B%E6%95%85%EF%BC%81%EF%BC%81/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Älter</strong>
+      <div class="article-nav-title">8 个线程池最佳实践和坑！使用不当直接生产事故！！</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tags</h3>
+    <div class="widget">
+      <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="/tags/CSS/" rel="tag">CSS</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/JAVA/" rel="tag">JAVA</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Java/" rel="tag">Java</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Spring/" rel="tag">Spring</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/js/" rel="tag">js</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%89%8D%E7%AB%AF/" rel="tag">前端</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%90%8E%E7%AB%AF/" rel="tag">后端</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E7%BA%BF%E7%A8%8B%E6%B1%A0/" rel="tag">线程池</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E7%BF%BB%E8%AF%91/" rel="tag">翻译</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/" rel="tag">设计模式</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E9%AB%98%E5%B9%B6%E5%8F%91/" rel="tag">高并发</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tag Cloud</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/CSS/" style="font-size: 10px;">CSS</a> <a href="/tags/JAVA/" style="font-size: 16.67px;">JAVA</a> <a href="/tags/Java/" style="font-size: 13.33px;">Java</a> <a href="/tags/Spring/" style="font-size: 10px;">Spring</a> <a href="/tags/js/" style="font-size: 10px;">js</a> <a href="/tags/%E5%89%8D%E7%AB%AF/" style="font-size: 20px;">前端</a> <a href="/tags/%E5%90%8E%E7%AB%AF/" style="font-size: 13.33px;">后端</a> <a href="/tags/%E7%BA%BF%E7%A8%8B%E6%B1%A0/" style="font-size: 10px;">线程池</a> <a href="/tags/%E7%BF%BB%E8%AF%91/" style="font-size: 10px;">翻译</a> <a href="/tags/%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/" style="font-size: 13.33px;">设计模式</a> <a href="/tags/%E9%AB%98%E5%B9%B6%E5%8F%91/" style="font-size: 10px;">高并发</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Archiv</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/02/">February 2026</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/01/">January 2026</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/12/">December 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/11/">November 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/10/">October 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/09/">September 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/08/">August 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/07/">July 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/04/">April 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/03/">March 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/02/">February 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/01/">January 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/12/">December 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/11/">November 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/10/">October 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/07/">July 2024</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">letzter Beitrag</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2026/02/14/%E4%B9%90%E8%A7%82%E9%94%81%E5%AE%9E%E7%8E%B0%E9%AB%98%E5%B9%B6%E5%8F%91%E7%8A%B6%E6%80%81%E4%B8%80%E8%87%B4/">乐观锁实现高并发状态一致</a>
+          </li>
+        
+          <li>
+            <a href="/2026/02/04/%E5%A4%A7%E6%A8%A1%E5%9E%8B%E8%BE%93%E5%87%BA%E6%A0%87%E5%87%86JSON%E8%A7%A3%E5%86%B3%E6%96%B9%E6%B3%95/">大模型输出标准JSON解决方法</a>
+          </li>
+        
+          <li>
+            <a href="/2026/01/23/Java%E7%BA%BF%E7%A8%8B%E6%B1%A0%E5%BC%82%E5%B8%B8%E5%A4%84%E7%90%86%E6%9C%BA%E5%88%B6/">Java线程池异常处理机制</a>
+          </li>
+        
+          <li>
+            <a href="/2026/01/04/%E5%80%9F%E8%AF%81%E4%B8%9A%E5%8A%A1%E7%8A%B6%E6%80%81%E6%9C%BA%E5%BB%BA%E6%A8%A1%E5%8E%9F%E5%AD%90%E6%80%A7/">借证业务状态机建模原子性</a>
+          </li>
+        
+          <li>
+            <a href="/2026/01/04/RAG%E6%B5%81%E7%A8%8B%E8%AF%A6%E8%A7%A3%E4%B8%8E%E5%9B%BE%E8%A7%A3/">RAG流程详解与图解</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      
+      &copy; 2026 haipeiface<br>
+      Powered by <a href="https://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+
+<script src="/js/jquery-3.6.4.min.js"></script>
+
+
+
+  
+<script src="/fancybox/jquery.fancybox.min.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+
+  </div>
+</body>
+</html>

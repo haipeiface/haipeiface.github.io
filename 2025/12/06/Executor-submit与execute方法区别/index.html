@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  
+  <title>Executor_submit与execute方法区别 | haipeiface.github.io</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="在Java的并发编程中，Executor框架提供了线程池的管理。其中，Executor接口只有一个execute方法，而ExecutorService接口（继承自Executor）增加了submit方法。主要区别如下：  返回值： execute方法没有返回值，它的定义是void execute(Runnable command)。因此，如果你不需要任务执行的结果，可以使用它。 submit方法返">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Executor_submit与execute方法区别">
+<meta property="og:url" content="http://example.com/2025/12/06/Executor-submit%E4%B8%8Eexecute%E6%96%B9%E6%B3%95%E5%8C%BA%E5%88%AB/index.html">
+<meta property="og:site_name" content="haipeiface.github.io">
+<meta property="og:description" content="在Java的并发编程中，Executor框架提供了线程池的管理。其中，Executor接口只有一个execute方法，而ExecutorService接口（继承自Executor）增加了submit方法。主要区别如下：  返回值： execute方法没有返回值，它的定义是void execute(Runnable command)。因此，如果你不需要任务执行的结果，可以使用它。 submit方法返">
+<meta property="og:locale">
+<meta property="article:published_time" content="2025-12-06T07:46:12.000Z">
+<meta property="article:modified_time" content="2026-03-06T08:04:27.628Z">
+<meta property="article:author" content="haipeiface">
+<meta name="twitter:card" content="summary">
+  
+    <link rel="alternate" href="/atom.xml" title="haipeiface.github.io" type="application/atom+xml">
+  
+  
+    <link rel="shortcut icon" href="/favicon.png">
+  
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+    
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.min.css">
+
+  
+  
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">haipeiface.github.io</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"><span class="fa fa-bars"></span></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        
+          <a class="nav-icon" href="/atom.xml" title="RSS Feed"><span class="fa fa-rss"></span></a>
+        
+        <a class="nav-icon nav-search-btn" title="Suche"><span class="fa fa-search"></span></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Suche"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://example.com"></form>
+      </div>
+    </div>
+  </div>
+</header>
+
+      <div class="outer">
+        <section id="main"><article id="post-Executor-submit与execute方法区别" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="article-meta">
+    <a href="/2025/12/06/Executor-submit%E4%B8%8Eexecute%E6%96%B9%E6%B3%95%E5%8C%BA%E5%88%AB/" class="article-date">
+  <time class="dt-published" datetime="2025-12-06T07:46:12.000Z" itemprop="datePublished">2025-12-06</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="p-name article-title" itemprop="headline name">
+      Executor_submit与execute方法区别
+    </h1>
+  
+
+      </header>
+    
+    <div class="e-content article-entry" itemprop="articleBody">
+      
+        <p>在Java的并发编程中，<code>Executor</code>框架提供了线程池的管理。其中，<code>Executor</code>接口只有一个<code>execute</code>方法，而<code>ExecutorService</code>接口（继承自<code>Executor</code>）增加了<code>submit</code>方法。主要区别如下：</p>
+<ol>
+<li><strong>返回值</strong>：<ul>
+<li><code>execute</code>方法没有返回值，它的定义是<code>void execute(Runnable command)</code>。因此，如果你不需要任务执行的结果，可以使用它。</li>
+<li><code>submit</code>方法返回一个<code>Future</code>对象，可以用来获取任务执行的结果或取消任务。它有多个重载版本，可以接受<code>Runnable</code>或<code>Callable</code>任务。</li>
+</ul>
+</li>
+<li><strong>异常处理</strong>：<ul>
+<li>使用<code>execute</code>方法时，任务中的异常必须在任务内部处理（例如通过try-catch），否则异常会传递到线程池的未捕获异常处理器（如果设置了的话），但不会通过<code>execute</code>方法抛出。</li>
+<li>使用<code>submit</code>方法时，任务中的异常可以通过返回的<code>Future</code>对象的<code>get</code>方法抛出。当调用<code>Future.get()</code>时，如果任务中抛出了异常，那么<code>get</code>方法会抛出<code>ExecutionException</code>，并将原始异常作为原因。</li>
+</ul>
+</li>
+<li><strong>任务类型</strong>：<ul>
+<li><code>execute</code>只接受<code>Runnable</code>任务。</li>
+<li><code>submit</code>可以接受<code>Runnable</code>和<code>Callable</code>任务。<code>Callable</code>任务可以返回结果和抛出异常，而<code>Runnable</code>任务不能。</li>
+</ul>
+</li>
+<li><strong>使用场景</strong>：<ul>
+<li>如果你只是想要异步执行一个任务，并且不关心结果，那么使用<code>execute</code>。</li>
+<li>如果你需要任务执行的结果，或者需要处理任务中可能抛出的异常，那么使用<code>submit</code>。</li>
+</ul>
+</li>
+</ol>
+<p>下面是一个简单的例子：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">ExecutorService</span> <span class="variable">executor</span> <span class="operator">=</span> Executors.newFixedThreadPool(<span class="number">2</span>);</span><br><span class="line"></span><br><span class="line"><span class="comment">// 使用execute</span></span><br><span class="line">executor.execute(() -&gt; &#123;</span><br><span class="line">    System.out.println(<span class="string">&quot;Task executed via execute&quot;</span>);</span><br><span class="line">&#125;);</span><br><span class="line"></span><br><span class="line"><span class="comment">// 使用submit并获取结果</span></span><br><span class="line">Future&lt;String&gt; future = executor.submit(() -&gt; &#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="string">&quot;Task executed via submit&quot;</span>;</span><br><span class="line">&#125;);</span><br><span class="line"></span><br><span class="line"><span class="keyword">try</span> &#123;</span><br><span class="line">    <span class="type">String</span> <span class="variable">result</span> <span class="operator">=</span> future.get();</span><br><span class="line">    System.out.println(result);</span><br><span class="line">&#125; <span class="keyword">catch</span> (InterruptedException | ExecutionException e) &#123;</span><br><span class="line">    e.printStackTrace();</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">executor.shutdown();</span><br></pre></td></tr></table></figure>
+
+<p>注意：<code>ExecutorService</code>接口还提供了其他方法，如<code>invokeAll</code>和<code>invokeAny</code>，用于批量提交任务。</p>
+<p>总之，选择使用<code>execute</code>还是<code>submit</code>取决于你是否需要任务执行的结果以及异常处理的方式。如果你需要处理结果或异常，那么<code>submit</code>是更合适的选择。</p>
+<p><code>ExecutorService</code> 中的 <code>submit()</code> 和 <code>execute()</code> 方法有以下主要区别：</p>
+<h2 id="1-返回值不同"><a href="#1-返回值不同" class="headerlink" title="1. 返回值不同"></a>1. <strong>返回值不同</strong></h2><ul>
+<li>**<code>execute()</code>**：<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">void</span> <span class="title function_">execute</span><span class="params">(Runnable command)</span>  <span class="comment">// 无返回值</span></span><br></pre></td></tr></table></figure></li>
+<li>**<code>submit()</code>**：<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">&lt;T&gt; Future&lt;T&gt; <span class="title function_">submit</span><span class="params">(Callable&lt;T&gt; task)</span>  <span class="comment">// 返回 Future 对象</span></span><br><span class="line">Future&lt;?&gt; submit(Runnable task)         <span class="comment">// 返回 Future 对象</span></span><br><span class="line">&lt;T&gt; Future&lt;T&gt; <span class="title function_">submit</span><span class="params">(Runnable task, T result)</span></span><br></pre></td></tr></table></figure></li>
+</ul>
+<h2 id="2-接受的参数类型"><a href="#2-接受的参数类型" class="headerlink" title="2. 接受的参数类型"></a>2. <strong>接受的参数类型</strong></h2><ul>
+<li><code>execute()</code> 只接受 <code>Runnable</code> 任务</li>
+<li><code>submit()</code> 可以接受：<ul>
+<li><code>Runnable</code> 任务</li>
+<li><code>Callable</code> 任务（可以返回结果和抛出异常）</li>
+</ul>
+</li>
+</ul>
+<h2 id="3-异常处理"><a href="#3-异常处理" class="headerlink" title="3. 异常处理"></a>3. <strong>异常处理</strong></h2><ul>
+<li>**<code>execute()</code>**：任务中的异常会直接抛出，可能导致线程池中的线程终止<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">executor.execute(() -&gt; &#123;</span><br><span class="line">  <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">RuntimeException</span>(<span class="string">&quot;异常被抛出&quot;</span>);</span><br><span class="line">&#125;);</span><br><span class="line"><span class="comment">// 异常会传播，可能终止线程</span></span><br></pre></td></tr></table></figure></li>
+<li>**<code>submit()</code>**：异常被封装在 Future 对象中，需要通过 <code>get()</code> 方法获取<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">Future&lt;?&gt; future = executor.submit(() -&gt; &#123;</span><br><span class="line">  <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">RuntimeException</span>(<span class="string">&quot;异常被封装&quot;</span>);</span><br><span class="line">&#125;);</span><br><span class="line"><span class="keyword">try</span> &#123;</span><br><span class="line">  future.get();  <span class="comment">// 这里会抛出 ExecutionException，包装了原始异常</span></span><br><span class="line">&#125; <span class="keyword">catch</span> (ExecutionException e) &#123;</span><br><span class="line">  e.getCause();  <span class="comment">// 获取原始异常</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></li>
+</ul>
+<h2 id="4-使用示例对比"><a href="#4-使用示例对比" class="headerlink" title="4. 使用示例对比"></a>4. <strong>使用示例对比</strong></h2><h3 id="execute-示例："><a href="#execute-示例：" class="headerlink" title="execute() 示例："></a>execute() 示例：</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">ExecutorService</span> <span class="variable">executor</span> <span class="operator">=</span> Executors.newFixedThreadPool(<span class="number">2</span>);</span><br><span class="line"></span><br><span class="line">executor.execute(() -&gt; &#123;</span><br><span class="line">    System.out.println(<span class="string">&quot;任务执行中...&quot;</span>);</span><br><span class="line">    <span class="comment">// 无法获取执行结果</span></span><br><span class="line">&#125;);</span><br><span class="line"></span><br><span class="line"><span class="comment">// 无法获取任务状态或结果</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="submit-示例："><a href="#submit-示例：" class="headerlink" title="submit() 示例："></a>submit() 示例：</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">ExecutorService</span> <span class="variable">executor</span> <span class="operator">=</span> Executors.newFixedThreadPool(<span class="number">2</span>);</span><br><span class="line"></span><br><span class="line"><span class="comment">// 提交 Runnable 任务</span></span><br><span class="line">Future&lt;?&gt; future1 = executor.submit(() -&gt; &#123;</span><br><span class="line">    System.out.println(<span class="string">&quot;Runnable 任务&quot;</span>);</span><br><span class="line">&#125;);</span><br><span class="line"></span><br><span class="line"><span class="comment">// 提交 Callable 任务（有返回值）</span></span><br><span class="line">Future&lt;Integer&gt; future2 = executor.submit(() -&gt; &#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="number">42</span>;  <span class="comment">// 返回结果</span></span><br><span class="line">&#125;);</span><br><span class="line"></span><br><span class="line"><span class="comment">// 可以获取结果</span></span><br><span class="line"><span class="keyword">try</span> &#123;</span><br><span class="line">    <span class="type">Integer</span> <span class="variable">result</span> <span class="operator">=</span> future2.get();  <span class="comment">// 获取返回值</span></span><br><span class="line">    System.out.println(<span class="string">&quot;结果: &quot;</span> + result);</span><br><span class="line">&#125; <span class="keyword">catch</span> (Exception e) &#123;</span><br><span class="line">    e.printStackTrace();</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 可以取消任务</span></span><br><span class="line">future1.cancel(<span class="literal">true</span>);</span><br><span class="line"></span><br><span class="line"><span class="comment">// 可以检查任务状态</span></span><br><span class="line"><span class="keyword">if</span> (future2.isDone()) &#123;</span><br><span class="line">    System.out.println(<span class="string">&quot;任务已完成&quot;</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="5-实际应用场景"><a href="#5-实际应用场景" class="headerlink" title="5. 实际应用场景"></a>5. <strong>实际应用场景</strong></h2><h3 id="使用-execute-的场景："><a href="#使用-execute-的场景：" class="headerlink" title="使用 execute() 的场景："></a>使用 <code>execute()</code> 的场景：</h3><ul>
+<li>只需要异步执行，不关心执行结果</li>
+<li>任务内部自行处理异常</li>
+<li>简单的后台任务</li>
+</ul>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 日志记录、数据清理等后台任务</span></span><br><span class="line">executor.execute(() -&gt; &#123;</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        <span class="comment">// 执行清理操作</span></span><br><span class="line">        cleanupData();</span><br><span class="line">    &#125; <span class="keyword">catch</span> (Exception e) &#123;</span><br><span class="line">        logger.error(<span class="string">&quot;清理失败&quot;</span>, e);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;);</span><br></pre></td></tr></table></figure>
+
+<h3 id="使用-submit-的场景："><a href="#使用-submit-的场景：" class="headerlink" title="使用 submit() 的场景："></a>使用 <code>submit()</code> 的场景：</h3><ul>
+<li>需要获取任务执行结果</li>
+<li>需要处理任务抛出的异常</li>
+<li>可能需要取消任务执行</li>
+<li>需要检查任务状态</li>
+</ul>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 并行计算，需要汇总结果</span></span><br><span class="line">List&lt;Future&lt;Integer&gt;&gt; futures = <span class="keyword">new</span> <span class="title class_">ArrayList</span>&lt;&gt;();</span><br><span class="line"><span class="keyword">for</span> (<span class="type">int</span> <span class="variable">i</span> <span class="operator">=</span> <span class="number">0</span>; i &lt; <span class="number">10</span>; i++) &#123;</span><br><span class="line">    <span class="type">int</span> <span class="variable">finalI</span> <span class="operator">=</span> i;</span><br><span class="line">    futures.add(executor.submit(() -&gt; compute(finalI)));</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 汇总所有结果</span></span><br><span class="line"><span class="type">int</span> <span class="variable">total</span> <span class="operator">=</span> <span class="number">0</span>;</span><br><span class="line"><span class="keyword">for</span> (Future&lt;Integer&gt; future : futures) &#123;</span><br><span class="line">    total += future.get();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="总结对比表"><a href="#总结对比表" class="headerlink" title="总结对比表"></a>总结对比表</h2><table>
+<thead>
+<tr>
+<th>特性</th>
+<th>execute()</th>
+<th>submit()</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>返回值</td>
+<td>void</td>
+<td>Future</td>
+</tr>
+<tr>
+<td>参数类型</td>
+<td>Runnable</td>
+<td>Runnable, Callable</td>
+</tr>
+<tr>
+<td>异常处理</td>
+<td>直接抛出</td>
+<td>封装在 Future 中</td>
+</tr>
+<tr>
+<td>结果获取</td>
+<td>不支持</td>
+<td>通过 Future.get()</td>
+</tr>
+<tr>
+<td>任务取消</td>
+<td>不支持</td>
+<td>支持 (Future.cancel())</td>
+</tr>
+<tr>
+<td>状态检查</td>
+<td>不支持</td>
+<td>支持 (Future.isDone())</td>
+</tr>
+</tbody></table>
+<h2 id="最佳实践建议"><a href="#最佳实践建议" class="headerlink" title="最佳实践建议"></a>最佳实践建议</h2><ol>
+<li>**大多数情况下使用 <code>submit()</code>**，因为它更灵活，提供更好的异常处理</li>
+<li>只有在确定不需要结果且异常已处理时，才使用 <code>execute()</code></li>
+<li>使用 <code>submit()</code> 时，确保正确处理 <code>Future.get()</code> 的阻塞和异常</li>
+<li>注意资源清理：使用完 ExecutorService 后调用 <code>shutdown()</code></li>
+</ol>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://example.com/2025/12/06/Executor-submit%E4%B8%8Eexecute%E6%96%B9%E6%B3%95%E5%8C%BA%E5%88%AB/" data-id="cmmem61qc0008e0sl3tuu8pit" data-title="Executor_submit与execute方法区别" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
+      
+      
+      
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2025/12/06/%E6%89%8B%E5%86%99ReAct-Agent%E5%AE%9E%E7%8E%B0/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Neuer</strong>
+      <div class="article-nav-title">
+        
+          手写ReAct_Agent实现
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2025/12/06/Java-Synchronized%E5%BA%95%E5%B1%82%E5%AE%9E%E7%8E%B0%E6%9C%BA%E5%88%B6%E8%AF%A6%E8%A7%A3/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Älter</strong>
+      <div class="article-nav-title">Java_Synchronized底层实现机制详解</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tags</h3>
+    <div class="widget">
+      <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="/tags/CSS/" rel="tag">CSS</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/JAVA/" rel="tag">JAVA</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Java/" rel="tag">Java</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Spring/" rel="tag">Spring</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/js/" rel="tag">js</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%89%8D%E7%AB%AF/" rel="tag">前端</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%90%8E%E7%AB%AF/" rel="tag">后端</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E7%BA%BF%E7%A8%8B%E6%B1%A0/" rel="tag">线程池</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E7%BF%BB%E8%AF%91/" rel="tag">翻译</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/" rel="tag">设计模式</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E9%AB%98%E5%B9%B6%E5%8F%91/" rel="tag">高并发</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tag Cloud</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/CSS/" style="font-size: 10px;">CSS</a> <a href="/tags/JAVA/" style="font-size: 16.67px;">JAVA</a> <a href="/tags/Java/" style="font-size: 13.33px;">Java</a> <a href="/tags/Spring/" style="font-size: 10px;">Spring</a> <a href="/tags/js/" style="font-size: 10px;">js</a> <a href="/tags/%E5%89%8D%E7%AB%AF/" style="font-size: 20px;">前端</a> <a href="/tags/%E5%90%8E%E7%AB%AF/" style="font-size: 13.33px;">后端</a> <a href="/tags/%E7%BA%BF%E7%A8%8B%E6%B1%A0/" style="font-size: 10px;">线程池</a> <a href="/tags/%E7%BF%BB%E8%AF%91/" style="font-size: 10px;">翻译</a> <a href="/tags/%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/" style="font-size: 13.33px;">设计模式</a> <a href="/tags/%E9%AB%98%E5%B9%B6%E5%8F%91/" style="font-size: 10px;">高并发</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Archiv</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/02/">February 2026</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/01/">January 2026</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/12/">December 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/11/">November 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/10/">October 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/09/">September 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/08/">August 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/07/">July 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/04/">April 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/03/">March 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/02/">February 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/01/">January 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/12/">December 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/11/">November 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/10/">October 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/07/">July 2024</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">letzter Beitrag</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2026/02/14/%E4%B9%90%E8%A7%82%E9%94%81%E5%AE%9E%E7%8E%B0%E9%AB%98%E5%B9%B6%E5%8F%91%E7%8A%B6%E6%80%81%E4%B8%80%E8%87%B4/">乐观锁实现高并发状态一致</a>
+          </li>
+        
+          <li>
+            <a href="/2026/02/04/%E5%A4%A7%E6%A8%A1%E5%9E%8B%E8%BE%93%E5%87%BA%E6%A0%87%E5%87%86JSON%E8%A7%A3%E5%86%B3%E6%96%B9%E6%B3%95/">大模型输出标准JSON解决方法</a>
+          </li>
+        
+          <li>
+            <a href="/2026/01/23/Java%E7%BA%BF%E7%A8%8B%E6%B1%A0%E5%BC%82%E5%B8%B8%E5%A4%84%E7%90%86%E6%9C%BA%E5%88%B6/">Java线程池异常处理机制</a>
+          </li>
+        
+          <li>
+            <a href="/2026/01/04/%E5%80%9F%E8%AF%81%E4%B8%9A%E5%8A%A1%E7%8A%B6%E6%80%81%E6%9C%BA%E5%BB%BA%E6%A8%A1%E5%8E%9F%E5%AD%90%E6%80%A7/">借证业务状态机建模原子性</a>
+          </li>
+        
+          <li>
+            <a href="/2026/01/04/RAG%E6%B5%81%E7%A8%8B%E8%AF%A6%E8%A7%A3%E4%B8%8E%E5%9B%BE%E8%A7%A3/">RAG流程详解与图解</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      
+      &copy; 2026 haipeiface<br>
+      Powered by <a href="https://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+
+<script src="/js/jquery-3.6.4.min.js"></script>
+
+
+
+  
+<script src="/fancybox/jquery.fancybox.min.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+
+  </div>
+</body>
+</html>

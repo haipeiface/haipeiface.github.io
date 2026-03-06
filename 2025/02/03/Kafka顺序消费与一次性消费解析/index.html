@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  
+  <title>Kafka顺序消费与一次性消费解析 | haipeiface.github.io</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="一、Kafka 顺序消费定义：指消息按照发送到 Kafka 的先后顺序被消费和处理。这是针对单个分区而言的。 得分要点1. 核心原理  分区内有序：Kafka 只保证在同一个分区内的消息是有序的，全局（跨分区）无法保证顺序。 生产者顺序写入：生产者向同一个分区发送消息时，消息会按其到达 Broker 的顺序被追加到日志末尾。 消费者顺序读取：消费者按日志的偏移量（Offset）从小到大的顺序拉取">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Kafka顺序消费与一次性消费解析">
+<meta property="og:url" content="http://example.com/2025/02/03/Kafka%E9%A1%BA%E5%BA%8F%E6%B6%88%E8%B4%B9%E4%B8%8E%E4%B8%80%E6%AC%A1%E6%80%A7%E6%B6%88%E8%B4%B9%E8%A7%A3%E6%9E%90/index.html">
+<meta property="og:site_name" content="haipeiface.github.io">
+<meta property="og:description" content="一、Kafka 顺序消费定义：指消息按照发送到 Kafka 的先后顺序被消费和处理。这是针对单个分区而言的。 得分要点1. 核心原理  分区内有序：Kafka 只保证在同一个分区内的消息是有序的，全局（跨分区）无法保证顺序。 生产者顺序写入：生产者向同一个分区发送消息时，消息会按其到达 Broker 的顺序被追加到日志末尾。 消费者顺序读取：消费者按日志的偏移量（Offset）从小到大的顺序拉取">
+<meta property="og:locale">
+<meta property="article:published_time" content="2025-02-03T07:26:20.000Z">
+<meta property="article:modified_time" content="2026-03-06T08:07:16.737Z">
+<meta property="article:author" content="haipeiface">
+<meta name="twitter:card" content="summary">
+  
+    <link rel="alternate" href="/atom.xml" title="haipeiface.github.io" type="application/atom+xml">
+  
+  
+    <link rel="shortcut icon" href="/favicon.png">
+  
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+    
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.min.css">
+
+  
+  
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">haipeiface.github.io</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"><span class="fa fa-bars"></span></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        
+          <a class="nav-icon" href="/atom.xml" title="RSS Feed"><span class="fa fa-rss"></span></a>
+        
+        <a class="nav-icon nav-search-btn" title="Suche"><span class="fa fa-search"></span></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Suche"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://example.com"></form>
+      </div>
+    </div>
+  </div>
+</header>
+
+      <div class="outer">
+        <section id="main"><article id="post-Kafka顺序消费与一次性消费解析" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="article-meta">
+    <a href="/2025/02/03/Kafka%E9%A1%BA%E5%BA%8F%E6%B6%88%E8%B4%B9%E4%B8%8E%E4%B8%80%E6%AC%A1%E6%80%A7%E6%B6%88%E8%B4%B9%E8%A7%A3%E6%9E%90/" class="article-date">
+  <time class="dt-published" datetime="2025-02-03T07:26:20.000Z" itemprop="datePublished">2025-02-03</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="p-name article-title" itemprop="headline name">
+      Kafka顺序消费与一次性消费解析
+    </h1>
+  
+
+      </header>
+    
+    <div class="e-content article-entry" itemprop="articleBody">
+      
+        <hr>
+<h3 id="一、Kafka-顺序消费"><a href="#一、Kafka-顺序消费" class="headerlink" title="一、Kafka 顺序消费"></a><strong>一、Kafka 顺序消费</strong></h3><p><strong>定义</strong>：指消息按照发送到 Kafka 的先后顺序被消费和处理。这是针对<strong>单个分区</strong>而言的。</p>
+<h4 id="得分要点"><a href="#得分要点" class="headerlink" title="得分要点"></a><strong>得分要点</strong></h4><p><strong>1. 核心原理</strong></p>
+<ul>
+<li><strong>分区内有序</strong>：Kafka 只保证在同一个分区内的消息是有序的，全局（跨分区）无法保证顺序。</li>
+<li><strong>生产者顺序写入</strong>：生产者向同一个分区发送消息时，消息会按其到达 Broker 的顺序被追加到日志末尾。</li>
+<li><strong>消费者顺序读取</strong>：消费者按日志的偏移量（Offset）从小到大的顺序拉取消息。</li>
+</ul>
+<p><strong>2. 关键实现方式</strong></p>
+<ul>
+<li><strong>方案一：单分区</strong><ul>
+<li>将整个主题（Topic）设置为仅有一个分区（Partition）。</li>
+<li><strong>缺点</strong>：严重牺牲并发性和吞吐量。</li>
+</ul>
+</li>
+<li><strong>方案二：按业务键分区</strong><ul>
+<li>为需要顺序处理的消息指定相同的键（Key）。根据 <code>Key</code> 的哈希值，这些消息会被路由到同一个分区。</li>
+<li>例如，处理同一订单的所有消息使用订单ID作为 <code>Key</code>，确保该订单的所有操作按顺序在同一分区内处理。</li>
+</ul>
+</li>
+<li><strong>方案三：单消费者消费单个分区</strong><ul>
+<li>如果一个消费者组（Consumer Group）内的消费者数量等于分区数量，且每个消费者独占一个分区，则该分区内的消息能被该消费者顺序处理。</li>
+</ul>
+</li>
+</ul>
+<p><strong>3. 主要应用场景</strong></p>
+<ul>
+<li>订单状态流转（创建 -&gt; 支付 -&gt; 发货）。</li>
+<li>实时增量同步数据库的 Binlog。</li>
+<li>任何需要严格保证因果关系的业务流程。</li>
+</ul>
+<p><strong>4. 注意事项</strong></p>
+<ul>
+<li><strong>并发与顺序的权衡</strong>：分区数决定了最大并行度。增加分区能提高吞吐量，但会破坏不同分区键之间的顺序性。</li>
+<li><strong>消费者失败与重试</strong>：消费者处理失败时，如果简单地将消息丢回队列或跳过，会破坏顺序。通常需要将失败消息暂存，等待前序消息成功后重试，或阻塞当前分区的消费。</li>
+<li><strong>分区再平衡</strong>：消费者组发生再平衡时，分区可能被分配给新的消费者，新消费者需要从上次提交的偏移量开始读取，不影响顺序，但可能导致重复消费。</li>
+</ul>
+<hr>
+<h3 id="二、Kafka-一次性消费"><a href="#二、Kafka-一次性消费" class="headerlink" title="二、Kafka 一次性消费"></a><strong>二、Kafka 一次性消费</strong></h3><p><strong>定义</strong>：指消息被消费且仅被处理一次，是消息传递的最高语义级别，也是最难实现的。</p>
+<h4 id="得分要点-1"><a href="#得分要点-1" class="headerlink" title="得分要点"></a><strong>得分要点</strong></h4><p><strong>1. 三种消息传递语义</strong></p>
+<ul>
+<li><strong>至多一次（At Most Once）</strong>：消息可能丢失，但绝不会重复。<ul>
+<li><strong>实现</strong>：消费者先提交偏移量，再处理消息。若提交后处理失败，消息就丢失了。</li>
+</ul>
+</li>
+<li><strong>至少一次（At Least Once）</strong>：消息绝不会丢失，但可能重复。<ul>
+<li><strong>实现</strong>：消费者先处理消息，成功后提交偏移量。若处理成功后提交前崩溃，消息会被重复消费。</li>
+<li><strong>最常见</strong>：默认和生产中广泛使用的模式，配合消费端<strong>幂等性</strong>设计来规避重复问题。</li>
+</ul>
+</li>
+<li><strong>正好一次（Exactly Once）</strong>：消息有且仅被处理一次。这是“一次性消费”的精确目标。</li>
+</ul>
+<p><strong>2. Kafka 实现“正好一次”的机制</strong><br>Kafka 的 Exactly Once 是一个<strong>组合特性</strong>，并非一个独立开关，它涵盖<strong>生产到消费</strong>的全流程：</p>
+<ul>
+<li><strong>幂等性生产者</strong><ul>
+<li>为每个生产者实例分配一个 PID，并为发送到同一分区的消息分配递增序列号。Broker 通过比对序列号来丢弃重复发送的消息。</li>
+<li>解决了因生产者重试导致的<strong>生产者端</strong>消息重复（即 Broker 接收到的重复）。</li>
+</ul>
+</li>
+<li><strong>事务</strong><ul>
+<li>允许生产者将一批消息的发送到一个或多个分区的操作，与消费-处理-生产模式的整个操作，封装成一个原子事务。</li>
+<li>可以跨多个分区和主题实现“全部成功或全部失败”。</li>
+</ul>
+</li>
+<li><strong>事务型消费者（读已提交）</strong><ul>
+<li>消费者可以配置 <code>isolation.level=read_committed</code>，只读取已成功提交的事务消息，过滤掉事务中止或进行中的消息。</li>
+<li>在“消费-处理-生产”模式中，消费者的偏移量可以作为一个特殊消息存储在主题中，并参与到生产者的事务里，从而实现将<strong>消费偏移量的提交</strong>和<strong>处理结果的输出</strong>原子化。</li>
+</ul>
+</li>
+</ul>
+<p><strong>3. 典型应用模式</strong></p>
+<ul>
+<li><strong>模式一：仅需精确一次投递（Kafka 内部）</strong><ul>
+<li>开启生产者的 <code>enable.idempotence=true</code>（默认开启）和 <code>acks=all</code>。</li>
+<li>适用于只需保证消息从生产者到 Kafka Broker 不丢不重的场景。</li>
+</ul>
+</li>
+<li><strong>模式二：端到端精确一次处理（Kafka Streams &#x2F; 事务 API）</strong><ul>
+<li>使用 Kafka 的<strong>事务 API</strong> 或直接使用 <strong>Kafka Streams</strong> 库。</li>
+<li>Kafka Streams 内部集成了 Exactly Once 语义，通过事务机制自动管理状态存储（如 RocksDB）和输出，实现从输入主题读取、处理、写入输出主题的端到端精确一次。</li>
+</ul>
+</li>
+</ul>
+<p><strong>4. 注意事项与局限性</strong></p>
+<ul>
+<li><strong>性能开销</strong>：事务和幂等性机制会带来额外的性能和延迟开销。</li>
+<li><strong>外部系统交互</strong>：Kafka 的“正好一次”语义主要保证在 <strong>Kafka 自身系统内部</strong>。如果消费过程需要写数据库或调用外部 API，Kafka 无法保证这些外部操作的原子性。此时通常采用“<strong>至少一次 + 消费者端幂等</strong>”的架构（例如，在数据库中基于消息唯一键做去重）。</li>
+</ul>
+<hr>
+<h3 id="总结对比"><a href="#总结对比" class="headerlink" title="总结对比"></a><strong>总结对比</strong></h3><table>
+<thead>
+<tr>
+<th>特性</th>
+<th>顺序消费</th>
+<th>一次性消费（特指 Exactly Once）</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>核心目标</strong></td>
+<td><strong>保持消息处理的先后顺序</strong></td>
+<td><strong>确保消息被不丢不重地处理一次</strong></td>
+</tr>
+<tr>
+<td><strong>作用范围</strong></td>
+<td><strong>分区级别</strong>，对单个分区有效</td>
+<td><strong>端到端级别</strong>，涉及生产者、Broker、消费者</td>
+</tr>
+<tr>
+<td><strong>关键实现</strong></td>
+<td>合理设计消息键，利用分区内有序特性</td>
+<td>组合使用<strong>幂等生产者</strong>、<strong>事务</strong>和<strong>读已提交</strong>的消费者</td>
+</tr>
+<tr>
+<td><strong>主要挑战</strong></td>
+<td>并发度与顺序性的矛盾；失败重试时的顺序维护</td>
+<td>与外部系统交互时的状态一致性；性能开销</td>
+</tr>
+<tr>
+<td><strong>常见方案</strong></td>
+<td>按业务键分区</td>
+<td>1. Kafka内部：幂等生产者。 2. 端到端：Kafka 事务 API 或 Kafka Streams。 3. 通用方案：至少一次 + 消费者幂等。</td>
+</tr>
+</tbody></table>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://example.com/2025/02/03/Kafka%E9%A1%BA%E5%BA%8F%E6%B6%88%E8%B4%B9%E4%B8%8E%E4%B8%80%E6%AC%A1%E6%80%A7%E6%B6%88%E8%B4%B9%E8%A7%A3%E6%9E%90/" data-id="cmmem61qi000me0sl92af7zwn" data-title="Kafka顺序消费与一次性消费解析" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
+      
+      
+      
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2025/02/06/SpringBoot%E8%AF%B7%E6%B1%82%E5%93%8D%E5%BA%94%E6%98%A0%E5%B0%84%E6%9C%BA%E5%88%B6%E8%A7%A3%E6%9E%90/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Neuer</strong>
+      <div class="article-nav-title">
+        
+          SpringBoot请求响应映射机制解析
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2025/01/04/%E7%9B%B4%E6%92%AD%E6%BC%94%E5%87%BA%E7%9F%AD%E4%BF%A1%E6%8F%90%E9%86%92%E8%AE%BE%E8%AE%A1/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Älter</strong>
+      <div class="article-nav-title">直播演出短信提醒设计</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tags</h3>
+    <div class="widget">
+      <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="/tags/CSS/" rel="tag">CSS</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/JAVA/" rel="tag">JAVA</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Java/" rel="tag">Java</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Spring/" rel="tag">Spring</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/js/" rel="tag">js</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%89%8D%E7%AB%AF/" rel="tag">前端</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%90%8E%E7%AB%AF/" rel="tag">后端</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E7%BA%BF%E7%A8%8B%E6%B1%A0/" rel="tag">线程池</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E7%BF%BB%E8%AF%91/" rel="tag">翻译</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/" rel="tag">设计模式</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E9%AB%98%E5%B9%B6%E5%8F%91/" rel="tag">高并发</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tag Cloud</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/CSS/" style="font-size: 10px;">CSS</a> <a href="/tags/JAVA/" style="font-size: 16.67px;">JAVA</a> <a href="/tags/Java/" style="font-size: 13.33px;">Java</a> <a href="/tags/Spring/" style="font-size: 10px;">Spring</a> <a href="/tags/js/" style="font-size: 10px;">js</a> <a href="/tags/%E5%89%8D%E7%AB%AF/" style="font-size: 20px;">前端</a> <a href="/tags/%E5%90%8E%E7%AB%AF/" style="font-size: 13.33px;">后端</a> <a href="/tags/%E7%BA%BF%E7%A8%8B%E6%B1%A0/" style="font-size: 10px;">线程池</a> <a href="/tags/%E7%BF%BB%E8%AF%91/" style="font-size: 10px;">翻译</a> <a href="/tags/%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/" style="font-size: 13.33px;">设计模式</a> <a href="/tags/%E9%AB%98%E5%B9%B6%E5%8F%91/" style="font-size: 10px;">高并发</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Archiv</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/02/">February 2026</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/01/">January 2026</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/12/">December 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/11/">November 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/10/">October 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/09/">September 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/08/">August 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/07/">July 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/04/">April 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/03/">March 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/02/">February 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/01/">January 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/12/">December 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/11/">November 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/10/">October 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/07/">July 2024</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">letzter Beitrag</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2026/02/14/%E4%B9%90%E8%A7%82%E9%94%81%E5%AE%9E%E7%8E%B0%E9%AB%98%E5%B9%B6%E5%8F%91%E7%8A%B6%E6%80%81%E4%B8%80%E8%87%B4/">乐观锁实现高并发状态一致</a>
+          </li>
+        
+          <li>
+            <a href="/2026/02/04/%E5%A4%A7%E6%A8%A1%E5%9E%8B%E8%BE%93%E5%87%BA%E6%A0%87%E5%87%86JSON%E8%A7%A3%E5%86%B3%E6%96%B9%E6%B3%95/">大模型输出标准JSON解决方法</a>
+          </li>
+        
+          <li>
+            <a href="/2026/01/23/Java%E7%BA%BF%E7%A8%8B%E6%B1%A0%E5%BC%82%E5%B8%B8%E5%A4%84%E7%90%86%E6%9C%BA%E5%88%B6/">Java线程池异常处理机制</a>
+          </li>
+        
+          <li>
+            <a href="/2026/01/04/%E5%80%9F%E8%AF%81%E4%B8%9A%E5%8A%A1%E7%8A%B6%E6%80%81%E6%9C%BA%E5%BB%BA%E6%A8%A1%E5%8E%9F%E5%AD%90%E6%80%A7/">借证业务状态机建模原子性</a>
+          </li>
+        
+          <li>
+            <a href="/2026/01/04/RAG%E6%B5%81%E7%A8%8B%E8%AF%A6%E8%A7%A3%E4%B8%8E%E5%9B%BE%E8%A7%A3/">RAG流程详解与图解</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      
+      &copy; 2026 haipeiface<br>
+      Powered by <a href="https://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+
+<script src="/js/jquery-3.6.4.min.js"></script>
+
+
+
+  
+<script src="/fancybox/jquery.fancybox.min.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+
+  </div>
+</body>
+</html>

@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  
+  <title>广告SDK无显示排查 | haipeiface.github.io</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="这是一个非常经典的广告 SDK 接入问题。当 App 或 H5 成功集成 SDK 但没有广告展示时，通常可以从 “集成基础确认”、“广告请求流程”、“素材填充” 以及 “UI 渲染” 四个维度进行排查。 作为技术支持，可以按照以下由易到难、由客户端到服务端的步骤引导用户操作： 第一阶段：基础环境与配置检查（最容易被忽视的问题） 确认 App Key 与广告位 ID 现象：代码里填错了 App ID">
+<meta property="og:type" content="article">
+<meta property="og:title" content="广告SDK无显示排查">
+<meta property="og:url" content="http://example.com/2024/10/01/%E5%B9%BF%E5%91%8ASDK%E6%97%A0%E6%98%BE%E7%A4%BA%E6%8E%92%E6%9F%A5/index.html">
+<meta property="og:site_name" content="haipeiface.github.io">
+<meta property="og:description" content="这是一个非常经典的广告 SDK 接入问题。当 App 或 H5 成功集成 SDK 但没有广告展示时，通常可以从 “集成基础确认”、“广告请求流程”、“素材填充” 以及 “UI 渲染” 四个维度进行排查。 作为技术支持，可以按照以下由易到难、由客户端到服务端的步骤引导用户操作： 第一阶段：基础环境与配置检查（最容易被忽视的问题） 确认 App Key 与广告位 ID 现象：代码里填错了 App ID">
+<meta property="og:locale">
+<meta property="article:published_time" content="2024-10-01T12:22:37.000Z">
+<meta property="article:modified_time" content="2026-03-06T08:00:26.206Z">
+<meta property="article:author" content="haipeiface">
+<meta name="twitter:card" content="summary">
+  
+    <link rel="alternate" href="/atom.xml" title="haipeiface.github.io" type="application/atom+xml">
+  
+  
+    <link rel="shortcut icon" href="/favicon.png">
+  
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+    
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.min.css">
+
+  
+  
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">haipeiface.github.io</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"><span class="fa fa-bars"></span></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        
+          <a class="nav-icon" href="/atom.xml" title="RSS Feed"><span class="fa fa-rss"></span></a>
+        
+        <a class="nav-icon nav-search-btn" title="Suche"><span class="fa fa-search"></span></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Suche"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://example.com"></form>
+      </div>
+    </div>
+  </div>
+</header>
+
+      <div class="outer">
+        <section id="main"><article id="post-广告SDK无显示排查" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="article-meta">
+    <a href="/2024/10/01/%E5%B9%BF%E5%91%8ASDK%E6%97%A0%E6%98%BE%E7%A4%BA%E6%8E%92%E6%9F%A5/" class="article-date">
+  <time class="dt-published" datetime="2024-10-01T12:22:37.000Z" itemprop="datePublished">2024-10-01</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="p-name article-title" itemprop="headline name">
+      广告SDK无显示排查
+    </h1>
+  
+
+      </header>
+    
+    <div class="e-content article-entry" itemprop="articleBody">
+      
+        <p>这是一个非常经典的广告 SDK 接入问题。当 App 或 H5 成功集成 SDK 但没有广告展示时，通常可以从 <strong>“集成基础确认”</strong>、<strong>“广告请求流程”</strong>、<strong>“素材填充”</strong> 以及 <strong>“UI 渲染”</strong> 四个维度进行排查。</p>
+<p>作为技术支持，可以按照以下由易到难、由客户端到服务端的步骤引导用户操作：</p>
+<h3 id="第一阶段：基础环境与配置检查（最容易被忽视的问题）"><a href="#第一阶段：基础环境与配置检查（最容易被忽视的问题）" class="headerlink" title="第一阶段：基础环境与配置检查（最容易被忽视的问题）"></a>第一阶段：基础环境与配置检查（最容易被忽视的问题）</h3><ol>
+<li><strong>确认 App Key 与广告位 ID</strong><ul>
+<li><strong>现象</strong>：代码里填错了 App ID 或广告位 ID（例如测试环境和正式环境混淆）。</li>
+<li><strong>排查</strong>：请用户核对开发者后台申请的 <code>AppKey</code> 和当前代码中填入的 <code>广告位 ID</code> 是否一一对应，且环境一致（是否在测试 App 里用了正式环境的广告位）。</li>
+</ul>
+</li>
+<li><strong>确认包名（Bundle ID&#x2F; Package Name）</strong><ul>
+<li><strong>现象</strong>：App 签名使用的包名与在广告平台后台注册的包名不一致，导致服务器校验失败，拒绝返回广告。</li>
+<li><strong>排查</strong>：检查 App 的包名是否与后台配置完全一致（注意大小写和下划线）。</li>
+</ul>
+</li>
+<li><strong>网络权限与 HTTPS 配置</strong><ul>
+<li><strong>现象</strong>：App 没有授予网络权限，或者由于 Android 9.0+ 或 iOS ATS 限制，禁用了 HTTP 请求（如果 SDK 请求的地址是 HTTP 或非标准端口）。</li>
+<li><strong>排查</strong>：检查 App 网络权限，以及 <code>AndroidManifest.xml</code>（Android）或 <code>Info.plist</code> 中的 <code>NSAppTransportSecurity</code> 设置（iOS）。</li>
+</ul>
+</li>
+<li><strong>SDK 初始化时机与位置</strong><ul>
+<li><strong>现象</strong>：在请求广告之前，SDK 尚未完成初始化，或者初始化失败。</li>
+<li><strong>排查</strong>：确认 SDK 初始化代码是否在 Application 或 AppDelegate 中尽早调用，并且是在请求广告之前调用。</li>
+</ul>
+</li>
+</ol>
+<h3 id="第二阶段：广告请求过程排查（核心日志分析）"><a href="#第二阶段：广告请求过程排查（核心日志分析）" class="headerlink" title="第二阶段：广告请求过程排查（核心日志分析）"></a>第二阶段：广告请求过程排查（核心日志分析）</h3><ol start="5">
+<li><strong>开启详细日志（Verbose Log）</strong><ul>
+<li><strong>操作</strong>：让用户在初始化 SDK 时开启调试模式或详细日志输出（<code>setDebug</code> 或类似方法）。</li>
+<li><strong>目的</strong>：这是最关键的一步。通过日志可以看到 SDK 内部发生了什么。</li>
+<li><strong>观察点</strong>：<ul>
+<li>是否有 <code>onAdRequest</code>（请求开始）的日志？</li>
+<li>是否有 <code>onAdFailed</code> 或 <code>onError</code> 的日志？如果有，直接查看错误码。</li>
+<li><em>常见错误码含义</em>：比如 <code>1001</code> 网络错误，<code>1002</code> 无填充，<code>2001</code> 参数错误，<code>3001</code> 权限不足等。</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><strong>检查广告位类型匹配</strong><ul>
+<li><strong>现象</strong>：用激励视频的代码逻辑去请求开屏广告，或者 Splash 广告位却用了 Native 的渲染方式。</li>
+<li><strong>排查</strong>：确认代码中请求广告的方式（<code>loadRewardVideoAd</code> &#x2F; <code>loadSplashAd</code>）与后台创建的广告位类型完全一致。</li>
+</ul>
+</li>
+<li><strong>测试模式与白名单</strong><ul>
+<li><strong>现象</strong>：有些广告平台要求测试设备必须添加 UDID 或 IMEI 到后台白名单才能返回测试广告，否则服务器不返回广告（或无填充）。</li>
+<li><strong>排查</strong>：<ul>
+<li>如果在测试阶段，建议让用户先将设备添加为“测试设备”。</li>
+<li>或者使用平台提供的“测试广告位 ID”进行验证，看是否能正常拿到广告。如果能，说明是当前正式广告位的问题。</li>
+</ul>
+</li>
+</ul>
+</li>
+</ol>
+<h3 id="第三阶段：填充与素材问题（服务端无返回）"><a href="#第三阶段：填充与素材问题（服务端无返回）" class="headerlink" title="第三阶段：填充与素材问题（服务端无返回）"></a>第三阶段：填充与素材问题（服务端无返回）</h3><ol start="8">
+<li><strong>确认广告填充（Fill Rate）</strong><ul>
+<li><strong>现象</strong>：客户端请求成功了，但服务器返回“无填充”（No Fill）。</li>
+<li><strong>排查</strong>：<ul>
+<li><strong>时段</strong>：是不是当前时段在该地域没有广告预算？</li>
+<li><strong>频控</strong>：是不是短时间内请求次数过多，被限流了？</li>
+<li><strong>人群</strong>：是不是当前用户设备（如新设备、无标签设备）不在广告主的目标投放范围内？</li>
+<li>建议在后台查看该广告位的“实时请求日志”或“今日填充趋势”。</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><strong>检查广告位状态</strong><ul>
+<li><strong>操作</strong>：登录广告平台管理后台。</li>
+<li><strong>排查</strong>：<ul>
+<li>广告位是否已通过审核？（新建的广告位可能还在审核中）。</li>
+<li>广告位是否被误操作暂停了？</li>
+<li>绑定的广告源（如广点通、穿山甲等渠道）是否余额充足、状态正常？</li>
+</ul>
+</li>
+</ul>
+</li>
+</ol>
+<h3 id="第四阶段：广告展示与UI渲染（请求成功但看不到）"><a href="#第四阶段：广告展示与UI渲染（请求成功但看不到）" class="headerlink" title="第四阶段：广告展示与UI渲染（请求成功但看不到）"></a>第四阶段：广告展示与UI渲染（请求成功但看不到）</h3><ol start="10">
+<li><strong>检查广告容器大小（针对原生&#x2F;横幅&#x2F;Banner）</strong><ul>
+<li><strong>现象</strong>：广告加载成功（<code>onAdLoaded</code> 回调），但屏幕上没看到。</li>
+<li><strong>排查</strong>：<ul>
+<li><strong>宽高为0</strong>：放置广告的 <code>ViewGroup</code> 或 <code>Container</code> 的宽高是否被设置成了 <code>0dp</code> 或 <code>0px</code>？</li>
+<li><strong>渲染时机</strong>：是否在广告加载成功回调里，正确地将广告 View 添加到了父容器？</li>
+<li><strong>可见性</strong>：父容器是否被其他 View 遮挡，或者 <code>visibility</code> 被设置成了 <code>GONE</code>？</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><strong>检查生命周期调用（针对激励视频&#x2F;插屏）</strong><ul>
+<li><strong>现象</strong>：广告加载成功了（<code>onAdLoaded</code>），但 <code>show</code> 方法调用后无反应。</li>
+<li><strong>排查</strong>：<ul>
+<li>是否在错误的线程调用了 <code>show</code>？（确保在主线程调用）。</li>
+<li>是否在广告加载成功的回调中立即调用 <code>show</code>？有时需要等待几毫秒让 SDK 内部状态准备好。</li>
+<li>对于插屏&#x2F;激励视频，是否调用了 <code>isReady()</code> 判断？虽然加载成功，但可能因为内部素材下载未完成导致 <code>isReady</code> 为 false。</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><strong>Android 特有——混淆规则</strong><ul>
+<li><strong>现象</strong>：Release 包没广告，Debug 包有广告。</li>
+<li><strong>排查</strong>：检查 ProGuard 或 R8 混淆规则。是否已经添加了该 SDK 官方文档提供的混淆保留规则？混淆可能会破坏 SDK 的反射调用，导致无法展示。</li>
+</ul>
+</li>
+</ol>
+<h3 id="第五阶段：终极手段——抓包与对比"><a href="#第五阶段：终极手段——抓包与对比" class="headerlink" title="第五阶段：终极手段——抓包与对比"></a>第五阶段：终极手段——抓包与对比</h3><ol start="13">
+<li><strong>网络抓包分析</strong><ul>
+<li><strong>操作</strong>：使用 Charles 或 Wireshark 对手机进行代理抓包。</li>
+<li><strong>目的</strong>：直接看客户端发给广告服务器的请求，以及服务器的响应。</li>
+<li><strong>看什么</strong>：<ul>
+<li>请求头中的 <code>User-Agent</code> 是否正常？</li>
+<li>响应内容是否是 <code>&#123;&quot;code&quot;:200, &quot;message&quot;:&quot;no fill&quot;&#125;</code>？</li>
+<li>请求的参数（如广告位 ID、设备 ID 等）是否与预期一致？</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><strong>对比 Demo 工程</strong><ul>
+<li><strong>操作</strong>：让用户运行 SDK 官方提供的 Demo App，替换成他自己的 App Key 和广告位 ID。</li>
+<li><strong>目的</strong>：如果 Demo 能显示，说明 SDK 本身和账户没问题，问题 100% 出在他自己的集成代码上；如果 Demo 也显示不了，则说明可能是账户&#x2F;广告位配置问题。</li>
+</ul>
+</li>
+</ol>
+<h3 id="总结话术（供回复用户参考）"><a href="#总结话术（供回复用户参考）" class="headerlink" title="总结话术（供回复用户参考）"></a>总结话术（供回复用户参考）</h3><blockquote>
+<p>“您好，针对没有广告显示的问题，麻烦您按以下步骤帮我定位一下：</p>
+<ol>
+<li><strong>开日志</strong>：请先在初始化时开启调试模式（<code>setDebug(true)</code>），运行后把完整的日志发给我，我们重点看是否有 <code>onError</code> 回调及错误码。</li>
+<li><strong>自查配置</strong>：请核对一下当前代码里的 <code>App ID</code> 和 <code>广告位 ID</code> 是否与后台完全一致，并且 App 的包名也和后台注册的一致。</li>
+<li><strong>测试工具</strong>：如果日志显示 <code>onAdLoaded</code> 成功了但看不到，请检查放置广告的视图宽高是否为0或被遮挡；如果是激励视频，请确认 <code>show</code> 方法是在主线程调用的。</li>
+<li><strong>环境验证</strong>：如果可能，请先用我们官方 Demo 配合您的广告位 ID 测试一下，看能否加载出来，这样能快速判断是代码集成问题还是广告账户侧的问题。”</li>
+</ol>
+</blockquote>
+<p>通过以上步骤，通常可以覆盖 95% 以上的“无广告”问题场景。</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://example.com/2024/10/01/%E5%B9%BF%E5%91%8ASDK%E6%97%A0%E6%98%BE%E7%A4%BA%E6%8E%92%E6%9F%A5/" data-id="cmmem61qt0019e0slc9iz5fe7" data-title="广告SDK无显示排查" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
+      
+      
+      
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2024/10/06/8%20%E4%B8%AA%E7%BA%BF%E7%A8%8B%E6%B1%A0%E6%9C%80%E4%BD%B3%E5%AE%9E%E8%B7%B5%E5%92%8C%E5%9D%91%EF%BC%81%E4%BD%BF%E7%94%A8%E4%B8%8D%E5%BD%93%E7%9B%B4%E6%8E%A5%E7%94%9F%E4%BA%A7%E4%BA%8B%E6%95%85%EF%BC%81%EF%BC%81/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Neuer</strong>
+      <div class="article-nav-title">
+        
+          8 个线程池最佳实践和坑！使用不当直接生产事故！！
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2024/07/07/K8s%E6%A0%B8%E5%BF%83%E7%BB%84%E4%BB%B6Pod%E3%80%81Deployment%E3%80%81Service%E3%80%81Ingress%E7%AE%80%E4%BB%8B/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Älter</strong>
+      <div class="article-nav-title">K8s核心组件Pod、Deployment、Service、Ingress简介</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tags</h3>
+    <div class="widget">
+      <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="/tags/CSS/" rel="tag">CSS</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/JAVA/" rel="tag">JAVA</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Java/" rel="tag">Java</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Spring/" rel="tag">Spring</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/js/" rel="tag">js</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%89%8D%E7%AB%AF/" rel="tag">前端</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%90%8E%E7%AB%AF/" rel="tag">后端</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E7%BA%BF%E7%A8%8B%E6%B1%A0/" rel="tag">线程池</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E7%BF%BB%E8%AF%91/" rel="tag">翻译</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/" rel="tag">设计模式</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E9%AB%98%E5%B9%B6%E5%8F%91/" rel="tag">高并发</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tag Cloud</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/CSS/" style="font-size: 10px;">CSS</a> <a href="/tags/JAVA/" style="font-size: 16.67px;">JAVA</a> <a href="/tags/Java/" style="font-size: 13.33px;">Java</a> <a href="/tags/Spring/" style="font-size: 10px;">Spring</a> <a href="/tags/js/" style="font-size: 10px;">js</a> <a href="/tags/%E5%89%8D%E7%AB%AF/" style="font-size: 20px;">前端</a> <a href="/tags/%E5%90%8E%E7%AB%AF/" style="font-size: 13.33px;">后端</a> <a href="/tags/%E7%BA%BF%E7%A8%8B%E6%B1%A0/" style="font-size: 10px;">线程池</a> <a href="/tags/%E7%BF%BB%E8%AF%91/" style="font-size: 10px;">翻译</a> <a href="/tags/%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/" style="font-size: 13.33px;">设计模式</a> <a href="/tags/%E9%AB%98%E5%B9%B6%E5%8F%91/" style="font-size: 10px;">高并发</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Archiv</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/02/">February 2026</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/01/">January 2026</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/12/">December 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/11/">November 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/10/">October 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/09/">September 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/08/">August 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/07/">July 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/04/">April 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/03/">March 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/02/">February 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/01/">January 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/12/">December 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/11/">November 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/10/">October 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/07/">July 2024</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">letzter Beitrag</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2026/02/14/%E4%B9%90%E8%A7%82%E9%94%81%E5%AE%9E%E7%8E%B0%E9%AB%98%E5%B9%B6%E5%8F%91%E7%8A%B6%E6%80%81%E4%B8%80%E8%87%B4/">乐观锁实现高并发状态一致</a>
+          </li>
+        
+          <li>
+            <a href="/2026/02/04/%E5%A4%A7%E6%A8%A1%E5%9E%8B%E8%BE%93%E5%87%BA%E6%A0%87%E5%87%86JSON%E8%A7%A3%E5%86%B3%E6%96%B9%E6%B3%95/">大模型输出标准JSON解决方法</a>
+          </li>
+        
+          <li>
+            <a href="/2026/01/23/Java%E7%BA%BF%E7%A8%8B%E6%B1%A0%E5%BC%82%E5%B8%B8%E5%A4%84%E7%90%86%E6%9C%BA%E5%88%B6/">Java线程池异常处理机制</a>
+          </li>
+        
+          <li>
+            <a href="/2026/01/04/%E5%80%9F%E8%AF%81%E4%B8%9A%E5%8A%A1%E7%8A%B6%E6%80%81%E6%9C%BA%E5%BB%BA%E6%A8%A1%E5%8E%9F%E5%AD%90%E6%80%A7/">借证业务状态机建模原子性</a>
+          </li>
+        
+          <li>
+            <a href="/2026/01/04/RAG%E6%B5%81%E7%A8%8B%E8%AF%A6%E8%A7%A3%E4%B8%8E%E5%9B%BE%E8%A7%A3/">RAG流程详解与图解</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      
+      &copy; 2026 haipeiface<br>
+      Powered by <a href="https://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+
+<script src="/js/jquery-3.6.4.min.js"></script>
+
+
+
+  
+<script src="/fancybox/jquery.fancybox.min.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+
+  </div>
+</body>
+</html>
