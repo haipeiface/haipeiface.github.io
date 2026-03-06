@@ -69,6 +69,342 @@
       <div class="outer">
         <section id="main">
   
+    <article id="post-线上CPU飙升排查经验分享" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="article-meta">
+    <a href="/2025/10/04/%E7%BA%BF%E4%B8%8ACPU%E9%A3%99%E5%8D%87%E6%8E%92%E6%9F%A5%E7%BB%8F%E9%AA%8C%E5%88%86%E4%BA%AB/" class="article-date">
+  <time class="dt-published" datetime="2025-10-04T04:44:46.000Z" itemprop="datePublished">2025-10-04</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="p-name article-title" href="/2025/10/04/%E7%BA%BF%E4%B8%8ACPU%E9%A3%99%E5%8D%87%E6%8E%92%E6%9F%A5%E7%BB%8F%E9%AA%8C%E5%88%86%E4%BA%AB/">线上CPU飙升排查经验分享</a>
+    </h1>
+  
+
+      </header>
+    
+    <div class="e-content article-entry" itemprop="articleBody">
+      
+        <hr>
+<h3 id="回答范例：一次高并发下CPU飙升的排查与解决"><a href="#回答范例：一次高并发下CPU飙升的排查与解决" class="headerlink" title="回答范例：一次高并发下CPU飙升的排查与解决"></a>回答范例：一次高并发下CPU飙升的排查与解决</h3><p><strong>1. 问题背景与发现（Situation）</strong></p>
+<ul>
+<li><strong>时间</strong>：某次大促活动期间。</li>
+<li><strong>现象</strong>：监控系统（如Zabbix、Prometheus）发出告警，显示核心业务服务（如订单服务）的CPU使用率突然从平时的20%飙升到95%以上，且持续不降。部分接口响应时间明显变长，甚至出现超时。</li>
+</ul>
+<p><strong>2. 紧急响应与定位过程（Task &amp; Action）</strong><br>我立刻登录到跳板机，按照以下步骤进行排查：</p>
+<ul>
+<li><strong>第一步：快速全局定位</strong><ul>
+<li>使用 <code>top</code> 命令查看服务器整体资源，确认是Java进程（PID：12345）占用了最高的CPU。</li>
+<li>接着使用 <code>top -Hp 12345</code> 查看该进程内最耗费CPU的线程。发现有几个线程（如PID：6789）的CPU占用率特别高。</li>
+<li><strong>关键操作</strong>：将线程ID <code>6789</code> 转换为十六进制 <code>1a85</code>（因为线程栈文件里用的是十六进制），命令：<code>printf &quot;%x\n&quot; 6789</code>。</li>
+</ul>
+</li>
+<li><strong>第二步：深入代码层面分析</strong><ul>
+<li>使用 <code>jstack 12345 | grep -A 20 1a85</code> 导出线程栈，并过滤出那个问题线程的堆栈信息。</li>
+<li><strong>发现</strong>：堆栈信息清晰地指向了项目中的一个类 <code>OrderAnalyseHandler</code> 的第38行。</li>
+</ul>
+</li>
+<li><strong>第三步：结合业务与日志分析根因</strong><ul>
+<li>我马上打开对应的业务代码。发现第38行是一个 <strong>正则表达式验证</strong>，用于处理用户输入的备注信息，其正则在极端情况下会触发 <strong>“灾难性回溯”</strong>。</li>
+<li>同时查看该时间点的业务日志（如ELK、Splunk），发现恰好有大量包含特殊字符（如一连串的<code>“AAAAAAAAA”</code>）的请求涌入。这个输入正是触发正则回溯的“导火索”。</li>
+<li>至此，根本原因已定位：<strong>一个低效的正则表达式 + 恶意&#x2F;特殊的用户输入 &#x3D; CPU打满</strong>。</li>
+</ul>
+</li>
+</ul>
+<p><strong>3. 解决方案与实施（Result）</strong></p>
+<ul>
+<li><strong>紧急止血</strong>：由于是线上大促，首要任务是恢复服务。我联系运维同学，将该节点从负载均衡（Nginx&#x2F;F5）上摘除，重启服务后临时恢复。同时，在网关层（如Sentinel、Hystrix）对该接口增加了<strong>限流和熔断</strong>规则，防止流量再次冲击。</li>
+<li><strong>根本解决</strong>：<ol>
+<li><strong>优化代码</strong>：将原正则 <code>(a+)+b</code> 这类写法替换为非回溯模式，或者使用更高效的预编译Pattern，甚至改用字符串遍历的方式替代。</li>
+<li><strong>代码审查</strong>：修复后，与团队成员一起复盘，对所有类似的正则使用场景进行梳理。</li>
+<li><strong>完善监控</strong>：在代码中增加了对方法执行耗时的监控（Metrics），如果某个方法执行超过阈值，会提前发出预警。</li>
+</ol>
+</li>
+</ul>
+<p><strong>4. 事后复盘与总结</strong><br>这个问题让我意识到，代码中一个看似微小的逻辑，在高并发场景下也可能演变成重大故障。之后的开发规范里，我们明确要求<strong>禁止编写复杂且可能回溯的正则，并强调了参数校验的重要性</strong>。</p>
+<hr>
+<h3 id="细节"><a href="#细节" class="headerlink" title="细节"></a>细节</h3><ul>
+<li><strong>为什么用 <code>top -Hp</code> 而不是直接用 <code>jstack</code>？</strong><br>答：<code>top</code>能直观地找出最耗CPU的线程PID，能快速缩小排查范围，避免在海量线程日志里大海捞针。</li>
+<li><strong>除了CPU飙升，你还排查过内存泄漏（OOM）的问题吗？</strong><br>可以准备一个内存泄漏的案例，关键点在于使用 <code>jstat</code> 观察GC情况，以及用 <code>jmap</code> 生成堆转储文件（Heap Dump），然后用MAT或JProfiler分析大对象。</li>
+<li><strong>如果当时没有监控，你怎么发现这个异常？</strong><br>可以从业务感知（用户反馈慢）、日志异常（大量TimeOut日志）以及现场登录服务器查看这三方面来回答。</li>
+</ul>
+<p>希望这个范例能给你一些启发。如果需要，我还可以帮你梳理一个内存泄漏的排查案例。</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://example.com/2025/10/04/%E7%BA%BF%E4%B8%8ACPU%E9%A3%99%E5%8D%87%E6%8E%92%E6%9F%A5%E7%BB%8F%E9%AA%8C%E5%88%86%E4%BA%AB/" data-id="cmmemxdei001pyssl80jkb51b" data-title="线上CPU飙升排查经验分享" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
+      
+      
+      
+    </footer>
+  </div>
+  
+</article>
+
+
+
+  
+    <article id="post-MySQL-EXPLAIN命令详解与优化" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="article-meta">
+    <a href="/2025/09/06/MySQL-EXPLAIN%E5%91%BD%E4%BB%A4%E8%AF%A6%E8%A7%A3%E4%B8%8E%E4%BC%98%E5%8C%96/" class="article-date">
+  <time class="dt-published" datetime="2025-09-06T07:26:21.000Z" itemprop="datePublished">2025-09-06</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="p-name article-title" href="/2025/09/06/MySQL-EXPLAIN%E5%91%BD%E4%BB%A4%E8%AF%A6%E8%A7%A3%E4%B8%8E%E4%BC%98%E5%8C%96/">MySQL_EXPLAIN命令详解与优化</a>
+    </h1>
+  
+
+      </header>
+    
+    <div class="e-content article-entry" itemprop="articleBody">
+      
+        <p>思考过程（Thinking）：</p>
+<p>MySQL 的 EXPLAIN 命令是分析查询性能的关键工具，用于获取查询执行计划信息。以下是详细说明：</p>
+<h2 id="一、基本用法"><a href="#一、基本用法" class="headerlink" title="一、基本用法"></a>一、基本用法</h2><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">EXPLAIN [EXTENDED <span class="operator">|</span> PARTITIONS <span class="operator">|</span> FORMAT <span class="operator">=</span> format] <span class="keyword">SELECT</span> ...;</span><br></pre></td></tr></table></figure>
+
+<p>常用简化形式：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">EXPLAIN <span class="keyword">SELECT</span> ...;</span><br></pre></td></tr></table></figure>
+
+<h2 id="二、输出列详解"><a href="#二、输出列详解" class="headerlink" title="二、输出列详解"></a>二、输出列详解</h2><p>EXPLAIN 输出结果包含以下重要列：</p>
+<h3 id="1-id"><a href="#1-id" class="headerlink" title="1. id"></a>1. <strong>id</strong></h3><ul>
+<li>查询标识符</li>
+<li>数字越大越先执行，相同则从上到下执行</li>
+</ul>
+<h3 id="2-select-type"><a href="#2-select-type" class="headerlink" title="2. select_type"></a>2. <strong>select_type</strong></h3><ul>
+<li>SIMPLE：简单查询（无子查询或UNION）</li>
+<li>PRIMARY：主查询（最外层）</li>
+<li>SUBQUERY：子查询</li>
+<li>DERIVED：派生表（FROM子句中的子查询）</li>
+<li>UNION：UNION中的第二个及后续查询</li>
+<li>UNION RESULT：UNION结果</li>
+</ul>
+<h3 id="3-table"><a href="#3-table" class="headerlink" title="3. table"></a>3. <strong>table</strong></h3><ul>
+<li>访问的表名（或别名）</li>
+</ul>
+<h3 id="4-type（重要性能指标）"><a href="#4-type（重要性能指标）" class="headerlink" title="4. type（重要性能指标）"></a>4. <strong>type</strong>（重要性能指标）</h3><p>访问类型，性能从好到坏排序：</p>
+<ul>
+<li><strong>system</strong>：表只有一行</li>
+<li><strong>const</strong>：通过主键或唯一索引查找，最多返回一行</li>
+<li><strong>eq_ref</strong>：联表查询时使用主键或唯一索引</li>
+<li><strong>ref</strong>：使用非唯一索引查找</li>
+<li><strong>range</strong>：索引范围扫描</li>
+<li><strong>index</strong>：全索引扫描</li>
+<li><strong>ALL</strong>：全表扫描（应避免）</li>
+</ul>
+<h3 id="5-possible-keys"><a href="#5-possible-keys" class="headerlink" title="5. possible_keys"></a>5. <strong>possible_keys</strong></h3><ul>
+<li>可能使用的索引</li>
+</ul>
+<h3 id="6-key"><a href="#6-key" class="headerlink" title="6. key"></a>6. <strong>key</strong></h3><ul>
+<li>实际使用的索引</li>
+</ul>
+<h3 id="7-key-len"><a href="#7-key-len" class="headerlink" title="7. key_len"></a>7. <strong>key_len</strong></h3><ul>
+<li>使用的索引长度</li>
+</ul>
+<h3 id="8-ref"><a href="#8-ref" class="headerlink" title="8. ref"></a>8. <strong>ref</strong></h3><ul>
+<li>与索引比较的列或常量</li>
+</ul>
+<h3 id="9-rows"><a href="#9-rows" class="headerlink" title="9. rows"></a>9. <strong>rows</strong></h3><ul>
+<li>预估需要读取的行数</li>
+</ul>
+<h3 id="10-Extra（重要优化信息）"><a href="#10-Extra（重要优化信息）" class="headerlink" title="10. Extra（重要优化信息）"></a>10. <strong>Extra</strong>（重要优化信息）</h3><ul>
+<li><strong>Using index</strong>：覆盖索引，无需回表</li>
+<li><strong>Using where</strong>：服务器层过滤</li>
+<li><strong>Using temporary</strong>：使用临时表</li>
+<li><strong>Using filesort</strong>：需要额外排序</li>
+<li><strong>Using join buffer</strong>：使用连接缓冲区</li>
+</ul>
+<h2 id="三、使用示例"><a href="#三、使用示例" class="headerlink" title="三、使用示例"></a>三、使用示例</h2><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- 基本用法</span></span><br><span class="line">EXPLAIN <span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> users <span class="keyword">WHERE</span> id <span class="operator">=</span> <span class="number">1</span>;</span><br><span class="line"></span><br><span class="line"><span class="comment">-- 联表查询分析</span></span><br><span class="line">EXPLAIN <span class="keyword">SELECT</span> u.name, o.order_no </span><br><span class="line"><span class="keyword">FROM</span> users u </span><br><span class="line"><span class="keyword">JOIN</span> orders o <span class="keyword">ON</span> u.id <span class="operator">=</span> o.user_id </span><br><span class="line"><span class="keyword">WHERE</span> u.age <span class="operator">&gt;</span> <span class="number">25</span>;</span><br><span class="line"></span><br><span class="line"><span class="comment">-- 查看详细执行计划</span></span><br><span class="line">EXPLAIN FORMAT <span class="operator">=</span> JSON <span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> products <span class="keyword">WHERE</span> price <span class="operator">&gt;</span> <span class="number">100</span>;</span><br></pre></td></tr></table></figure>
+
+<h2 id="四、高级用法"><a href="#四、高级用法" class="headerlink" title="四、高级用法"></a>四、高级用法</h2><h3 id="1-EXPLAIN-ANALYZE（MySQL-8-0-18-）"><a href="#1-EXPLAIN-ANALYZE（MySQL-8-0-18-）" class="headerlink" title="1. EXPLAIN ANALYZE（MySQL 8.0.18+）"></a>1. <strong>EXPLAIN ANALYZE</strong>（MySQL 8.0.18+）</h3><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">EXPLAIN ANALYZE <span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> large_table <span class="keyword">WHERE</span> category <span class="operator">=</span> <span class="string">&#x27;books&#x27;</span>;</span><br></pre></td></tr></table></figure>
+
+<p>提供实际执行时间和成本统计。</p>
+<h3 id="2-JSON格式输出"><a href="#2-JSON格式输出" class="headerlink" title="2. JSON格式输出"></a>2. <strong>JSON格式输出</strong></h3><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">EXPLAIN FORMAT<span class="operator">=</span>JSON <span class="keyword">SELECT</span> ...;</span><br></pre></td></tr></table></figure>
+
+<p>获取更详细的JSON格式执行计划。</p>
+<h3 id="3-分区表分析"><a href="#3-分区表分析" class="headerlink" title="3. 分区表分析"></a>3. <strong>分区表分析</strong></h3><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">EXPLAIN PARTITIONS <span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> sales <span class="keyword">WHERE</span> <span class="keyword">year</span> <span class="operator">=</span> <span class="number">2023</span>;</span><br></pre></td></tr></table></figure>
+
+<p>显示分区访问情况。</p>
+<h2 id="五、优化建议"><a href="#五、优化建议" class="headerlink" title="五、优化建议"></a>五、优化建议</h2><ol>
+<li><strong>重点关注指标</strong><ul>
+<li><code>type</code> 尽量达到 ref 或 range 以上</li>
+<li><code>rows</code> 值尽可能小</li>
+<li><code>Extra</code> 避免出现 Using temporary 和 Using filesort</li>
+</ul>
+</li>
+<li><strong>常见优化场景</strong><ul>
+<li>全表扫描（type&#x3D;ALL）→ 考虑添加索引</li>
+<li>文件排序（Using filesort）→ 优化ORDER BY子句</li>
+<li>临时表（Using temporary）→ 优化GROUP BY或DISTINCT</li>
+</ul>
+</li>
+<li><strong>索引优化示例</strong></li>
+</ol>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- 优化前</span></span><br><span class="line">EXPLAIN <span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> orders <span class="keyword">WHERE</span> order_date <span class="operator">&gt;</span> <span class="string">&#x27;2023-01-01&#x27;</span>;</span><br><span class="line"><span class="comment">-- 如果type为ALL，添加索引</span></span><br><span class="line"><span class="keyword">CREATE</span> INDEX idx_order_date <span class="keyword">ON</span> orders(order_date);</span><br></pre></td></tr></table></figure>
+
+<h2 id="六、限制说明"><a href="#六、限制说明" class="headerlink" title="六、限制说明"></a>六、限制说明</h2><ol>
+<li>不实际执行查询</li>
+<li>基于统计信息估算</li>
+<li>不显示触发器和存储过程影响</li>
+<li>对于UPDATE&#x2F;DELETE语句，需要先转换为SELECT查看</li>
+</ol>
+<h2 id="七、实际工作流程"><a href="#七、实际工作流程" class="headerlink" title="七、实际工作流程"></a>七、实际工作流程</h2><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- 1. 分析慢查询</span></span><br><span class="line">EXPLAIN <span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> slow_query_table <span class="keyword">WHERE</span> conditions;</span><br><span class="line"></span><br><span class="line"><span class="comment">-- 2. 查看索引使用情况</span></span><br><span class="line">EXPLAIN <span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> <span class="keyword">table</span> USE INDEX (index_name) <span class="keyword">WHERE</span> ...;</span><br><span class="line"></span><br><span class="line"><span class="comment">-- 3. 对比不同写法</span></span><br><span class="line">EXPLAIN <span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> <span class="keyword">table</span> <span class="keyword">WHERE</span> a <span class="operator">=</span> <span class="number">1</span> <span class="keyword">AND</span> b <span class="operator">=</span> <span class="number">2</span>;</span><br><span class="line">EXPLAIN <span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> <span class="keyword">table</span> <span class="keyword">WHERE</span> b <span class="operator">=</span> <span class="number">2</span> <span class="keyword">AND</span> a <span class="operator">=</span> <span class="number">1</span>;</span><br><span class="line"></span><br><span class="line"><span class="comment">-- 4. 验证优化效果</span></span><br></pre></td></tr></table></figure>
+
+<p>通过 EXPLAIN 分析，可以系统性地识别查询性能瓶颈，制定合理的优化策略。</p>
+<h1 id="MySQL-EXPLAIN-命令详解"><a href="#MySQL-EXPLAIN-命令详解" class="headerlink" title="MySQL EXPLAIN 命令详解"></a>MySQL EXPLAIN 命令详解</h1><p>EXPLAIN 是 MySQL 中用于分析查询执行计划的关键工具，它能帮助我们理解查询是如何执行的，从而进行性能优化。</p>
+<h2 id="基本用法"><a href="#基本用法" class="headerlink" title="基本用法"></a>基本用法</h2><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- 基本语法</span></span><br><span class="line">EXPLAIN <span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> users <span class="keyword">WHERE</span> id <span class="operator">=</span> <span class="number">1</span>;</span><br><span class="line"></span><br><span class="line"><span class="comment">-- 也可以用于其他 DML 语句</span></span><br><span class="line">EXPLAIN <span class="keyword">UPDATE</span> users <span class="keyword">SET</span> name <span class="operator">=</span> <span class="string">&#x27;John&#x27;</span> <span class="keyword">WHERE</span> id <span class="operator">=</span> <span class="number">1</span>;</span><br><span class="line">EXPLAIN <span class="keyword">DELETE</span> <span class="keyword">FROM</span> users <span class="keyword">WHERE</span> id <span class="operator">=</span> <span class="number">1</span>;</span><br><span class="line"></span><br><span class="line"><span class="comment">-- 完整语法（MySQL 8.0+）</span></span><br><span class="line">EXPLAIN [FORMAT <span class="operator">=</span> &#123;TRADITIONAL <span class="operator">|</span> JSON <span class="operator">|</span> TREE&#125;] <span class="keyword">SELECT</span> ...;</span><br></pre></td></tr></table></figure>
+
+<h2 id="输出结果详解"><a href="#输出结果详解" class="headerlink" title="输出结果详解"></a>输出结果详解</h2><h3 id="主要字段说明"><a href="#主要字段说明" class="headerlink" title="主要字段说明"></a>主要字段说明</h3><table>
+<thead>
+<tr>
+<th>字段</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>id</strong></td>
+<td>查询标识符，数字越大越先执行</td>
+</tr>
+<tr>
+<td><strong>select_type</strong></td>
+<td>查询类型</td>
+</tr>
+<tr>
+<td><strong>table</strong></td>
+<td>访问的表名</td>
+</tr>
+<tr>
+<td><strong>partitions</strong></td>
+<td>匹配的分区</td>
+</tr>
+<tr>
+<td><strong>type</strong></td>
+<td>访问类型（重要性能指标）</td>
+</tr>
+<tr>
+<td><strong>possible_keys</strong></td>
+<td>可能使用的索引</td>
+</tr>
+<tr>
+<td><strong>key</strong></td>
+<td>实际使用的索引</td>
+</tr>
+<tr>
+<td><strong>key_len</strong></td>
+<td>使用的索引长度</td>
+</tr>
+<tr>
+<td><strong>ref</strong></td>
+<td>与索引比较的列或常量</td>
+</tr>
+<tr>
+<td><strong>rows</strong></td>
+<td>预估需要读取的行数</td>
+</tr>
+<tr>
+<td><strong>filtered</strong></td>
+<td>过滤后的行百分比</td>
+</tr>
+<tr>
+<td><strong>Extra</strong></td>
+<td>额外信息</td>
+</tr>
+</tbody></table>
+<h3 id="1-select-type（查询类型）"><a href="#1-select-type（查询类型）" class="headerlink" title="1. select_type（查询类型）"></a>1. <strong>select_type</strong>（查询类型）</h3><ul>
+<li><strong>SIMPLE</strong>：简单查询（无子查询或UNION）</li>
+<li><strong>PRIMARY</strong>：主查询（最外层）</li>
+<li><strong>SUBQUERY</strong>：子查询</li>
+<li><strong>DERIVED</strong>：派生表（FROM子句中的子查询）</li>
+<li><strong>UNION</strong>：UNION中的第二个及后续查询</li>
+<li><strong>UNION RESULT</strong>：UNION结果</li>
+</ul>
+<h3 id="2-type（访问类型-非常重要！）"><a href="#2-type（访问类型-非常重要！）" class="headerlink" title="2. type（访问类型 - 非常重要！）"></a>2. <strong>type</strong>（访问类型 - 非常重要！）</h3><p>按性能从好到坏排序：</p>
+<ol>
+<li><strong>system</strong>：表只有一行</li>
+<li><strong>const</strong>：通过主键或唯一索引查找，最多返回一行</li>
+<li><strong>eq_ref</strong>：联表查询时使用主键或唯一索引</li>
+<li><strong>ref</strong>：使用非唯一索引查找</li>
+<li><strong>range</strong>：索引范围扫描</li>
+<li><strong>index</strong>：全索引扫描</li>
+<li><strong>ALL</strong>：全表扫描（应避免）</li>
+</ol>
+<h3 id="3-Extra（额外信息）"><a href="#3-Extra（额外信息）" class="headerlink" title="3. Extra（额外信息）"></a>3. <strong>Extra</strong>（额外信息）</h3><ul>
+<li><strong>Using index</strong>：覆盖索引，无需回表</li>
+<li><strong>Using where</strong>：服务器层过滤</li>
+<li><strong>Using temporary</strong>：使用临时表</li>
+<li><strong>Using filesort</strong>：需要额外排序</li>
+<li><strong>Using join buffer</strong>：使用连接缓冲区</li>
+</ul>
+<h2 id="实战示例"><a href="#实战示例" class="headerlink" title="实战示例"></a>实战示例</h2><h3 id="示例1：基本查询分析"><a href="#示例1：基本查询分析" class="headerlink" title="示例1：基本查询分析"></a>示例1：基本查询分析</h3><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">EXPLAIN <span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> orders <span class="keyword">WHERE</span> customer_id <span class="operator">=</span> <span class="number">100</span>;</span><br></pre></td></tr></table></figure>
+
+<h3 id="示例2：连接查询分析"><a href="#示例2：连接查询分析" class="headerlink" title="示例2：连接查询分析"></a>示例2：连接查询分析</h3><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">EXPLAIN <span class="keyword">SELECT</span> o.<span class="operator">*</span>, c.name </span><br><span class="line"><span class="keyword">FROM</span> orders o </span><br><span class="line"><span class="keyword">JOIN</span> customers c <span class="keyword">ON</span> o.customer_id <span class="operator">=</span> c.id </span><br><span class="line"><span class="keyword">WHERE</span> o.amount <span class="operator">&gt;</span> <span class="number">1000</span>;</span><br></pre></td></tr></table></figure>
+
+<h3 id="示例3：JSON格式输出（MySQL-8-0-）"><a href="#示例3：JSON格式输出（MySQL-8-0-）" class="headerlink" title="示例3：JSON格式输出（MySQL 8.0+）"></a>示例3：JSON格式输出（MySQL 8.0+）</h3><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">EXPLAIN FORMAT<span class="operator">=</span>JSON </span><br><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> products <span class="keyword">WHERE</span> category_id <span class="operator">=</span> <span class="number">5</span>;</span><br></pre></td></tr></table></figure>
+
+<p>JSON格式提供更详细的信息，包括成本估算等。</p>
+<h2 id="优化案例"><a href="#优化案例" class="headerlink" title="优化案例"></a>优化案例</h2><h3 id="案例1：识别全表扫描"><a href="#案例1：识别全表扫描" class="headerlink" title="案例1：识别全表扫描"></a>案例1：识别全表扫描</h3><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- 问题查询</span></span><br><span class="line">EXPLAIN <span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> users <span class="keyword">WHERE</span> email <span class="keyword">LIKE</span> <span class="string">&#x27;%@gmail.com&#x27;</span>;</span><br><span class="line"><span class="comment">-- 如果 type = ALL，说明是全表扫描</span></span><br><span class="line"></span><br><span class="line"><span class="comment">-- 优化方案：考虑添加索引或修改查询条件</span></span><br><span class="line"><span class="keyword">CREATE</span> INDEX idx_email <span class="keyword">ON</span> users(email);</span><br></pre></td></tr></table></figure>
+
+<h3 id="案例2：识别文件排序"><a href="#案例2：识别文件排序" class="headerlink" title="案例2：识别文件排序"></a>案例2：识别文件排序</h3><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- 问题查询</span></span><br><span class="line">EXPLAIN <span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> orders <span class="keyword">ORDER</span> <span class="keyword">BY</span> order_date;</span><br><span class="line"><span class="comment">-- 如果 Extra 出现 &quot;Using filesort&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="comment">-- 优化方案：添加合适的索引</span></span><br><span class="line"><span class="keyword">CREATE</span> INDEX idx_order_date <span class="keyword">ON</span> orders(order_date);</span><br></pre></td></tr></table></figure>
+
+<h2 id="高级用法"><a href="#高级用法" class="headerlink" title="高级用法"></a>高级用法</h2><h3 id="1-EXPLAIN-ANALYZE（MySQL-8-0-18-）-1"><a href="#1-EXPLAIN-ANALYZE（MySQL-8-0-18-）-1" class="headerlink" title="1. EXPLAIN ANALYZE（MySQL 8.0.18+）"></a>1. EXPLAIN ANALYZE（MySQL 8.0.18+）</h3><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- 提供实际执行时间和成本统计</span></span><br><span class="line">EXPLAIN ANALYZE <span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> large_table <span class="keyword">WHERE</span> category <span class="operator">=</span> <span class="string">&#x27;books&#x27;</span>;</span><br></pre></td></tr></table></figure>
+
+<h3 id="2-分析分区表"><a href="#2-分析分区表" class="headerlink" title="2. 分析分区表"></a>2. 分析分区表</h3><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- 查看分区访问情况</span></span><br><span class="line">EXPLAIN PARTITIONS </span><br><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> sales <span class="keyword">WHERE</span> sale_date <span class="keyword">BETWEEN</span> <span class="string">&#x27;2023-01-01&#x27;</span> <span class="keyword">AND</span> <span class="string">&#x27;2023-12-31&#x27;</span>;</span><br></pre></td></tr></table></figure>
+
+<h3 id="3-对比不同查询计划"><a href="#3-对比不同查询计划" class="headerlink" title="3. 对比不同查询计划"></a>3. 对比不同查询计划</h3><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- 对比两个查询的性能</span></span><br><span class="line">EXPLAIN <span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> users <span class="keyword">WHERE</span> last_name <span class="operator">=</span> <span class="string">&#x27;Smith&#x27;</span> <span class="keyword">AND</span> first_name <span class="operator">=</span> <span class="string">&#x27;John&#x27;</span>;</span><br><span class="line">EXPLAIN <span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> users USE INDEX (idx_lastname) </span><br><span class="line"><span class="keyword">WHERE</span> last_name <span class="operator">=</span> <span class="string">&#x27;Smith&#x27;</span> <span class="keyword">AND</span> first_name <span class="operator">=</span> <span class="string">&#x27;John&#x27;</span>;</span><br></pre></td></tr></table></figure>
+
+<h2 id="优化建议"><a href="#优化建议" class="headerlink" title="优化建议"></a>优化建议</h2><ol>
+<li><strong>关注关键指标</strong><ul>
+<li>避免 <code>type: ALL</code>（全表扫描）</li>
+<li>尽量减少 <code>rows</code> 的值</li>
+<li>注意 <code>Using filesort</code> 和 <code>Using temporary</code></li>
+</ul>
+</li>
+<li><strong>索引优化</strong><ul>
+<li>确保查询使用了合适的索引</li>
+<li>考虑复合索引的顺序</li>
+<li>利用覆盖索引（Using index）</li>
+</ul>
+</li>
+<li><strong>查询结构调整</strong><ul>
+<li>避免在 WHERE 子句中对列进行函数操作</li>
+<li>减少子查询，改用 JOIN</li>
+<li>合理使用 LIMIT</li>
+</ul>
+</li>
+</ol>
+<h2 id="常用诊断查询"><a href="#常用诊断查询" class="headerlink" title="常用诊断查询"></a>常用诊断查询</h2><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- 查看表的索引情况</span></span><br><span class="line"><span class="keyword">SHOW</span> INDEX <span class="keyword">FROM</span> table_name;</span><br><span class="line"></span><br><span class="line"><span class="comment">-- 分析查询缓存中的执行计划</span></span><br><span class="line">EXPLAIN EXTENDED <span class="keyword">SELECT</span> ...;</span><br><span class="line"><span class="keyword">SHOW</span> WARNINGS;</span><br><span class="line"></span><br><span class="line"><span class="comment">-- 强制使用/忽略索引</span></span><br><span class="line">EXPLAIN <span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> <span class="keyword">table</span> USE INDEX (index_name) <span class="keyword">WHERE</span> ...;</span><br><span class="line">EXPLAIN <span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> <span class="keyword">table</span> IGNORE INDEX (index_name) <span class="keyword">WHERE</span> ...;</span><br></pre></td></tr></table></figure>
+
+<p>EXPLAIN 是 MySQL 性能调优的基础工具，结合慢查询日志、性能模式等工具，可以全面诊断和优化数据库性能。</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://example.com/2025/09/06/MySQL-EXPLAIN%E5%91%BD%E4%BB%A4%E8%AF%A6%E8%A7%A3%E4%B8%8E%E4%BC%98%E5%8C%96/" data-id="cmmemxddy000pyssl7p0cfr1m" data-title="MySQL_EXPLAIN命令详解与优化" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
+      
+      
+      
+    </footer>
+  </div>
+  
+</article>
+
+
+
+  
     <article id="post-网页端功能变慢排查思路" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
   <div class="article-meta">
     <a href="/2025/08/04/%E7%BD%91%E9%A1%B5%E7%AB%AF%E5%8A%9F%E8%83%BD%E5%8F%98%E6%85%A2%E6%8E%92%E6%9F%A5%E6%80%9D%E8%B7%AF/" class="article-date">
@@ -172,7 +508,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://example.com/2025/08/04/%E7%BD%91%E9%A1%B5%E7%AB%AF%E5%8A%9F%E8%83%BD%E5%8F%98%E6%85%A2%E6%8E%92%E6%9F%A5%E6%80%9D%E8%B7%AF/" data-id="cmmem61r7001se0sl3vfu82dq" data-title="网页端功能变慢排查思路" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
+      <a data-url="http://example.com/2025/08/04/%E7%BD%91%E9%A1%B5%E7%AB%AF%E5%8A%9F%E8%83%BD%E5%8F%98%E6%85%A2%E6%8E%92%E6%9F%A5%E6%80%9D%E8%B7%AF/" data-id="cmmemxdei001rysslac9n7ex2" data-title="网页端功能变慢排查思路" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
       
       
       
@@ -260,7 +596,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://example.com/2025/08/04/Java%E5%AF%BC%E5%87%BAExcel%E4%BC%98%E5%8C%96%E6%96%B9%E6%B3%95/" data-id="cmmem61qg000he0sl0pkrbcl1" data-title="Java导出Excel优化方法" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
+      <a data-url="http://example.com/2025/08/04/Java%E5%AF%BC%E5%87%BAExcel%E4%BC%98%E5%8C%96%E6%96%B9%E6%B3%95/" data-id="cmmemxddu000hyssl5wtiaogj" data-title="Java导出Excel优化方法" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
       
       
       
@@ -375,7 +711,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://example.com/2025/07/04/%E5%BE%AE%E6%9C%8D%E5%8A%A1%E6%B5%81%E9%87%8F%E6%9A%B4%E6%B6%A8%E9%98%B2%E6%8A%A4%E7%AD%96%E7%95%A5/" data-id="cmmem61qu001be0sl95n47gbu" data-title="微服务流量暴涨防护策略" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
+      <a data-url="http://example.com/2025/07/04/%E5%BE%AE%E6%9C%8D%E5%8A%A1%E6%B5%81%E9%87%8F%E6%9A%B4%E6%B6%A8%E9%98%B2%E6%8A%A4%E7%AD%96%E7%95%A5/" data-id="cmmemxdeb001ayssl01uj3ofh" data-title="微服务流量暴涨防护策略" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
       
       
       
@@ -522,7 +858,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://example.com/2025/04/06/RabbitMQ%E6%B6%88%E6%81%AF%E7%A7%AF%E5%8E%8B%E5%A4%84%E7%90%86%E4%B8%8E%E4%BC%98%E5%8C%96%E6%96%B9%E6%A1%88/" data-id="cmmem61qn000ve0sl86q36vlk" data-title="RabbitMQ消息积压处理与优化方案" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
+      <a data-url="http://example.com/2025/04/06/RabbitMQ%E6%B6%88%E6%81%AF%E7%A7%AF%E5%8E%8B%E5%A4%84%E7%90%86%E4%B8%8E%E4%BC%98%E5%8C%96%E6%96%B9%E6%A1%88/" data-id="cmmemxde1000vyssl2a37b6no" data-title="RabbitMQ消息积压处理与优化方案" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
       
       
       
@@ -603,7 +939,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://example.com/2025/03/06/Netty%E8%A7%A3%E5%86%B3JDK%E7%A9%BA%E8%BD%AE%E8%AF%A2Bug%E6%9C%BA%E5%88%B6/" data-id="cmmem61qm000te0slgqjmd3lo" data-title="Netty解决JDK空轮询Bug机制" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
+      <a data-url="http://example.com/2025/03/06/Netty%E8%A7%A3%E5%86%B3JDK%E7%A9%BA%E8%BD%AE%E8%AF%A2Bug%E6%9C%BA%E5%88%B6/" data-id="cmmemxde0000tysslabi86cwl" data-title="Netty解决JDK空轮询Bug机制" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
       
       
       
@@ -850,7 +1186,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://example.com/2025/02/12/MySQL%E7%AA%97%E5%8F%A3%E5%87%BD%E6%95%B0%E4%BB%8B%E7%BB%8D/" data-id="cmmem61qj000pe0slgve9asxv" data-title="MySQL窗口函数介绍" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
+      <a data-url="http://example.com/2025/02/12/MySQL%E7%AA%97%E5%8F%A3%E5%87%BD%E6%95%B0%E4%BB%8B%E7%BB%8D/" data-id="cmmemxddz000rysslgc4aaxfu" data-title="MySQL窗口函数介绍" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
       
       
       
@@ -961,7 +1297,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://example.com/2025/02/06/SpringBoot%E8%AF%B7%E6%B1%82%E5%93%8D%E5%BA%94%E6%98%A0%E5%B0%84%E6%9C%BA%E5%88%B6%E8%A7%A3%E6%9E%90/" data-id="cmmem61qo000xe0sl6p5sai5x" data-title="SpringBoot请求响应映射机制解析" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
+      <a data-url="http://example.com/2025/02/06/SpringBoot%E8%AF%B7%E6%B1%82%E5%93%8D%E5%BA%94%E6%98%A0%E5%B0%84%E6%9C%BA%E5%88%B6%E8%A7%A3%E6%9E%90/" data-id="cmmemxde2000xysslepd946g7" data-title="SpringBoot请求响应映射机制解析" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
       
       
       
@@ -1122,315 +1458,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://example.com/2025/02/03/Kafka%E9%A1%BA%E5%BA%8F%E6%B6%88%E8%B4%B9%E4%B8%8E%E4%B8%80%E6%AC%A1%E6%80%A7%E6%B6%88%E8%B4%B9%E8%A7%A3%E6%9E%90/" data-id="cmmem61qi000me0sl92af7zwn" data-title="Kafka顺序消费与一次性消费解析" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
-      
-      
-      
-    </footer>
-  </div>
-  
-</article>
-
-
-
-  
-    <article id="post-直播演出短信提醒设计" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
-  <div class="article-meta">
-    <a href="/2025/01/04/%E7%9B%B4%E6%92%AD%E6%BC%94%E5%87%BA%E7%9F%AD%E4%BF%A1%E6%8F%90%E9%86%92%E8%AE%BE%E8%AE%A1/" class="article-date">
-  <time class="dt-published" datetime="2025-01-04T12:44:43.000Z" itemprop="datePublished">2025-01-04</time>
-</a>
-    
-  </div>
-  <div class="article-inner">
-    
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="p-name article-title" href="/2025/01/04/%E7%9B%B4%E6%92%AD%E6%BC%94%E5%87%BA%E7%9F%AD%E4%BF%A1%E6%8F%90%E9%86%92%E8%AE%BE%E8%AE%A1/">直播演出短信提醒设计</a>
-    </h1>
-  
-
-      </header>
-    
-    <div class="e-content article-entry" itemprop="articleBody">
-      
-        <p>我们可以考虑使用时间轮算法，或者基于消息队列的延迟消息，或者使用数据库索引和轮询分片，或者使用外部调度服务如Quartz，或者利用Redis的sorted set等。</p>
-<p>由于问题是开放式的，需要给出设计方案，考虑高并发、高可用、可扩展性等。</p>
-<p>我们可以提出几种方案，比较优劣，并推荐一种。</p>
-<p>常见方案：</p>
-<ol>
-<li>使用数据库定期扫描，但优化：按演出开始时间索引，只扫描即将开始的演出（比如未来10分钟内），而不是全表。但依然要扫描演出表，然后对每个演出找出订阅用户。可以加条件限制，减小扫描范围。</li>
-<li>使用消息队列延迟消息：当用户订阅时，计算演出开始前5分钟的时间戳，发送一个延迟消息到队列，到时间后消费消息发送短信。但需要处理用户取消订阅等情况。并且如果演出时间改变，需要更新消息。</li>
-<li>使用Redis的Sorted Set：将提醒任务按触发时间戳排序，定期从Redis中获取到期的任务进行处理。可以实现精确触发，且性能高。</li>
-<li>使用时间轮算法（如Netty的HashedWheelTimer）或类似Quartz的调度框架。</li>
-<li>基于数据库的分片轮询：将演出ID哈希后分布到多个队列中，每个队列独立扫描。</li>
-</ol>
-<p>需要考虑用户订阅提醒的操作频率，以及演出数量的规模。</p>
-<p>假设演出数量可能很多，用户订阅量也大。需要设计一个可水平扩展的方案。</p>
-<p>我们可以结合消息队列和数据库：当用户订阅时，将提醒任务发送到延迟队列（如RabbitMQ的延迟插件，或者使用Kafka的时间戳索引）。但延迟消息通常有最大延迟时间限制，比如RabbitMQ延迟插件可能有限制，但可以用定时任务轮询消息队列。</p>
-<p>另一种方案：将演出开始时间作为分片键，定期扫描未来一小段时间内的演出，然后将这些演出的提醒任务批量提交到队列或直接处理。这样扫描数据库只针对即将开始的演出，数据量小。</p>
-<p>由于用户订阅是实时添加的，我们需要确保新订阅的用户也能收到提醒，即使订阅时间晚于提醒触发时间（比如演出开始前1分钟才订阅，那么应该立即发送？但需求是开场前5分钟提醒，如果用户订阅时距离演出开始不足5分钟，应该怎么处理？可能也需要发送，或者忽略。可以定义：如果订阅时间距离演出开始时间小于5分钟，则立即发送短信；否则，安排在5分钟前发送。但这里我们只考虑正常情况：在开场前5分钟发送。</p>
-<p>设计一个健壮的系统需要考虑：</p>
-<ul>
-<li>用户订阅提醒：存储用户ID和演出ID，关联演出开始时间。</li>
-<li>当演出时间变更时，需要更新提醒任务。</li>
-<li>取消订阅：需要取消未发送的提醒。</li>
-</ul>
-<p>我们可以使用消息队列延迟消息，但是消息队列的延迟消息通常不支持动态取消（需要额外处理）。使用Redis sorted set可以方便地移除。</p>
-<p>一个常用模式：使用Redis的ZSet存储待发送提醒，score为触发时间戳（演出开始时间-5分钟）。定期从Redis中获取当前时间戳之前的任务，发送短信，然后从ZSet中删除。同时，为了防止丢失，可以将任务持久化到数据库，Redis作为实时调度层，数据库作为备份和恢复。</p>
-<p>具体流程：</p>
-<ul>
-<li>用户订阅提醒时，计算触发时间戳t &#x3D; 演出开始时间 - 5分钟。</li>
-<li>将提醒任务信息（如用户ID、演出ID、手机号等）存入数据库（提醒任务表）。</li>
-<li>同时，将任务以t为score存入Redis ZSet（key可能是“reminder_tasks”），value可以是一个唯一ID（比如任务ID），或者序列化信息。为了支持取消，还需要一个映射存储任务详情。</li>
-<li>启动一个调度服务，不断从Redis ZSet中获取score &lt;&#x3D; 当前时间戳的任务（使用ZRANGEBYSCORE），每批取一定数量，然后处理发送短信。处理完成后从ZSet中移除这些任务，并更新数据库状态为已发送。</li>
-<li>为了容错，如果Redis宕机，可以从数据库恢复未发送的任务（通过状态和触发时间）重新加载到Redis。可以定期将未来一定时间内的任务加载到Redis。</li>
-</ul>
-<p>这个方案结合了Redis的高性能和数据库的持久化，是比较通用的做法。</p>
-<p>另外，为了避免全量扫描数据库，我们可以对数据库的提醒任务表建立索引（演出开始时间、状态）。但即便如此，如果数据量大，频繁扫描未来5分钟的任务也可能有压力。使用Redis作为缓冲区可以减少数据库扫描。</p>
-<p>另一种思路：使用时间轮算法，但需要自己实现，且不便于持久化。</p>
-<p>考虑到实际业务，可能使用成熟的调度框架如Quartz，但Quartz也是基于数据库扫描，会有锁竞争。</p>
-<p>因此，推荐使用Redis ZSet + 数据库的方案。</p>
-<p>还需要考虑分布式环境下的并发处理，多个消费者从Redis取任务时，要保证任务不被重复消费。可以使用Redis的ZPOPMIN或Lua脚本实现原子性取任务。但ZPOPMIN只支持单个，可以批量取并使用Lua脚本或事务。</p>
-<p>另外，要处理任务失败重试。</p>
-<p>还需要考虑演出时间变更：如果演出时间修改，需要更新提醒任务。我们可以先取消原来的任务（从Redis删除，更新数据库状态），再重新插入新任务。取消时需要知道任务ID。</p>
-<p>用户取消订阅类似。</p>
-<p>总之，这个方案可以满足需求。</p>
-<p>现在，根据问题，给出一个清晰的设计思路，并解释为什么避免全量扫描。</p>
-<p>针对你的业务场景（直播演出开场前5分钟短信提醒，用户动态订阅，避免全量扫描数据库），我设计一个基于 <strong>Redis ZSet + 数据库持久化</strong> 的高效解决方案。该方案既能支持大量用户和演出数据，又能实时响应新订阅，同时避免频繁的全表扫描。</p>
-<hr>
-<h2 id="核心思路"><a href="#核心思路" class="headerlink" title="核心思路"></a>核心思路</h2><ul>
-<li><strong>触发时间计算</strong>：每个提醒任务的触发时间为 <code>演出开始时间 - 5分钟</code>。</li>
-<li><strong>实时调度层</strong>：使用 Redis 的有序集合（ZSet）存储待触发的任务，以触发时间戳作为分数（score），支持毫秒级范围查询和弹出。</li>
-<li><strong>持久化层</strong>：使用数据库（如 MySQL）记录所有提醒任务的详细信息，包括用户、演出、状态等，用于数据备份、恢复和变更管理。</li>
-<li><strong>消费者进程</strong>：多个 Worker 不断从 Redis 中拉取到期的任务，发送短信，并更新数据库状态，确保任务被可靠处理。</li>
-</ul>
-<hr>
-<h2 id="详细设计"><a href="#详细设计" class="headerlink" title="详细设计"></a>详细设计</h2><h3 id="1-数据表结构"><a href="#1-数据表结构" class="headerlink" title="1. 数据表结构"></a>1. 数据表结构</h3><p><strong>提醒任务表（reminder_task）</strong></p>
-<table>
-<thead>
-<tr>
-<th>字段名</th>
-<th>类型</th>
-<th>说明</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>id</td>
-<td>bigint</td>
-<td>主键，唯一标识</td>
-</tr>
-<tr>
-<td>user_id</td>
-<td>varchar</td>
-<td>用户ID</td>
-</tr>
-<tr>
-<td>show_id</td>
-<td>varchar</td>
-<td>演出ID</td>
-</tr>
-<tr>
-<td>phone</td>
-<td>varchar</td>
-<td>手机号</td>
-</tr>
-<tr>
-<td>show_time</td>
-<td>datetime</td>
-<td>演出开始时间</td>
-</tr>
-<tr>
-<td>trigger_time</td>
-<td>datetime</td>
-<td>应触发时间（show_time - 5分钟）</td>
-</tr>
-<tr>
-<td>status</td>
-<td>tinyint</td>
-<td>状态：0-待触发，1-已触发，2-已取消</td>
-</tr>
-<tr>
-<td>retry_count</td>
-<td>tinyint</td>
-<td>失败重试次数</td>
-</tr>
-<tr>
-<td>create_time</td>
-<td>datetime</td>
-<td>创建时间</td>
-</tr>
-<tr>
-<td>update_time</td>
-<td>datetime</td>
-<td>最后更新时间</td>
-</tr>
-</tbody></table>
-<p>索引建议：<code>(trigger_time, status)</code> 用于恢复未完成任务；<code>(show_id, user_id)</code> 用于去重。</p>
-<h3 id="2-订阅流程（用户添加提醒）"><a href="#2-订阅流程（用户添加提醒）" class="headerlink" title="2. 订阅流程（用户添加提醒）"></a>2. 订阅流程（用户添加提醒）</h3><p>当用户订阅某个演出的提醒时：</p>
-<ol>
-<li>计算 <code>trigger_time = show_time - 5分钟</code>。</li>
-<li>插入一条记录到 <code>reminder_task</code> 表，状态为 <code>待触发</code>。</li>
-<li>将任务信息以 JSON 或唯一ID的形式存入 Redis：<ul>
-<li>使用一个固定的 ZSet Key，例如 <code>reminder:zset</code>。</li>
-<li>成员（member）：可以是任务ID，或者包含用户ID、演出ID的字符串（推荐用任务ID，便于取消）。</li>
-<li>分数（score）：<code>trigger_time</code> 的时间戳（毫秒或秒）。</li>
-</ul>
-</li>
-<li>如果此时 <code>trigger_time</code> 已经小于当前时间（即用户订阅时已过提醒点），可直接触发发送，或仍按正常流程等待下一次扫描（取决于业务规则，通常应立即发送）。</li>
-</ol>
-<h3 id="3-提醒触发流程（消费者-Worker）"><a href="#3-提醒触发流程（消费者-Worker）" class="headerlink" title="3. 提醒触发流程（消费者 Worker）"></a>3. 提醒触发流程（消费者 Worker）</h3><ul>
-<li>启动多个 Worker 进程（可水平扩展），每个 Worker 定时（如每秒）执行以下操作：<ol>
-<li>使用 Redis 的 <code>ZRANGEBYSCORE</code> 命令获取当前时间戳之前的所有任务（<code>score &lt;= now</code>），并限制每次取出的数量（例如 100 条），防止单次处理过多。</li>
-<li>为了原子性，可使用 Lua 脚本：先查询出这批任务，然后从 ZSet 中移除它们（<code>ZREMRANGEBYSCORE</code>）。</li>
-<li>对取出的每个任务：<ul>
-<li>解析出任务ID，查询数据库获取完整信息（或直接从Redis member中携带必要信息，如用户手机号）。</li>
-<li>调用短信发送接口。</li>
-<li>根据发送结果更新数据库状态：成功则置为 <code>已触发</code>；失败则记录重试次数，若未超限则重新计算下次重试时间并重新入 Redis（或由死信队列处理）。</li>
-</ul>
-</li>
-<li>如果发送过程中 Worker 崩溃，未确认的任务会留在 Redis（已移除）？实际上，由于我们已经从 Redis 移除了任务，失败的任务需要依赖数据库状态进行恢复。可引入“处理中”状态，但为简化，可以先从数据库加载任务并更新状态，失败后重新插入 Redis（利用重试机制）。更健壮的做法是使用消息队列的 ACK 机制，但 Redis 方案也能通过记录处理日志来保证最终一致性。</li>
-</ol>
-</li>
-</ul>
-<h3 id="4-演出时间变更处理"><a href="#4-演出时间变更处理" class="headerlink" title="4. 演出时间变更处理"></a>4. 演出时间变更处理</h3><p>如果演出时间修改：</p>
-<ol>
-<li>找到该演出关联的所有 <code>待触发</code> 提醒任务。</li>
-<li>将这些任务从 Redis ZSet 中删除（可根据任务ID删除，需维护一个从 member 到 ID 的映射，或直接用任务ID作为 member）。</li>
-<li>更新数据库中的 <code>show_time</code> 和 <code>trigger_time</code>，状态保持不变。</li>
-<li>重新将任务插入 Redis ZSet（新的触发时间）。</li>
-</ol>
-<h3 id="5-用户取消订阅"><a href="#5-用户取消订阅" class="headerlink" title="5. 用户取消订阅"></a>5. 用户取消订阅</h3><ul>
-<li>更新数据库状态为 <code>已取消</code>。</li>
-<li>同时从 Redis ZSet 中删除对应任务（通过任务ID）。</li>
-</ul>
-<h3 id="6-系统启动-故障恢复"><a href="#6-系统启动-故障恢复" class="headerlink" title="6. 系统启动&#x2F;故障恢复"></a>6. 系统启动&#x2F;故障恢复</h3><ul>
-<li>系统启动时，从数据库中查询 <code>trigger_time</code> 在 <code>[当前时间, 当前时间 + 预加载窗口]</code> 范围内且状态为 <code>待触发</code> 的任务，批量加载到 Redis ZSet 中。预加载窗口可设为未来 1 小时，避免一次性加载过多。</li>
-<li>定期扫描数据库，将未来更长时间的任务逐步预热到 Redis。</li>
-</ul>
-<hr>
-<h2 id="为什么避免全量扫描？"><a href="#为什么避免全量扫描？" class="headerlink" title="为什么避免全量扫描？"></a>为什么避免全量扫描？</h2><ul>
-<li><strong>数据库只作为持久化存储</strong>，日常提醒触发完全依赖 Redis 的实时扫描，数据库仅用于查询特定任务（如恢复、变更），不需要每隔 5 分钟全表扫描。</li>
-<li>Redis ZSet 的 <code>ZRANGEBYSCORE</code> 操作时间复杂度为 O(log(N)+M)，性能极高，即使有百万级待触发任务也能毫秒级返回。</li>
-<li>通过分页取出和批量处理，避免了单次处理过多任务导致阻塞。</li>
-</ul>
-<hr>
-<h2 id="扩展性考虑"><a href="#扩展性考虑" class="headerlink" title="扩展性考虑"></a>扩展性考虑</h2><ul>
-<li><strong>Redis 分片</strong>：如果单 Redis 实例压力过大，可按演出ID哈希分片，每个分片对应一个 ZSet，Worker 分别消费。</li>
-<li><strong>高可用</strong>：Redis 采用哨兵或集群模式；数据库主从备份。</li>
-<li><strong>短信发送限流</strong>：控制 Worker 消费速率，对接短信网关的 QPS 限制。</li>
-<li><strong>监控告警</strong>：监控 Redis ZSet 积压量、发送成功率、失败重试次数。</li>
-</ul>
-<hr>
-<h2 id="备选方案对比"><a href="#备选方案对比" class="headerlink" title="备选方案对比"></a>备选方案对比</h2><table>
-<thead>
-<tr>
-<th>方案</th>
-<th>优点</th>
-<th>缺点</th>
-</tr>
-</thead>
-<tbody><tr>
-<td><strong>数据库轮询 + 索引</strong></td>
-<td>简单，不引入新组件</td>
-<td>随数据量增大性能下降，频繁扫描有压力</td>
-</tr>
-<tr>
-<td><strong>消息队列延迟消息</strong></td>
-<td>精确触发，消息持久化</td>
-<td>不支持动态取消&#x2F;修改，延迟时间有限制</td>
-</tr>
-<tr>
-<td><strong>Quartz</strong></td>
-<td>成熟，支持集群</td>
-<td>基于数据库锁，性能瓶颈，不适合海量任务</td>
-</tr>
-<tr>
-<td><strong>Redis ZSet</strong></td>
-<td>高性能，支持动态增删，易水平扩展</td>
-<td>需配合数据库做持久化，需处理恢复逻辑</td>
-</tr>
-</tbody></table>
-<p>综合来看，<strong>Redis ZSet + 数据库</strong> 最适合你的场景，兼顾了性能、灵活性和数据可靠性。</p>
-<hr>
-<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>该设计方案利用 Redis 的有序集合作为实时调度器，避免了全量扫描数据库；数据库作为可靠存储，处理变更和恢复。通过合理的任务加载和消费者并发控制，可以支撑大规模用户订阅和演出提醒，满足业务需求。</p>
-
-      
-    </div>
-    <footer class="article-footer">
-      <a data-url="http://example.com/2025/01/04/%E7%9B%B4%E6%92%AD%E6%BC%94%E5%87%BA%E7%9F%AD%E4%BF%A1%E6%8F%90%E9%86%92%E8%AE%BE%E8%AE%A1/" data-id="cmmem61qy001le0slax8y9t68" data-title="直播演出短信提醒设计" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
-      
-      
-      
-    </footer>
-  </div>
-  
-</article>
-
-
-
-  
-    <article id="post-线上Redis宕机优化策略" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
-  <div class="article-meta">
-    <a href="/2024/12/24/%E7%BA%BF%E4%B8%8ARedis%E5%AE%95%E6%9C%BA%E4%BC%98%E5%8C%96%E7%AD%96%E7%95%A5/" class="article-date">
-  <time class="dt-published" datetime="2024-12-24T12:44:47.000Z" itemprop="datePublished">2024-12-24</time>
-</a>
-    
-  </div>
-  <div class="article-inner">
-    
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="p-name article-title" href="/2024/12/24/%E7%BA%BF%E4%B8%8ARedis%E5%AE%95%E6%9C%BA%E4%BC%98%E5%8C%96%E7%AD%96%E7%95%A5/">线上Redis宕机优化策略</a>
-    </h1>
-  
-
-      </header>
-    
-    <div class="e-content article-entry" itemprop="articleBody">
-      
-        <p>思考过程（Thinking）：</p>
-<p>嗯，用户问的是线上Redis机器宕机后如何优化。这是一个非常典型的运维和架构问题，用户的核心需求是知道在发生宕机后，如何进行系统性的改进和优化，以避免未来再次发生类似问题或减少影响。</p>
-<p>问题本身有一定复杂度，需要从多个层面考虑。用户可能不仅想知道应急处理，更想知道长期的根本解决方案。我应该提供一个结构清晰的优化思路，涵盖从快速恢复、高可用架构、数据持久化到日常运维等多个方面。</p>
-<p>可以从几个关键维度来组织回答：首先是高可用架构的改进，避免单点故障；其次是数据持久化和恢复策略，确保数据不丢；然后是日常的监控、容量规划和故障演练，做到提前预防。最后可以提一下关键业务的数据零丢失方案，作为更高级的优化方向。这样回答既全面又有层次，能覆盖用户的实际需求。</p>
-<p>线上Redis宕机确实让人紧张。优化可以从<strong>事前防御</strong>和<strong>事后恢复</strong>两个维度系统性地进行：</p>
-<h3 id="1-高可用架构（防止单点故障）"><a href="#1-高可用架构（防止单点故障）" class="headerlink" title="1. 高可用架构（防止单点故障）"></a>1. 高可用架构（防止单点故障）</h3><p>这是避免因宕机导致业务中断的核心。</p>
-<ul>
-<li><strong>主从复制 + 哨兵</strong>：为每个Master配一个Slave，再用<strong>至少3个</strong>哨兵节点监控，实现主节点故障的自动摘除与选举。</li>
-<li><strong>Redis Cluster</strong>：若数据量或QPS很大，建议直接使用。通过<strong>数据分片</strong>将压力分散，节点宕机只影响部分Slot，且内部支持自动故障转移。</li>
-</ul>
-<h3 id="2-数据持久化（快速恢复）"><a href="#2-数据持久化（快速恢复）" class="headerlink" title="2. 数据持久化（快速恢复）"></a>2. 数据持久化（快速恢复）</h3><p>如果宕机后<strong>重启</strong>，持久化机制决定了恢复速度和数据完整性。</p>
-<ul>
-<li><strong>AOF + rewrite</strong>：建议开启AOF，并设置<code>appendfsync everysec</code>（最多丢1秒数据）。配合<strong>定时rewrite</strong>，可兼顾数据安全和恢复速度。</li>
-<li><strong>混合持久化</strong>：Redis 4.0以上版本推荐开启（<code>aof-use-rdb-preamble yes</code>）。用RDB做全量快照，用AOF存增量，<strong>重启加载速度极快</strong>。</li>
-</ul>
-<h3 id="3-事前防御与容量规划"><a href="#3-事前防御与容量规划" class="headerlink" title="3. 事前防御与容量规划"></a>3. 事前防御与容量规划</h3><ul>
-<li><strong>合理设置maxmemory</strong>：避免内存写满导致OOM或被系统kill。</li>
-<li><strong>慢查询优化</strong>：排查并优化慢查询命令，防止Redis阻塞。</li>
-<li><strong>禁用高风险命令</strong>：如 <code>Keys</code>、<code>Flushall</code> 等，防止误操作导致不可用。</li>
-</ul>
-<h3 id="4-监控与快速定位"><a href="#4-监控与快速定位" class="headerlink" title="4. 监控与快速定位"></a>4. 监控与快速定位</h3><ul>
-<li><strong>监控关键指标</strong>：如命中率、QPS、慢查询数。</li>
-<li><strong>设置分级告警</strong>：如CPU超过80%触发警告，连接数突降到0则触发电话告警，便于快速响应。</li>
-</ul>
-<h3 id="5-降级与熔断机制（业务侧防护）"><a href="#5-降级与熔断机制（业务侧防护）" class="headerlink" title="5. 降级与熔断机制（业务侧防护）"></a>5. 降级与熔断机制（业务侧防护）</h3><p>如果Redis宕机，业务层要有预案防止<strong>雪崩</strong>：</p>
-<ul>
-<li><strong>本地缓存兜底</strong>：如Caffeine或Guava Cache，Redis挂了可以先读本地。</li>
-<li><strong>空结果缓存</strong>：防止<strong>缓存穿透</strong>打垮数据库。</li>
-<li><strong>熔断返回默认值</strong>：直接返回默认数据（如默认商品信息），保证主流程跑通。</li>
-</ul>
-<p>如果你们是<strong>单节点</strong>，当务之急是先搭建主从哨兵架构；如果是<strong>集群</strong>，重点应放在分析内存使用和优化持久化配置上。</p>
-<p>如果需要，我可以帮你梳理排查宕机具体原因（如内存、流量、慢查询）的步骤，需要吗？</p>
-
-      
-    </div>
-    <footer class="article-footer">
-      <a data-url="http://example.com/2024/12/24/%E7%BA%BF%E4%B8%8ARedis%E5%AE%95%E6%9C%BA%E4%BC%98%E5%8C%96%E7%AD%96%E7%95%A5/" data-id="cmmem61r8001te0sldjy2do86" data-title="线上Redis宕机优化策略" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
+      <a data-url="http://example.com/2025/02/03/Kafka%E9%A1%BA%E5%BA%8F%E6%B6%88%E8%B4%B9%E4%B8%8E%E4%B8%80%E6%AC%A1%E6%80%A7%E6%B6%88%E8%B4%B9%E8%A7%A3%E6%9E%90/" data-id="cmmemxddw000mysslg8ly6oss" data-title="Kafka顺序消费与一次性消费解析" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
       
       
       
@@ -1479,7 +1507,7 @@
   <div class="widget-wrap">
     <h3 class="widget-title">Archiv</h3>
     <div class="widget">
-      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/02/">February 2026</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/01/">January 2026</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/12/">December 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/11/">November 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/10/">October 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/09/">September 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/08/">August 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/07/">July 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/04/">April 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/03/">March 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/02/">February 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/01/">January 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/12/">December 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/11/">November 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/10/">October 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/07/">July 2024</a></li></ul>
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/03/">March 2026</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/02/">February 2026</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/01/">January 2026</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/12/">December 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/11/">November 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/10/">October 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/09/">September 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/08/">August 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/07/">July 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/04/">April 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/03/">March 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/02/">February 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/01/">January 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/12/">December 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/11/">November 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/10/">October 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/07/">July 2024</a></li></ul>
     </div>
   </div>
 
@@ -1492,6 +1520,14 @@
       <ul>
         
           <li>
+            <a href="/2026/03/01/element-vue-admin%E5%89%8D%E7%AB%AFmock%E6%98%AF%E5%A6%82%E4%BD%95%E5%AE%9E%E7%8E%B0%E7%9A%84/">element-vue-admin前端mock是如何实现的</a>
+          </li>
+        
+          <li>
+            <a href="/2026/02/18/Disruptor%E5%9C%A8%E6%92%AE%E5%90%88%E5%BC%95%E6%93%8E%E7%9A%84%E5%AE%9E%E8%B7%B5%EF%BD%9C%E5%BE%97%E7%89%A9%E6%8A%80%E6%9C%AF/">Disruptor在撮合引擎的实践｜得物技术</a>
+          </li>
+        
+          <li>
             <a href="/2026/02/14/%E4%B9%90%E8%A7%82%E9%94%81%E5%AE%9E%E7%8E%B0%E9%AB%98%E5%B9%B6%E5%8F%91%E7%8A%B6%E6%80%81%E4%B8%80%E8%87%B4/">乐观锁实现高并发状态一致</a>
           </li>
         
@@ -1501,14 +1537,6 @@
         
           <li>
             <a href="/2026/01/23/Java%E7%BA%BF%E7%A8%8B%E6%B1%A0%E5%BC%82%E5%B8%B8%E5%A4%84%E7%90%86%E6%9C%BA%E5%88%B6/">Java线程池异常处理机制</a>
-          </li>
-        
-          <li>
-            <a href="/2026/01/04/%E5%80%9F%E8%AF%81%E4%B8%9A%E5%8A%A1%E7%8A%B6%E6%80%81%E6%9C%BA%E5%BB%BA%E6%A8%A1%E5%8E%9F%E5%AD%90%E6%80%A7/">借证业务状态机建模原子性</a>
-          </li>
-        
-          <li>
-            <a href="/2026/01/04/RAG%E6%B5%81%E7%A8%8B%E8%AF%A6%E8%A7%A3%E4%B8%8E%E5%9B%BE%E8%A7%A3/">RAG流程详解与图解</a>
           </li>
         
       </ul>

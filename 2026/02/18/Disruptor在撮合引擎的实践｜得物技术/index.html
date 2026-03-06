@@ -9,7 +9,7 @@
   <meta name="description" content="目录 一、Disruptor的简介  Disruptor的使用场景 Disruptor和ArrayBlockingQueue性能对比 Disruptor快速接入指南 Disruptor消费者等待策略 Disruptor灵活的消费者模式  二、Disruptor的核心概念  Disruptor内部组件交互图 核心概念  三、Disruptor的特点  环形数组结构 无锁化设计 独占缓存行的方式消除伪">
 <meta property="og:type" content="article">
 <meta property="og:title" content="Disruptor在撮合引擎的实践｜得物技术">
-<meta property="og:url" content="http://example.com/2024/10/08/Disruptor%E5%9C%A8%E6%92%AE%E5%90%88%E5%BC%95%E6%93%8E%E7%9A%84%E5%AE%9E%E8%B7%B5%EF%BD%9C%E5%BE%97%E7%89%A9%E6%8A%80%E6%9C%AF/index.html">
+<meta property="og:url" content="http://example.com/2026/02/18/Disruptor%E5%9C%A8%E6%92%AE%E5%90%88%E5%BC%95%E6%93%8E%E7%9A%84%E5%AE%9E%E8%B7%B5%EF%BD%9C%E5%BE%97%E7%89%A9%E6%8A%80%E6%9C%AF/index.html">
 <meta property="og:site_name" content="haipeiface.github.io">
 <meta property="og:description" content="目录 一、Disruptor的简介  Disruptor的使用场景 Disruptor和ArrayBlockingQueue性能对比 Disruptor快速接入指南 Disruptor消费者等待策略 Disruptor灵活的消费者模式  二、Disruptor的核心概念  Disruptor内部组件交互图 核心概念  三、Disruptor的特点  环形数组结构 无锁化设计 独占缓存行的方式消除伪">
 <meta property="og:locale">
@@ -24,8 +24,8 @@
 <meta property="og:image" content="http://example.com/images/fillEventFactory.png">
 <meta property="og:image" content="http://example.com/images/%E6%A0%B8%E5%BF%83%E6%9C%8D%E5%8A%A1%E6%95%B0%E6%8D%AE%E6%B5%81%E5%90%91.png">
 <meta property="og:image" content="http://example.com/images/%E6%92%AE%E5%90%88%E5%BC%95%E6%93%8E%E6%B5%81%E7%A8%8B%E5%9B%BE.png">
-<meta property="article:published_time" content="2024-10-08T01:26:42.000Z">
-<meta property="article:modified_time" content="2024-11-30T09:29:07.882Z">
+<meta property="article:published_time" content="2026-02-18T01:26:42.000Z">
+<meta property="article:modified_time" content="2026-03-06T08:30:28.096Z">
 <meta property="article:author" content="haipeiface">
 <meta property="article:tag" content="JAVA">
 <meta name="twitter:card" content="summary">
@@ -86,8 +86,8 @@
       <div class="outer">
         <section id="main"><article id="post-Disruptor在撮合引擎的实践｜得物技术" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
   <div class="article-meta">
-    <a href="/2024/10/08/Disruptor%E5%9C%A8%E6%92%AE%E5%90%88%E5%BC%95%E6%93%8E%E7%9A%84%E5%AE%9E%E8%B7%B5%EF%BD%9C%E5%BE%97%E7%89%A9%E6%8A%80%E6%9C%AF/" class="article-date">
-  <time class="dt-published" datetime="2024-10-08T01:26:42.000Z" itemprop="datePublished">2024-10-08</time>
+    <a href="/2026/02/18/Disruptor%E5%9C%A8%E6%92%AE%E5%90%88%E5%BC%95%E6%93%8E%E7%9A%84%E5%AE%9E%E8%B7%B5%EF%BD%9C%E5%BE%97%E7%89%A9%E6%8A%80%E6%9C%AF/" class="article-date">
+  <time class="dt-published" datetime="2026-02-18T01:26:42.000Z" itemprop="datePublished">2026-02-18</time>
 </a>
     
   </div>
@@ -340,7 +340,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://example.com/2024/10/08/Disruptor%E5%9C%A8%E6%92%AE%E5%90%88%E5%BC%95%E6%93%8E%E7%9A%84%E5%AE%9E%E8%B7%B5%EF%BD%9C%E5%BE%97%E7%89%A9%E6%8A%80%E6%9C%AF/" data-id="cmmem61qb0007e0sl3uek77ix" data-title="Disruptor在撮合引擎的实践｜得物技术" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
+      <a data-url="http://example.com/2026/02/18/Disruptor%E5%9C%A8%E6%92%AE%E5%90%88%E5%BC%95%E6%93%8E%E7%9A%84%E5%AE%9E%E8%B7%B5%EF%BD%9C%E5%BE%97%E7%89%A9%E6%8A%80%E6%9C%AF/" data-id="cmmemxddp0007ysslgi841o72" data-title="Disruptor在撮合引擎的实践｜得物技术" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
       
       
       
@@ -352,7 +352,7 @@
     
 <nav id="article-nav">
   
-    <a href="/2024/10/10/element-vue-admin%E5%89%8D%E7%AB%AFmock%E6%98%AF%E5%A6%82%E4%BD%95%E5%AE%9E%E7%8E%B0%E7%9A%84/" id="article-nav-newer" class="article-nav-link-wrap">
+    <a href="/2026/03/01/element-vue-admin%E5%89%8D%E7%AB%AFmock%E6%98%AF%E5%A6%82%E4%BD%95%E5%AE%9E%E7%8E%B0%E7%9A%84/" id="article-nav-newer" class="article-nav-link-wrap">
       <strong class="article-nav-caption">Neuer</strong>
       <div class="article-nav-title">
         
@@ -362,9 +362,9 @@
     </a>
   
   
-    <a href="/2024/10/08/%E8%AE%BE%E7%BD%AE%E5%85%83%E7%B4%A0%E5%B1%85%E4%B8%AD%E7%9A%847%E7%A7%8D%E5%8A%9E%E6%B3%95/" id="article-nav-older" class="article-nav-link-wrap">
+    <a href="/2026/02/14/%E4%B9%90%E8%A7%82%E9%94%81%E5%AE%9E%E7%8E%B0%E9%AB%98%E5%B9%B6%E5%8F%91%E7%8A%B6%E6%80%81%E4%B8%80%E8%87%B4/" id="article-nav-older" class="article-nav-link-wrap">
       <strong class="article-nav-caption">Älter</strong>
-      <div class="article-nav-title">设置元素居中的7种办法</div>
+      <div class="article-nav-title">乐观锁实现高并发状态一致</div>
     </a>
   
 </nav>
@@ -403,7 +403,7 @@
   <div class="widget-wrap">
     <h3 class="widget-title">Archiv</h3>
     <div class="widget">
-      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/02/">February 2026</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/01/">January 2026</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/12/">December 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/11/">November 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/10/">October 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/09/">September 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/08/">August 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/07/">July 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/04/">April 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/03/">March 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/02/">February 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/01/">January 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/12/">December 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/11/">November 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/10/">October 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/07/">July 2024</a></li></ul>
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/03/">March 2026</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/02/">February 2026</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/01/">January 2026</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/12/">December 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/11/">November 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/10/">October 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/09/">September 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/08/">August 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/07/">July 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/04/">April 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/03/">March 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/02/">February 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/01/">January 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/12/">December 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/11/">November 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/10/">October 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/07/">July 2024</a></li></ul>
     </div>
   </div>
 
@@ -416,6 +416,14 @@
       <ul>
         
           <li>
+            <a href="/2026/03/01/element-vue-admin%E5%89%8D%E7%AB%AFmock%E6%98%AF%E5%A6%82%E4%BD%95%E5%AE%9E%E7%8E%B0%E7%9A%84/">element-vue-admin前端mock是如何实现的</a>
+          </li>
+        
+          <li>
+            <a href="/2026/02/18/Disruptor%E5%9C%A8%E6%92%AE%E5%90%88%E5%BC%95%E6%93%8E%E7%9A%84%E5%AE%9E%E8%B7%B5%EF%BD%9C%E5%BE%97%E7%89%A9%E6%8A%80%E6%9C%AF/">Disruptor在撮合引擎的实践｜得物技术</a>
+          </li>
+        
+          <li>
             <a href="/2026/02/14/%E4%B9%90%E8%A7%82%E9%94%81%E5%AE%9E%E7%8E%B0%E9%AB%98%E5%B9%B6%E5%8F%91%E7%8A%B6%E6%80%81%E4%B8%80%E8%87%B4/">乐观锁实现高并发状态一致</a>
           </li>
         
@@ -425,14 +433,6 @@
         
           <li>
             <a href="/2026/01/23/Java%E7%BA%BF%E7%A8%8B%E6%B1%A0%E5%BC%82%E5%B8%B8%E5%A4%84%E7%90%86%E6%9C%BA%E5%88%B6/">Java线程池异常处理机制</a>
-          </li>
-        
-          <li>
-            <a href="/2026/01/04/%E5%80%9F%E8%AF%81%E4%B8%9A%E5%8A%A1%E7%8A%B6%E6%80%81%E6%9C%BA%E5%BB%BA%E6%A8%A1%E5%8E%9F%E5%AD%90%E6%80%A7/">借证业务状态机建模原子性</a>
-          </li>
-        
-          <li>
-            <a href="/2026/01/04/RAG%E6%B5%81%E7%A8%8B%E8%AF%A6%E8%A7%A3%E4%B8%8E%E5%9B%BE%E8%A7%A3/">RAG流程详解与图解</a>
           </li>
         
       </ul>

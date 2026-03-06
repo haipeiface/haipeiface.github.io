@@ -69,6 +69,314 @@
       <div class="outer">
         <section id="main">
   
+    <article id="post-直播演出短信提醒设计" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="article-meta">
+    <a href="/2025/01/04/%E7%9B%B4%E6%92%AD%E6%BC%94%E5%87%BA%E7%9F%AD%E4%BF%A1%E6%8F%90%E9%86%92%E8%AE%BE%E8%AE%A1/" class="article-date">
+  <time class="dt-published" datetime="2025-01-04T12:44:43.000Z" itemprop="datePublished">2025-01-04</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="p-name article-title" href="/2025/01/04/%E7%9B%B4%E6%92%AD%E6%BC%94%E5%87%BA%E7%9F%AD%E4%BF%A1%E6%8F%90%E9%86%92%E8%AE%BE%E8%AE%A1/">直播演出短信提醒设计</a>
+    </h1>
+  
+
+      </header>
+    
+    <div class="e-content article-entry" itemprop="articleBody">
+      
+        <p>我们可以考虑使用时间轮算法，或者基于消息队列的延迟消息，或者使用数据库索引和轮询分片，或者使用外部调度服务如Quartz，或者利用Redis的sorted set等。</p>
+<p>由于问题是开放式的，需要给出设计方案，考虑高并发、高可用、可扩展性等。</p>
+<p>我们可以提出几种方案，比较优劣，并推荐一种。</p>
+<p>常见方案：</p>
+<ol>
+<li>使用数据库定期扫描，但优化：按演出开始时间索引，只扫描即将开始的演出（比如未来10分钟内），而不是全表。但依然要扫描演出表，然后对每个演出找出订阅用户。可以加条件限制，减小扫描范围。</li>
+<li>使用消息队列延迟消息：当用户订阅时，计算演出开始前5分钟的时间戳，发送一个延迟消息到队列，到时间后消费消息发送短信。但需要处理用户取消订阅等情况。并且如果演出时间改变，需要更新消息。</li>
+<li>使用Redis的Sorted Set：将提醒任务按触发时间戳排序，定期从Redis中获取到期的任务进行处理。可以实现精确触发，且性能高。</li>
+<li>使用时间轮算法（如Netty的HashedWheelTimer）或类似Quartz的调度框架。</li>
+<li>基于数据库的分片轮询：将演出ID哈希后分布到多个队列中，每个队列独立扫描。</li>
+</ol>
+<p>需要考虑用户订阅提醒的操作频率，以及演出数量的规模。</p>
+<p>假设演出数量可能很多，用户订阅量也大。需要设计一个可水平扩展的方案。</p>
+<p>我们可以结合消息队列和数据库：当用户订阅时，将提醒任务发送到延迟队列（如RabbitMQ的延迟插件，或者使用Kafka的时间戳索引）。但延迟消息通常有最大延迟时间限制，比如RabbitMQ延迟插件可能有限制，但可以用定时任务轮询消息队列。</p>
+<p>另一种方案：将演出开始时间作为分片键，定期扫描未来一小段时间内的演出，然后将这些演出的提醒任务批量提交到队列或直接处理。这样扫描数据库只针对即将开始的演出，数据量小。</p>
+<p>由于用户订阅是实时添加的，我们需要确保新订阅的用户也能收到提醒，即使订阅时间晚于提醒触发时间（比如演出开始前1分钟才订阅，那么应该立即发送？但需求是开场前5分钟提醒，如果用户订阅时距离演出开始不足5分钟，应该怎么处理？可能也需要发送，或者忽略。可以定义：如果订阅时间距离演出开始时间小于5分钟，则立即发送短信；否则，安排在5分钟前发送。但这里我们只考虑正常情况：在开场前5分钟发送。</p>
+<p>设计一个健壮的系统需要考虑：</p>
+<ul>
+<li>用户订阅提醒：存储用户ID和演出ID，关联演出开始时间。</li>
+<li>当演出时间变更时，需要更新提醒任务。</li>
+<li>取消订阅：需要取消未发送的提醒。</li>
+</ul>
+<p>我们可以使用消息队列延迟消息，但是消息队列的延迟消息通常不支持动态取消（需要额外处理）。使用Redis sorted set可以方便地移除。</p>
+<p>一个常用模式：使用Redis的ZSet存储待发送提醒，score为触发时间戳（演出开始时间-5分钟）。定期从Redis中获取当前时间戳之前的任务，发送短信，然后从ZSet中删除。同时，为了防止丢失，可以将任务持久化到数据库，Redis作为实时调度层，数据库作为备份和恢复。</p>
+<p>具体流程：</p>
+<ul>
+<li>用户订阅提醒时，计算触发时间戳t &#x3D; 演出开始时间 - 5分钟。</li>
+<li>将提醒任务信息（如用户ID、演出ID、手机号等）存入数据库（提醒任务表）。</li>
+<li>同时，将任务以t为score存入Redis ZSet（key可能是“reminder_tasks”），value可以是一个唯一ID（比如任务ID），或者序列化信息。为了支持取消，还需要一个映射存储任务详情。</li>
+<li>启动一个调度服务，不断从Redis ZSet中获取score &lt;&#x3D; 当前时间戳的任务（使用ZRANGEBYSCORE），每批取一定数量，然后处理发送短信。处理完成后从ZSet中移除这些任务，并更新数据库状态为已发送。</li>
+<li>为了容错，如果Redis宕机，可以从数据库恢复未发送的任务（通过状态和触发时间）重新加载到Redis。可以定期将未来一定时间内的任务加载到Redis。</li>
+</ul>
+<p>这个方案结合了Redis的高性能和数据库的持久化，是比较通用的做法。</p>
+<p>另外，为了避免全量扫描数据库，我们可以对数据库的提醒任务表建立索引（演出开始时间、状态）。但即便如此，如果数据量大，频繁扫描未来5分钟的任务也可能有压力。使用Redis作为缓冲区可以减少数据库扫描。</p>
+<p>另一种思路：使用时间轮算法，但需要自己实现，且不便于持久化。</p>
+<p>考虑到实际业务，可能使用成熟的调度框架如Quartz，但Quartz也是基于数据库扫描，会有锁竞争。</p>
+<p>因此，推荐使用Redis ZSet + 数据库的方案。</p>
+<p>还需要考虑分布式环境下的并发处理，多个消费者从Redis取任务时，要保证任务不被重复消费。可以使用Redis的ZPOPMIN或Lua脚本实现原子性取任务。但ZPOPMIN只支持单个，可以批量取并使用Lua脚本或事务。</p>
+<p>另外，要处理任务失败重试。</p>
+<p>还需要考虑演出时间变更：如果演出时间修改，需要更新提醒任务。我们可以先取消原来的任务（从Redis删除，更新数据库状态），再重新插入新任务。取消时需要知道任务ID。</p>
+<p>用户取消订阅类似。</p>
+<p>总之，这个方案可以满足需求。</p>
+<p>现在，根据问题，给出一个清晰的设计思路，并解释为什么避免全量扫描。</p>
+<p>针对你的业务场景（直播演出开场前5分钟短信提醒，用户动态订阅，避免全量扫描数据库），我设计一个基于 <strong>Redis ZSet + 数据库持久化</strong> 的高效解决方案。该方案既能支持大量用户和演出数据，又能实时响应新订阅，同时避免频繁的全表扫描。</p>
+<hr>
+<h2 id="核心思路"><a href="#核心思路" class="headerlink" title="核心思路"></a>核心思路</h2><ul>
+<li><strong>触发时间计算</strong>：每个提醒任务的触发时间为 <code>演出开始时间 - 5分钟</code>。</li>
+<li><strong>实时调度层</strong>：使用 Redis 的有序集合（ZSet）存储待触发的任务，以触发时间戳作为分数（score），支持毫秒级范围查询和弹出。</li>
+<li><strong>持久化层</strong>：使用数据库（如 MySQL）记录所有提醒任务的详细信息，包括用户、演出、状态等，用于数据备份、恢复和变更管理。</li>
+<li><strong>消费者进程</strong>：多个 Worker 不断从 Redis 中拉取到期的任务，发送短信，并更新数据库状态，确保任务被可靠处理。</li>
+</ul>
+<hr>
+<h2 id="详细设计"><a href="#详细设计" class="headerlink" title="详细设计"></a>详细设计</h2><h3 id="1-数据表结构"><a href="#1-数据表结构" class="headerlink" title="1. 数据表结构"></a>1. 数据表结构</h3><p><strong>提醒任务表（reminder_task）</strong></p>
+<table>
+<thead>
+<tr>
+<th>字段名</th>
+<th>类型</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>id</td>
+<td>bigint</td>
+<td>主键，唯一标识</td>
+</tr>
+<tr>
+<td>user_id</td>
+<td>varchar</td>
+<td>用户ID</td>
+</tr>
+<tr>
+<td>show_id</td>
+<td>varchar</td>
+<td>演出ID</td>
+</tr>
+<tr>
+<td>phone</td>
+<td>varchar</td>
+<td>手机号</td>
+</tr>
+<tr>
+<td>show_time</td>
+<td>datetime</td>
+<td>演出开始时间</td>
+</tr>
+<tr>
+<td>trigger_time</td>
+<td>datetime</td>
+<td>应触发时间（show_time - 5分钟）</td>
+</tr>
+<tr>
+<td>status</td>
+<td>tinyint</td>
+<td>状态：0-待触发，1-已触发，2-已取消</td>
+</tr>
+<tr>
+<td>retry_count</td>
+<td>tinyint</td>
+<td>失败重试次数</td>
+</tr>
+<tr>
+<td>create_time</td>
+<td>datetime</td>
+<td>创建时间</td>
+</tr>
+<tr>
+<td>update_time</td>
+<td>datetime</td>
+<td>最后更新时间</td>
+</tr>
+</tbody></table>
+<p>索引建议：<code>(trigger_time, status)</code> 用于恢复未完成任务；<code>(show_id, user_id)</code> 用于去重。</p>
+<h3 id="2-订阅流程（用户添加提醒）"><a href="#2-订阅流程（用户添加提醒）" class="headerlink" title="2. 订阅流程（用户添加提醒）"></a>2. 订阅流程（用户添加提醒）</h3><p>当用户订阅某个演出的提醒时：</p>
+<ol>
+<li>计算 <code>trigger_time = show_time - 5分钟</code>。</li>
+<li>插入一条记录到 <code>reminder_task</code> 表，状态为 <code>待触发</code>。</li>
+<li>将任务信息以 JSON 或唯一ID的形式存入 Redis：<ul>
+<li>使用一个固定的 ZSet Key，例如 <code>reminder:zset</code>。</li>
+<li>成员（member）：可以是任务ID，或者包含用户ID、演出ID的字符串（推荐用任务ID，便于取消）。</li>
+<li>分数（score）：<code>trigger_time</code> 的时间戳（毫秒或秒）。</li>
+</ul>
+</li>
+<li>如果此时 <code>trigger_time</code> 已经小于当前时间（即用户订阅时已过提醒点），可直接触发发送，或仍按正常流程等待下一次扫描（取决于业务规则，通常应立即发送）。</li>
+</ol>
+<h3 id="3-提醒触发流程（消费者-Worker）"><a href="#3-提醒触发流程（消费者-Worker）" class="headerlink" title="3. 提醒触发流程（消费者 Worker）"></a>3. 提醒触发流程（消费者 Worker）</h3><ul>
+<li>启动多个 Worker 进程（可水平扩展），每个 Worker 定时（如每秒）执行以下操作：<ol>
+<li>使用 Redis 的 <code>ZRANGEBYSCORE</code> 命令获取当前时间戳之前的所有任务（<code>score &lt;= now</code>），并限制每次取出的数量（例如 100 条），防止单次处理过多。</li>
+<li>为了原子性，可使用 Lua 脚本：先查询出这批任务，然后从 ZSet 中移除它们（<code>ZREMRANGEBYSCORE</code>）。</li>
+<li>对取出的每个任务：<ul>
+<li>解析出任务ID，查询数据库获取完整信息（或直接从Redis member中携带必要信息，如用户手机号）。</li>
+<li>调用短信发送接口。</li>
+<li>根据发送结果更新数据库状态：成功则置为 <code>已触发</code>；失败则记录重试次数，若未超限则重新计算下次重试时间并重新入 Redis（或由死信队列处理）。</li>
+</ul>
+</li>
+<li>如果发送过程中 Worker 崩溃，未确认的任务会留在 Redis（已移除）？实际上，由于我们已经从 Redis 移除了任务，失败的任务需要依赖数据库状态进行恢复。可引入“处理中”状态，但为简化，可以先从数据库加载任务并更新状态，失败后重新插入 Redis（利用重试机制）。更健壮的做法是使用消息队列的 ACK 机制，但 Redis 方案也能通过记录处理日志来保证最终一致性。</li>
+</ol>
+</li>
+</ul>
+<h3 id="4-演出时间变更处理"><a href="#4-演出时间变更处理" class="headerlink" title="4. 演出时间变更处理"></a>4. 演出时间变更处理</h3><p>如果演出时间修改：</p>
+<ol>
+<li>找到该演出关联的所有 <code>待触发</code> 提醒任务。</li>
+<li>将这些任务从 Redis ZSet 中删除（可根据任务ID删除，需维护一个从 member 到 ID 的映射，或直接用任务ID作为 member）。</li>
+<li>更新数据库中的 <code>show_time</code> 和 <code>trigger_time</code>，状态保持不变。</li>
+<li>重新将任务插入 Redis ZSet（新的触发时间）。</li>
+</ol>
+<h3 id="5-用户取消订阅"><a href="#5-用户取消订阅" class="headerlink" title="5. 用户取消订阅"></a>5. 用户取消订阅</h3><ul>
+<li>更新数据库状态为 <code>已取消</code>。</li>
+<li>同时从 Redis ZSet 中删除对应任务（通过任务ID）。</li>
+</ul>
+<h3 id="6-系统启动-故障恢复"><a href="#6-系统启动-故障恢复" class="headerlink" title="6. 系统启动&#x2F;故障恢复"></a>6. 系统启动&#x2F;故障恢复</h3><ul>
+<li>系统启动时，从数据库中查询 <code>trigger_time</code> 在 <code>[当前时间, 当前时间 + 预加载窗口]</code> 范围内且状态为 <code>待触发</code> 的任务，批量加载到 Redis ZSet 中。预加载窗口可设为未来 1 小时，避免一次性加载过多。</li>
+<li>定期扫描数据库，将未来更长时间的任务逐步预热到 Redis。</li>
+</ul>
+<hr>
+<h2 id="为什么避免全量扫描？"><a href="#为什么避免全量扫描？" class="headerlink" title="为什么避免全量扫描？"></a>为什么避免全量扫描？</h2><ul>
+<li><strong>数据库只作为持久化存储</strong>，日常提醒触发完全依赖 Redis 的实时扫描，数据库仅用于查询特定任务（如恢复、变更），不需要每隔 5 分钟全表扫描。</li>
+<li>Redis ZSet 的 <code>ZRANGEBYSCORE</code> 操作时间复杂度为 O(log(N)+M)，性能极高，即使有百万级待触发任务也能毫秒级返回。</li>
+<li>通过分页取出和批量处理，避免了单次处理过多任务导致阻塞。</li>
+</ul>
+<hr>
+<h2 id="扩展性考虑"><a href="#扩展性考虑" class="headerlink" title="扩展性考虑"></a>扩展性考虑</h2><ul>
+<li><strong>Redis 分片</strong>：如果单 Redis 实例压力过大，可按演出ID哈希分片，每个分片对应一个 ZSet，Worker 分别消费。</li>
+<li><strong>高可用</strong>：Redis 采用哨兵或集群模式；数据库主从备份。</li>
+<li><strong>短信发送限流</strong>：控制 Worker 消费速率，对接短信网关的 QPS 限制。</li>
+<li><strong>监控告警</strong>：监控 Redis ZSet 积压量、发送成功率、失败重试次数。</li>
+</ul>
+<hr>
+<h2 id="备选方案对比"><a href="#备选方案对比" class="headerlink" title="备选方案对比"></a>备选方案对比</h2><table>
+<thead>
+<tr>
+<th>方案</th>
+<th>优点</th>
+<th>缺点</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>数据库轮询 + 索引</strong></td>
+<td>简单，不引入新组件</td>
+<td>随数据量增大性能下降，频繁扫描有压力</td>
+</tr>
+<tr>
+<td><strong>消息队列延迟消息</strong></td>
+<td>精确触发，消息持久化</td>
+<td>不支持动态取消&#x2F;修改，延迟时间有限制</td>
+</tr>
+<tr>
+<td><strong>Quartz</strong></td>
+<td>成熟，支持集群</td>
+<td>基于数据库锁，性能瓶颈，不适合海量任务</td>
+</tr>
+<tr>
+<td><strong>Redis ZSet</strong></td>
+<td>高性能，支持动态增删，易水平扩展</td>
+<td>需配合数据库做持久化，需处理恢复逻辑</td>
+</tr>
+</tbody></table>
+<p>综合来看，<strong>Redis ZSet + 数据库</strong> 最适合你的场景，兼顾了性能、灵活性和数据可靠性。</p>
+<hr>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>该设计方案利用 Redis 的有序集合作为实时调度器，避免了全量扫描数据库；数据库作为可靠存储，处理变更和恢复。通过合理的任务加载和消费者并发控制，可以支撑大规模用户订阅和演出提醒，满足业务需求。</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://example.com/2025/01/04/%E7%9B%B4%E6%92%AD%E6%BC%94%E5%87%BA%E7%9F%AD%E4%BF%A1%E6%8F%90%E9%86%92%E8%AE%BE%E8%AE%A1/" data-id="cmmemxdef001kyssl7ufedjup" data-title="直播演出短信提醒设计" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
+      
+      
+      
+    </footer>
+  </div>
+  
+</article>
+
+
+
+  
+    <article id="post-线上Redis宕机优化策略" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="article-meta">
+    <a href="/2024/12/24/%E7%BA%BF%E4%B8%8ARedis%E5%AE%95%E6%9C%BA%E4%BC%98%E5%8C%96%E7%AD%96%E7%95%A5/" class="article-date">
+  <time class="dt-published" datetime="2024-12-24T12:44:47.000Z" itemprop="datePublished">2024-12-24</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="p-name article-title" href="/2024/12/24/%E7%BA%BF%E4%B8%8ARedis%E5%AE%95%E6%9C%BA%E4%BC%98%E5%8C%96%E7%AD%96%E7%95%A5/">线上Redis宕机优化策略</a>
+    </h1>
+  
+
+      </header>
+    
+    <div class="e-content article-entry" itemprop="articleBody">
+      
+        <p>思考过程（Thinking）：</p>
+<p>嗯，用户问的是线上Redis机器宕机后如何优化。这是一个非常典型的运维和架构问题，用户的核心需求是知道在发生宕机后，如何进行系统性的改进和优化，以避免未来再次发生类似问题或减少影响。</p>
+<p>问题本身有一定复杂度，需要从多个层面考虑。用户可能不仅想知道应急处理，更想知道长期的根本解决方案。我应该提供一个结构清晰的优化思路，涵盖从快速恢复、高可用架构、数据持久化到日常运维等多个方面。</p>
+<p>可以从几个关键维度来组织回答：首先是高可用架构的改进，避免单点故障；其次是数据持久化和恢复策略，确保数据不丢；然后是日常的监控、容量规划和故障演练，做到提前预防。最后可以提一下关键业务的数据零丢失方案，作为更高级的优化方向。这样回答既全面又有层次，能覆盖用户的实际需求。</p>
+<p>线上Redis宕机确实让人紧张。优化可以从<strong>事前防御</strong>和<strong>事后恢复</strong>两个维度系统性地进行：</p>
+<h3 id="1-高可用架构（防止单点故障）"><a href="#1-高可用架构（防止单点故障）" class="headerlink" title="1. 高可用架构（防止单点故障）"></a>1. 高可用架构（防止单点故障）</h3><p>这是避免因宕机导致业务中断的核心。</p>
+<ul>
+<li><strong>主从复制 + 哨兵</strong>：为每个Master配一个Slave，再用<strong>至少3个</strong>哨兵节点监控，实现主节点故障的自动摘除与选举。</li>
+<li><strong>Redis Cluster</strong>：若数据量或QPS很大，建议直接使用。通过<strong>数据分片</strong>将压力分散，节点宕机只影响部分Slot，且内部支持自动故障转移。</li>
+</ul>
+<h3 id="2-数据持久化（快速恢复）"><a href="#2-数据持久化（快速恢复）" class="headerlink" title="2. 数据持久化（快速恢复）"></a>2. 数据持久化（快速恢复）</h3><p>如果宕机后<strong>重启</strong>，持久化机制决定了恢复速度和数据完整性。</p>
+<ul>
+<li><strong>AOF + rewrite</strong>：建议开启AOF，并设置<code>appendfsync everysec</code>（最多丢1秒数据）。配合<strong>定时rewrite</strong>，可兼顾数据安全和恢复速度。</li>
+<li><strong>混合持久化</strong>：Redis 4.0以上版本推荐开启（<code>aof-use-rdb-preamble yes</code>）。用RDB做全量快照，用AOF存增量，<strong>重启加载速度极快</strong>。</li>
+</ul>
+<h3 id="3-事前防御与容量规划"><a href="#3-事前防御与容量规划" class="headerlink" title="3. 事前防御与容量规划"></a>3. 事前防御与容量规划</h3><ul>
+<li><strong>合理设置maxmemory</strong>：避免内存写满导致OOM或被系统kill。</li>
+<li><strong>慢查询优化</strong>：排查并优化慢查询命令，防止Redis阻塞。</li>
+<li><strong>禁用高风险命令</strong>：如 <code>Keys</code>、<code>Flushall</code> 等，防止误操作导致不可用。</li>
+</ul>
+<h3 id="4-监控与快速定位"><a href="#4-监控与快速定位" class="headerlink" title="4. 监控与快速定位"></a>4. 监控与快速定位</h3><ul>
+<li><strong>监控关键指标</strong>：如命中率、QPS、慢查询数。</li>
+<li><strong>设置分级告警</strong>：如CPU超过80%触发警告，连接数突降到0则触发电话告警，便于快速响应。</li>
+</ul>
+<h3 id="5-降级与熔断机制（业务侧防护）"><a href="#5-降级与熔断机制（业务侧防护）" class="headerlink" title="5. 降级与熔断机制（业务侧防护）"></a>5. 降级与熔断机制（业务侧防护）</h3><p>如果Redis宕机，业务层要有预案防止<strong>雪崩</strong>：</p>
+<ul>
+<li><strong>本地缓存兜底</strong>：如Caffeine或Guava Cache，Redis挂了可以先读本地。</li>
+<li><strong>空结果缓存</strong>：防止<strong>缓存穿透</strong>打垮数据库。</li>
+<li><strong>熔断返回默认值</strong>：直接返回默认数据（如默认商品信息），保证主流程跑通。</li>
+</ul>
+<p>如果你们是<strong>单节点</strong>，当务之急是先搭建主从哨兵架构；如果是<strong>集群</strong>，重点应放在分析内存使用和优化持久化配置上。</p>
+<p>如果需要，我可以帮你梳理排查宕机具体原因（如内存、流量、慢查询）的步骤，需要吗？</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://example.com/2024/12/24/%E7%BA%BF%E4%B8%8ARedis%E5%AE%95%E6%9C%BA%E4%BC%98%E5%8C%96%E7%AD%96%E7%95%A5/" data-id="cmmemxden0020yssl3rpvavc4" data-title="线上Redis宕机优化策略" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
+      
+      
+      
+    </footer>
+  </div>
+  
+</article>
+
+
+
+  
     <article id="post-Java-CompletableFuture-使用示例" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
   <div class="article-meta">
     <a href="/2024/12/15/Java-CompletableFuture-%E4%BD%BF%E7%94%A8%E7%A4%BA%E4%BE%8B/" class="article-date">
@@ -130,7 +438,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://example.com/2024/12/15/Java-CompletableFuture-%E4%BD%BF%E7%94%A8%E7%A4%BA%E4%BE%8B/" data-id="cmmem61qd000be0sl9mm89mp8" data-title="Java_CompletableFuture_使用示例" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
+      <a data-url="http://example.com/2024/12/15/Java-CompletableFuture-%E4%BD%BF%E7%94%A8%E7%A4%BA%E4%BE%8B/" data-id="cmmemxdds000cyssl429m9wzq" data-title="Java_CompletableFuture_使用示例" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
       
       
       
@@ -208,7 +516,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://example.com/2024/12/14/GraphQL%E8%A7%A3%E5%86%B3%E7%97%9B%E7%82%B9%E4%B8%8E%E5%BC%95%E5%85%A5%E5%8E%9F%E5%9B%A0/" data-id="cmmem61qe000ce0sl0w8g8bvl" data-title="GraphQL解决痛点与引入原因" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
+      <a data-url="http://example.com/2024/12/14/GraphQL%E8%A7%A3%E5%86%B3%E7%97%9B%E7%82%B9%E4%B8%8E%E5%BC%95%E5%85%A5%E5%8E%9F%E5%9B%A0/" data-id="cmmemxddr000byssl09gohjee" data-title="GraphQL解决痛点与引入原因" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
       
       
       
@@ -308,7 +616,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://example.com/2024/12/11/Nacos%E9%85%8D%E7%BD%AE%E7%83%AD%E6%9B%B4%E6%96%B0%E5%AE%9E%E7%8E%B0%E6%96%B9%E5%BC%8F%E8%A7%A3%E6%9E%90/" data-id="cmmem61ql000se0slbbu01trn" data-title="Nacos配置热更新实现方式解析" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
+      <a data-url="http://example.com/2024/12/11/Nacos%E9%85%8D%E7%BD%AE%E7%83%AD%E6%9B%B4%E6%96%B0%E5%AE%9E%E7%8E%B0%E6%96%B9%E5%BC%8F%E8%A7%A3%E6%9E%90/" data-id="cmmemxddz000syssl67j99nej" data-title="Nacos配置热更新实现方式解析" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
       
       
       
@@ -395,7 +703,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://example.com/2024/12/03/%E6%B3%A8%E8%A7%A3@Transactional%E7%9A%84%E5%8F%82%E6%95%B0/" data-id="cmmem61qx001ie0sla6gfgvml" data-title="注解@Transactional的参数" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
+      <a data-url="http://example.com/2024/12/03/%E6%B3%A8%E8%A7%A3@Transactional%E7%9A%84%E5%8F%82%E6%95%B0/" data-id="cmmemxded001fyssl8sk645i9" data-title="注解@Transactional的参数" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
       
       
       
@@ -475,7 +783,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://example.com/2024/11/30/%E5%89%8D%E7%AB%AF-%E6%97%A0%E6%84%9F%E5%88%B7%E6%96%B0token/" data-id="cmmem61qr0016e0sl76orflbw" data-title="前端-无感刷新token" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
+      <a data-url="http://example.com/2024/11/30/%E5%89%8D%E7%AB%AF-%E6%97%A0%E6%84%9F%E5%88%B7%E6%96%B0token/" data-id="cmmemxdea0017yssl8bka58f2" data-title="前端-无感刷新token" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
       
       
       
@@ -548,7 +856,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://example.com/2024/11/22/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97%E6%95%85%E9%9A%9C%E5%85%9C%E5%BA%95%E6%96%B9%E6%A1%88/" data-id="cmmem61qw001he0slfspwdtwc" data-title="消息队列故障兜底方案" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
+      <a data-url="http://example.com/2024/11/22/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97%E6%95%85%E9%9A%9C%E5%85%9C%E5%BA%95%E6%96%B9%E6%A1%88/" data-id="cmmemxdef001iyssl9pbtevu2" data-title="消息队列故障兜底方案" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
       
       
       
@@ -618,7 +926,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://example.com/2024/11/04/%E7%AA%97%E5%8F%A3%E5%87%BD%E6%95%B0%E8%BF%9E%E7%BB%AD%E7%99%BB%E5%BD%95%E9%97%AE%E9%A2%98/" data-id="cmmem61qx001je0sl8zt3htn9" data-title="窗口函数连续登录问题" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
+      <a data-url="http://example.com/2024/11/04/%E7%AA%97%E5%8F%A3%E5%87%BD%E6%95%B0%E8%BF%9E%E7%BB%AD%E7%99%BB%E5%BD%95%E9%97%AE%E9%A2%98/" data-id="cmmemxdeg001lysslbz4ta0iz" data-title="窗口函数连续登录问题" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
       
       
       
@@ -691,130 +999,10 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://example.com/2024/11/04/Java-GC%E5%81%9C%E9%A1%BF%E8%B0%83%E4%BC%98%E7%BB%8F%E9%AA%8C%E5%88%86%E4%BA%AB/" data-id="cmmem61qe000de0slgdsz6n7n" data-title="Java_GC停顿调优经验分享" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
+      <a data-url="http://example.com/2024/11/04/Java-GC%E5%81%9C%E9%A1%BF%E8%B0%83%E4%BC%98%E7%BB%8F%E9%AA%8C%E5%88%86%E4%BA%AB/" data-id="cmmemxdds000dyssl6b31dkhg" data-title="Java_GC停顿调优经验分享" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
       
       
       
-    </footer>
-  </div>
-  
-</article>
-
-
-
-  
-    <article id="post-本地消息表加定时任务兜底消息队列" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
-  <div class="article-meta">
-    <a href="/2024/11/02/%E6%9C%AC%E5%9C%B0%E6%B6%88%E6%81%AF%E8%A1%A8%E5%8A%A0%E5%AE%9A%E6%97%B6%E4%BB%BB%E5%8A%A1%E5%85%9C%E5%BA%95%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" class="article-date">
-  <time class="dt-published" datetime="2024-11-02T12:44:40.000Z" itemprop="datePublished">2024-11-02</time>
-</a>
-    
-  </div>
-  <div class="article-inner">
-    
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="p-name article-title" href="/2024/11/02/%E6%9C%AC%E5%9C%B0%E6%B6%88%E6%81%AF%E8%A1%A8%E5%8A%A0%E5%AE%9A%E6%97%B6%E4%BB%BB%E5%8A%A1%E5%85%9C%E5%BA%95%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/">本地消息表加定时任务兜底消息队列</a>
-    </h1>
-  
-
-      </header>
-    
-    <div class="e-content article-entry" itemprop="articleBody">
-      
-        <p>思考过程（Thinking）：</p>
-<p>好的，用户之前问了线上消息队列故障的兜底改造方案，我给出了一个比较全面的分层方案，现在用户简单回复“需要”，这显然是对我上一轮回答的延续。</p>
-<p>嗯，用户应该是希望我针对上一轮方案中的某个具体部分，进行更深入的展开。回顾一下，我上一轮提到了好几个方案，包括快速分析的短期策略、中期策略、长期策略，还重点推荐了“本地数据库消息表+定时任务”的经典架构。</p>
-<p>用户可能是一位开发人员或架构师，正在处理实际的生产故障或进行系统加固。他的真实需求不仅仅是知道理论，而是需要可落地的、具体的代码实现指导。他可能正面临MQ不可用的紧急情况，或者在进行系统改造，急需一个能立即上手的解决方案。</p>
-<p>那么，用户最可能需要的，就是对我上一轮重点推荐的“本地数据库消息表+定时任务”模式进行详细展开。这个方案最经典、最稳妥，也最容易用代码实现。我需要提供从建表SQL、生产端代码、消费端代码到定时任务扫描的完整示例，并且要考虑到幂等性、异常处理这些关键点，让用户能直接参考甚至复制使用。</p>
-<p>好的，我们来详细拆解一下<strong>“本地数据库消息表 + 定时任务”</strong>这套兜底方案的具体落地方案。</p>
-<p>它的核心思路是利用本地数据库事务来保证业务数据和消息状态的一致性。当 MQ 不可用时，消息会被可靠地保存在数据库中，由定时任务等待 MQ 恢复后重新投递。</p>
-<p>下面我们分模块来看具体的实现方式：</p>
-<h3 id="模块一：消息表结构设计"><a href="#模块一：消息表结构设计" class="headerlink" title="模块一：消息表结构设计"></a>模块一：消息表结构设计</h3><p>首先需要在业务库中创建一张消息表，用于持久化待发送的消息。</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">CREATE</span> <span class="keyword">TABLE</span> `message_retry` (</span><br><span class="line">  `id` <span class="type">bigint</span>(<span class="number">20</span>) <span class="keyword">NOT</span> <span class="keyword">NULL</span> AUTO_INCREMENT,</span><br><span class="line">  `biz_id` <span class="type">varchar</span>(<span class="number">64</span>) <span class="keyword">NOT</span> <span class="keyword">NULL</span> COMMENT <span class="string">&#x27;业务ID（如订单号），用于幂等&#x27;</span>,</span><br><span class="line">  `biz_type` <span class="type">varchar</span>(<span class="number">32</span>) <span class="keyword">NOT</span> <span class="keyword">NULL</span> COMMENT <span class="string">&#x27;业务类型（如 order_create）&#x27;</span>,</span><br><span class="line">  `message_body` text <span class="keyword">NOT</span> <span class="keyword">NULL</span> COMMENT <span class="string">&#x27;消息内容（JSON格式）&#x27;</span>,</span><br><span class="line">  `status` tinyint(<span class="number">4</span>) <span class="keyword">NOT</span> <span class="keyword">NULL</span> <span class="keyword">DEFAULT</span> <span class="string">&#x27;0&#x27;</span> COMMENT <span class="string">&#x27;状态：0-待发送，1-已发送，2-已死信&#x27;</span>,</span><br><span class="line">  `retry_count` <span class="type">int</span>(<span class="number">11</span>) <span class="keyword">NOT</span> <span class="keyword">NULL</span> <span class="keyword">DEFAULT</span> <span class="string">&#x27;0&#x27;</span> COMMENT <span class="string">&#x27;已重试次数&#x27;</span>,</span><br><span class="line">  `next_retry_time` datetime <span class="keyword">DEFAULT</span> <span class="keyword">NULL</span> COMMENT <span class="string">&#x27;下一次重试时间&#x27;</span>,</span><br><span class="line">  `create_time` datetime <span class="keyword">NOT</span> <span class="keyword">NULL</span> <span class="keyword">DEFAULT</span> <span class="built_in">CURRENT_TIMESTAMP</span>,</span><br><span class="line">  `update_time` datetime <span class="keyword">NOT</span> <span class="keyword">NULL</span> <span class="keyword">DEFAULT</span> <span class="built_in">CURRENT_TIMESTAMP</span> <span class="keyword">ON</span> <span class="keyword">UPDATE</span> <span class="built_in">CURRENT_TIMESTAMP</span>,</span><br><span class="line">  <span class="keyword">PRIMARY</span> KEY (`id`),</span><br><span class="line">  KEY `idx_status_next_retry` (`status`,`next_retry_time`) <span class="comment">-- 定时任务扫描索引</span></span><br><span class="line">) ENGINE<span class="operator">=</span>InnoDB <span class="keyword">DEFAULT</span> CHARSET<span class="operator">=</span>utf8mb4;</span><br></pre></td></tr></table></figure>
-
-<h3 id="模块二：生产端代码实现"><a href="#模块二：生产端代码实现" class="headerlink" title="模块二：生产端代码实现"></a>模块二：生产端代码实现</h3><p>在发送消息的业务方法中，核心是<strong>将业务操作和插入消息表放在同一个数据库事务里</strong>。</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Service</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">OrderService</span> &#123;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Autowired</span></span><br><span class="line">    <span class="keyword">private</span> MessageRetryMapper messageRetryMapper;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Autowired</span></span><br><span class="line">    <span class="keyword">private</span> MQProducer mqProducer; <span class="comment">// 你的MQ客户端</span></span><br><span class="line"></span><br><span class="line">    <span class="meta">@Transactional(rollbackFor = Exception.class)</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">createOrder</span><span class="params">(Order order)</span> &#123;</span><br><span class="line">        <span class="comment">// 1. 业务操作：插入订单表</span></span><br><span class="line">        insertOrder(order);</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 2. 构造消息内容</span></span><br><span class="line">        <span class="type">MessageRetry</span> <span class="variable">message</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">MessageRetry</span>();</span><br><span class="line">        message.setBizId(order.getOrderId());</span><br><span class="line">        message.setBizType(<span class="string">&quot;order_create&quot;</span>);</span><br><span class="line">        message.setMessageBody(JSON.toJSONString(order));</span><br><span class="line">        message.setStatus(<span class="number">0</span>); <span class="comment">// 待发送</span></span><br><span class="line">        message.setRetryCount(<span class="number">0</span>);</span><br><span class="line">        message.setNextRetryTime(<span class="keyword">new</span> <span class="title class_">Date</span>()); <span class="comment">// 立即发送</span></span><br><span class="line"></span><br><span class="line">        <span class="comment">// 3. 在同个事务中，插入消息记录</span></span><br><span class="line">        messageRetryMapper.insert(message);</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 4. 事务提交后，尝试立即发送（非必须，但能降低延迟）</span></span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            mqProducer.send(message.getMessageBody());</span><br><span class="line">            <span class="comment">// 发送成功后，异步更新消息状态为“已发送”</span></span><br><span class="line">            messageRetryMapper.updateStatus(message.getId(), <span class="number">1</span>);</span><br><span class="line">        &#125; <span class="keyword">catch</span> (MQException e) &#123;</span><br><span class="line">            <span class="comment">// MQ异常：这里只打印日志，事务已提交，消息留在表里等定时任务处理</span></span><br><span class="line">            log.error(<span class="string">&quot;MQ发送失败，等待定时任务重试，消息ID：&#123;&#125;&quot;</span>, message.getId(), e);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<h3 id="模块三：消费端幂等处理"><a href="#模块三：消费端幂等处理" class="headerlink" title="模块三：消费端幂等处理"></a>模块三：消费端幂等处理</h3><p>由于定时任务可能重复发送，消费端<strong>必须实现幂等</strong>，这是保证数据一致性的关键。</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Service</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">OrderConsumer</span> &#123;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Autowired</span></span><br><span class="line">    <span class="keyword">private</span> OrderService orderService;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 消费订单创建消息</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">handleOrderCreateMessage</span><span class="params">(String messageBody)</span> &#123;</span><br><span class="line">        <span class="type">Order</span> <span class="variable">order</span> <span class="operator">=</span> JSON.parseObject(messageBody, Order.class);</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 核心：通过业务ID（如订单号）判断是否已处理</span></span><br><span class="line">        <span class="comment">// 例如在订单表里加一个字段 mq_processed 或利用唯一索引</span></span><br><span class="line">        <span class="keyword">if</span> (orderService.checkIfProcessed(order.getOrderId())) &#123;</span><br><span class="line">            log.info(<span class="string">&quot;消息已处理，幂等跳过，orderId: &#123;&#125;&quot;</span>, order.getOrderId());</span><br><span class="line">            <span class="keyword">return</span>;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 执行实际的业务逻辑</span></span><br><span class="line">        orderService.processOrder(order);</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 标记处理完成（可以在processOrder内部通过更新状态实现）</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<h3 id="模块四：定时任务扫表示例"><a href="#模块四：定时任务扫表示例" class="headerlink" title="模块四：定时任务扫表示例"></a>模块四：定时任务扫表示例</h3><p>用一个定时任务（如 Quartz、XXL-JOB）来扫描并重试发送失败的消息。</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Component</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">MessageRetryScheduler</span> &#123;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Autowired</span></span><br><span class="line">    <span class="keyword">private</span> MessageRetryMapper messageRetryMapper;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Autowired</span></span><br><span class="line">    <span class="keyword">private</span> MQProducer mqProducer;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 建议每10-30秒执行一次</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="meta">@Scheduled(fixedDelay = 15000)</span> <span class="comment">// 每15秒执行一次</span></span><br><span class="line">    <span class="meta">@Transactional(rollbackFor = Exception.class)</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">retryFailedMessages</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="comment">// 1. 查询待发送且到达重试时间的消息（增加重试次数限制，避免死循环）</span></span><br><span class="line">        List&lt;MessageRetry&gt; messages = messageRetryMapper.selectPendingMessages(</span><br><span class="line">                <span class="number">0</span>, <span class="comment">// status: 待发送</span></span><br><span class="line">                <span class="keyword">new</span> <span class="title class_">Date</span>(), <span class="comment">// 当前时间</span></span><br><span class="line">                <span class="number">3</span>, <span class="comment">// 最多重试3次</span></span><br><span class="line">                <span class="number">100</span> <span class="comment">// 每次扫描100条</span></span><br><span class="line">        );</span><br><span class="line"></span><br><span class="line">        <span class="keyword">for</span> (MessageRetry msg : messages) &#123;</span><br><span class="line">            <span class="keyword">try</span> &#123;</span><br><span class="line">                <span class="comment">// 2. 尝试发送消息</span></span><br><span class="line">                mqProducer.send(msg.getMessageBody());</span><br><span class="line"></span><br><span class="line">                <span class="comment">// 3. 发送成功：更新状态为已发送</span></span><br><span class="line">                messageRetryMapper.updateStatus(msg.getId(), <span class="number">1</span>);</span><br><span class="line">            &#125; <span class="keyword">catch</span> (Exception e) &#123;</span><br><span class="line">                log.error(<span class="string">&quot;定时任务重试发送失败，消息ID：&#123;&#125;&quot;</span>, msg.getId(), e);</span><br><span class="line"></span><br><span class="line">                <span class="comment">// 4. 发送失败：更新重试次数和下一次重试时间</span></span><br><span class="line">                <span class="type">int</span> <span class="variable">retryCount</span> <span class="operator">=</span> msg.getRetryCount() + <span class="number">1</span>;</span><br><span class="line">                <span class="type">Date</span> <span class="variable">nextRetryTime</span> <span class="operator">=</span> calculateNextRetryTime(retryCount); <span class="comment">// 指数退避</span></span><br><span class="line"></span><br><span class="line">                <span class="keyword">if</span> (retryCount &gt;= <span class="number">3</span>) &#123;</span><br><span class="line">                    <span class="comment">// 超过重试上限，标记为死信，人工介入</span></span><br><span class="line">                    messageRetryMapper.updateToDeadLetter(msg.getId());</span><br><span class="line">                &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                    messageRetryMapper.updateRetryInfo(msg.getId(), retryCount, nextRetryTime);</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 计算下一次重试时间（指数退避）</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">private</span> Date <span class="title function_">calculateNextRetryTime</span><span class="params">(<span class="type">int</span> retryCount)</span> &#123;</span><br><span class="line">        <span class="type">long</span> <span class="variable">delay</span> <span class="operator">=</span> (<span class="type">long</span>) Math.pow(<span class="number">2</span>, retryCount) * <span class="number">60</span> * <span class="number">1000</span>; <span class="comment">// 2^retryCount 分钟</span></span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">new</span> <span class="title class_">Date</span>(System.currentTimeMillis() + delay);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<h3 id="模块五：异常与死信处理"><a href="#模块五：异常与死信处理" class="headerlink" title="模块五：异常与死信处理"></a>模块五：异常与死信处理</h3><p>对于重试多次仍失败的消息，需要人工介入。</p>
-<ul>
-<li><strong>监控</strong>：<code>message_retry</code> 表中 <code>status = 2</code> (死信) 的数量。</li>
-<li><strong>补偿</strong>：可以开发一个简单的管理后台，供运维查看死信消息内容，确认业务状态后，手动触发补发或直接处理业务。</li>
-<li><strong>清理</strong>：对于已发送成功（<code>status = 1</code>）的消息，需要定期清理，避免单表数据过大。例如，写一个定时任务删除7天前的成功记录。</li>
-</ul>
-<p>这套方案的优点是完全不依赖 MQ 本身，数据最可靠；缺点是对数据库有一定压力，且实时性比纯 MQ 稍差。</p>
-<p>落地时，你可以根据业务量调整扫描频率和批次大小，并考虑用独立的线程池来执行发送任务，避免定时任务阻塞。</p>
-<p>如果还有具体的代码场景需要调整，可以随时告诉我。</p>
-
-      
-    </div>
-    <footer class="article-footer">
-      <a data-url="http://example.com/2024/11/02/%E6%9C%AC%E5%9C%B0%E6%B6%88%E6%81%AF%E8%A1%A8%E5%8A%A0%E5%AE%9A%E6%97%B6%E4%BB%BB%E5%8A%A1%E5%85%9C%E5%BA%95%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" data-id="cmmem61qv001fe0sl5i1pheif" data-title="本地消息表加定时任务兜底消息队列" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
-      
-      
-      
-    </footer>
-  </div>
-  
-</article>
-
-
-
-  
-    <article id="post-纯原生js简单实现可拖拽任务看板" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
-  <div class="article-meta">
-    <a href="/2024/10/29/%E7%BA%AF%E5%8E%9F%E7%94%9Fjs%E7%AE%80%E5%8D%95%E5%AE%9E%E7%8E%B0%E5%8F%AF%E6%8B%96%E6%8B%BD%E4%BB%BB%E5%8A%A1%E7%9C%8B%E6%9D%BF/" class="article-date">
-  <time class="dt-published" datetime="2024-10-29T03:12:04.000Z" itemprop="datePublished">2024-10-29</time>
-</a>
-    
-  </div>
-  <div class="article-inner">
-    
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="p-name article-title" href="/2024/10/29/%E7%BA%AF%E5%8E%9F%E7%94%9Fjs%E7%AE%80%E5%8D%95%E5%AE%9E%E7%8E%B0%E5%8F%AF%E6%8B%96%E6%8B%BD%E4%BB%BB%E5%8A%A1%E7%9C%8B%E6%9D%BF/">纯原生js简单实现可拖拽任务看板</a>
-    </h1>
-  
-
-      </header>
-    
-    <div class="e-content article-entry" itemprop="articleBody">
-      
-        <figure class="highlight html"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&lt;!DOCTYPE <span class="keyword">html</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">html</span> <span class="attr">lang</span>=<span class="string">&quot;zh-CN&quot;</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">head</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">meta</span> <span class="attr">charset</span>=<span class="string">&quot;UTF-8&quot;</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">title</span>&gt;</span>看板<span class="tag">&lt;/<span class="name">title</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">style</span>&gt;</span><span class="language-css"></span></span><br><span class="line"><span class="language-css">        <span class="selector-class">.kanban-board</span> &#123;</span></span><br><span class="line"><span class="language-css">            <span class="attribute">display</span>: flex;</span></span><br><span class="line"><span class="language-css">            <span class="attribute">overflow-x</span>: auto;</span></span><br><span class="line"><span class="language-css">            <span class="attribute">padding</span>: <span class="number">10px</span>;</span></span><br><span class="line"><span class="language-css">        &#125;</span></span><br><span class="line"><span class="language-css">        <span class="selector-class">.kanban-column</span> &#123;</span></span><br><span class="line"><span class="language-css">            <span class="attribute">background-color</span>: <span class="number">#f4f5f7</span>;</span></span><br><span class="line"><span class="language-css">            <span class="attribute">border-radius</span>: <span class="number">3px</span>;</span></span><br><span class="line"><span class="language-css">            <span class="attribute">margin-right</span>: <span class="number">10px</span>;</span></span><br><span class="line"><span class="language-css">            <span class="attribute">padding</span>: <span class="number">10px</span>;</span></span><br><span class="line"><span class="language-css">            <span class="attribute">width</span>: <span class="number">300px</span>;</span></span><br><span class="line"><span class="language-css">            <span class="attribute">flex-shrink</span>: <span class="number">0</span>;</span></span><br><span class="line"><span class="language-css">        &#125;</span></span><br><span class="line"><span class="language-css">        <span class="selector-class">.kanban-card</span> &#123;</span></span><br><span class="line"><span class="language-css">            <span class="attribute">background-color</span>: <span class="number">#fff</span>;</span></span><br><span class="line"><span class="language-css">            <span class="attribute">border-radius</span>: <span class="number">3px</span>;</span></span><br><span class="line"><span class="language-css">            <span class="attribute">box-shadow</span>: <span class="number">0</span> <span class="number">1px</span> <span class="number">0</span> <span class="built_in">rgba</span>(<span class="number">9</span>, <span class="number">30</span>, <span class="number">66</span>, <span class="number">0.25</span>);</span></span><br><span class="line"><span class="language-css">            <span class="attribute">margin-bottom</span>: <span class="number">10px</span>;</span></span><br><span class="line"><span class="language-css">            <span class="attribute">padding</span>: <span class="number">10px</span>;</span></span><br><span class="line"><span class="language-css">            <span class="attribute">cursor</span>: move;</span></span><br><span class="line"><span class="language-css">        &#125;</span></span><br><span class="line"><span class="language-css">    </span><span class="tag">&lt;/<span class="name">style</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">head</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">body</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">div</span> <span class="attr">class</span>=<span class="string">&quot;kanban-board&quot;</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">div</span> <span class="attr">class</span>=<span class="string">&quot;kanban-column&quot;</span> <span class="attr">ondragover</span>=<span class="string">&quot;event.preventDefault()&quot;</span> <span class="attr">ondrop</span>=<span class="string">&quot;drop(event)&quot;</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">h2</span>&gt;</span>待办事项<span class="tag">&lt;/<span class="name">h2</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">div</span> <span class="attr">id</span>=<span class="string">&quot;task1&quot;</span> <span class="attr">class</span>=<span class="string">&quot;kanban-card&quot;</span> <span class="attr">draggable</span>=<span class="string">&quot;true&quot;</span> <span class="attr">ondragstart</span>=<span class="string">&quot;drag(event)&quot;</span>&gt;</span>任务 1<span class="tag">&lt;/<span class="name">div</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">div</span> <span class="attr">id</span>=<span class="string">&quot;task2&quot;</span> <span class="attr">class</span>=<span class="string">&quot;kanban-card&quot;</span> <span class="attr">draggable</span>=<span class="string">&quot;true&quot;</span> <span class="attr">ondragstart</span>=<span class="string">&quot;drag(event)&quot;</span>&gt;</span>任务 2<span class="tag">&lt;/<span class="name">div</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;/<span class="name">div</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">div</span> <span class="attr">class</span>=<span class="string">&quot;kanban-column&quot;</span> <span class="attr">ondragover</span>=<span class="string">&quot;event.preventDefault()&quot;</span> <span class="attr">ondrop</span>=<span class="string">&quot;drop(event)&quot;</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">h2</span>&gt;</span>进行中<span class="tag">&lt;/<span class="name">h2</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">div</span> <span class="attr">id</span>=<span class="string">&quot;task3&quot;</span> <span class="attr">class</span>=<span class="string">&quot;kanban-card&quot;</span> <span class="attr">draggable</span>=<span class="string">&quot;true&quot;</span> <span class="attr">ondragstart</span>=<span class="string">&quot;drag(event)&quot;</span>&gt;</span>任务 3<span class="tag">&lt;/<span class="name">div</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;/<span class="name">div</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">div</span> <span class="attr">class</span>=<span class="string">&quot;kanban-column&quot;</span> <span class="attr">ondragover</span>=<span class="string">&quot;event.preventDefault()&quot;</span> <span class="attr">ondrop</span>=<span class="string">&quot;drop(event)&quot;</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">h2</span>&gt;</span>已完成<span class="tag">&lt;/<span class="name">h2</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">div</span> <span class="attr">id</span>=<span class="string">&quot;task4&quot;</span> <span class="attr">class</span>=<span class="string">&quot;kanban-card&quot;</span> <span class="attr">draggable</span>=<span class="string">&quot;true&quot;</span> <span class="attr">ondragstart</span>=<span class="string">&quot;drag(event)&quot;</span>&gt;</span>任务 4<span class="tag">&lt;/<span class="name">div</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;/<span class="name">div</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">div</span>&gt;</span></span><br><span class="line"></span><br><span class="line">    <span class="tag">&lt;<span class="name">script</span>&gt;</span><span class="language-javascript"></span></span><br><span class="line"><span class="language-javascript">        <span class="keyword">function</span> <span class="title function_">drag</span>(<span class="params">event</span>) &#123;</span></span><br><span class="line"><span class="language-javascript">            event.<span class="property">dataTransfer</span>.<span class="title function_">setData</span>(<span class="string">&quot;text&quot;</span>, event.<span class="property">target</span>.<span class="property">id</span>);</span></span><br><span class="line"><span class="language-javascript">        &#125;</span></span><br><span class="line"><span class="language-javascript"></span></span><br><span class="line"><span class="language-javascript">        <span class="keyword">function</span> <span class="title function_">drop</span>(<span class="params">event</span>) &#123;</span></span><br><span class="line"><span class="language-javascript">            event.<span class="title function_">preventDefault</span>();</span></span><br><span class="line"><span class="language-javascript">            <span class="keyword">const</span> data = event.<span class="property">dataTransfer</span>.<span class="title function_">getData</span>(<span class="string">&quot;text&quot;</span>);</span></span><br><span class="line"><span class="language-javascript">            <span class="keyword">const</span> card = <span class="variable language_">document</span>.<span class="title function_">getElementById</span>(data);</span></span><br><span class="line"><span class="language-javascript">            <span class="keyword">if</span> (event.<span class="property">target</span>.<span class="property">classList</span>.<span class="title function_">contains</span>(<span class="string">&#x27;kanban-column&#x27;</span>)) &#123;</span></span><br><span class="line"><span class="language-javascript">                event.<span class="property">target</span>.<span class="title function_">appendChild</span>(card);</span></span><br><span class="line"><span class="language-javascript">            &#125; <span class="keyword">else</span> <span class="keyword">if</span> (event.<span class="property">target</span>.<span class="property">classList</span>.<span class="title function_">contains</span>(<span class="string">&#x27;kanban-card&#x27;</span>)) &#123;</span></span><br><span class="line"><span class="language-javascript">                event.<span class="property">target</span>.<span class="property">parentNode</span>.<span class="title function_">insertBefore</span>(card, event.<span class="property">target</span>.<span class="property">nextSibling</span>);</span></span><br><span class="line"><span class="language-javascript">            &#125;</span></span><br><span class="line"><span class="language-javascript">        &#125;</span></span><br><span class="line"><span class="language-javascript">    </span><span class="tag">&lt;/<span class="name">script</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">body</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">html</span>&gt;</span></span><br></pre></td></tr></table></figure>
-
-
-
-<h3 id="说明"><a href="#说明" class="headerlink" title="说明"></a>说明</h3><p><strong>拖拽属性</strong>：每个任务卡片（kanban-card）设置了 draggable&#x3D;”true”，使其可以被拖动。</p>
-<p><strong>事件处理</strong>：</p>
-<p><code>ondragstart</code>：在拖动开始时触发，使用 <code>event.dataTransfer.setData</code> 存储被拖动元素的 ID。</p>
-<p><code>ondragover</code>：在拖动元素悬停在目标元素上时触发，使用 <code>event.preventDefault()</code> 允许放置。</p>
-<p><code>ondrop</code>：在放置时触发，使用 <code>event.dataTransfer.getData</code> 获取被拖动元素的 ID，并将其附加到目标元素。</p>
-<p><strong>注意</strong>：确保每个卡片有唯一的 <code>id</code>，以便在拖放操作中正确识别。您可以在生成卡片时动态分配 ID。</p>
-<p><strong>拖放逻辑</strong>：</p>
-<p><code>ondrop</code> 事件中，首先检查放置目标是否是一个列（kanban-column），如果是，则将卡片附加到该列。</p>
-<p>如果放置目标是另一个卡片（kanban-card），则将拖动的卡片插入到目标卡片的后面。</p>
-
-      
-    </div>
-    <footer class="article-footer">
-      <a data-url="http://example.com/2024/10/29/%E7%BA%AF%E5%8E%9F%E7%94%9Fjs%E7%AE%80%E5%8D%95%E5%AE%9E%E7%8E%B0%E5%8F%AF%E6%8B%96%E6%8B%BD%E4%BB%BB%E5%8A%A1%E7%9C%8B%E6%9D%BF/" data-id="cmmem61qz001me0slgpyxdajx" data-title="纯原生js简单实现可拖拽任务看板" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
-      
-      
-      
-  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/js/" rel="tag">js</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/%E5%89%8D%E7%AB%AF/" rel="tag">前端</a></li></ul>
-
     </footer>
   </div>
   
@@ -860,7 +1048,7 @@
   <div class="widget-wrap">
     <h3 class="widget-title">Archiv</h3>
     <div class="widget">
-      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/02/">February 2026</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/01/">January 2026</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/12/">December 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/11/">November 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/10/">October 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/09/">September 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/08/">August 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/07/">July 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/04/">April 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/03/">March 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/02/">February 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/01/">January 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/12/">December 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/11/">November 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/10/">October 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/07/">July 2024</a></li></ul>
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/03/">March 2026</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/02/">February 2026</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/01/">January 2026</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/12/">December 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/11/">November 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/10/">October 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/09/">September 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/08/">August 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/07/">July 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/04/">April 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/03/">March 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/02/">February 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/01/">January 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/12/">December 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/11/">November 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/10/">October 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/07/">July 2024</a></li></ul>
     </div>
   </div>
 
@@ -873,6 +1061,14 @@
       <ul>
         
           <li>
+            <a href="/2026/03/01/element-vue-admin%E5%89%8D%E7%AB%AFmock%E6%98%AF%E5%A6%82%E4%BD%95%E5%AE%9E%E7%8E%B0%E7%9A%84/">element-vue-admin前端mock是如何实现的</a>
+          </li>
+        
+          <li>
+            <a href="/2026/02/18/Disruptor%E5%9C%A8%E6%92%AE%E5%90%88%E5%BC%95%E6%93%8E%E7%9A%84%E5%AE%9E%E8%B7%B5%EF%BD%9C%E5%BE%97%E7%89%A9%E6%8A%80%E6%9C%AF/">Disruptor在撮合引擎的实践｜得物技术</a>
+          </li>
+        
+          <li>
             <a href="/2026/02/14/%E4%B9%90%E8%A7%82%E9%94%81%E5%AE%9E%E7%8E%B0%E9%AB%98%E5%B9%B6%E5%8F%91%E7%8A%B6%E6%80%81%E4%B8%80%E8%87%B4/">乐观锁实现高并发状态一致</a>
           </li>
         
@@ -882,14 +1078,6 @@
         
           <li>
             <a href="/2026/01/23/Java%E7%BA%BF%E7%A8%8B%E6%B1%A0%E5%BC%82%E5%B8%B8%E5%A4%84%E7%90%86%E6%9C%BA%E5%88%B6/">Java线程池异常处理机制</a>
-          </li>
-        
-          <li>
-            <a href="/2026/01/04/%E5%80%9F%E8%AF%81%E4%B8%9A%E5%8A%A1%E7%8A%B6%E6%80%81%E6%9C%BA%E5%BB%BA%E6%A8%A1%E5%8E%9F%E5%AD%90%E6%80%A7/">借证业务状态机建模原子性</a>
-          </li>
-        
-          <li>
-            <a href="/2026/01/04/RAG%E6%B5%81%E7%A8%8B%E8%AF%A6%E8%A7%A3%E4%B8%8E%E5%9B%BE%E8%A7%A3/">RAG流程详解与图解</a>
           </li>
         
       </ul>

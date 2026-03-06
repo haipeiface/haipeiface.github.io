@@ -69,6 +69,272 @@
       <div class="outer">
         <section id="main">
   
+    <article id="post-Executor-submit与execute方法区别" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="article-meta">
+    <a href="/2025/12/06/Executor-submit%E4%B8%8Eexecute%E6%96%B9%E6%B3%95%E5%8C%BA%E5%88%AB/" class="article-date">
+  <time class="dt-published" datetime="2025-12-06T07:46:12.000Z" itemprop="datePublished">2025-12-06</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="p-name article-title" href="/2025/12/06/Executor-submit%E4%B8%8Eexecute%E6%96%B9%E6%B3%95%E5%8C%BA%E5%88%AB/">Executor_submit与execute方法区别</a>
+    </h1>
+  
+
+      </header>
+    
+    <div class="e-content article-entry" itemprop="articleBody">
+      
+        <p>在Java的并发编程中，<code>Executor</code>框架提供了线程池的管理。其中，<code>Executor</code>接口只有一个<code>execute</code>方法，而<code>ExecutorService</code>接口（继承自<code>Executor</code>）增加了<code>submit</code>方法。主要区别如下：</p>
+<ol>
+<li><strong>返回值</strong>：<ul>
+<li><code>execute</code>方法没有返回值，它的定义是<code>void execute(Runnable command)</code>。因此，如果你不需要任务执行的结果，可以使用它。</li>
+<li><code>submit</code>方法返回一个<code>Future</code>对象，可以用来获取任务执行的结果或取消任务。它有多个重载版本，可以接受<code>Runnable</code>或<code>Callable</code>任务。</li>
+</ul>
+</li>
+<li><strong>异常处理</strong>：<ul>
+<li>使用<code>execute</code>方法时，任务中的异常必须在任务内部处理（例如通过try-catch），否则异常会传递到线程池的未捕获异常处理器（如果设置了的话），但不会通过<code>execute</code>方法抛出。</li>
+<li>使用<code>submit</code>方法时，任务中的异常可以通过返回的<code>Future</code>对象的<code>get</code>方法抛出。当调用<code>Future.get()</code>时，如果任务中抛出了异常，那么<code>get</code>方法会抛出<code>ExecutionException</code>，并将原始异常作为原因。</li>
+</ul>
+</li>
+<li><strong>任务类型</strong>：<ul>
+<li><code>execute</code>只接受<code>Runnable</code>任务。</li>
+<li><code>submit</code>可以接受<code>Runnable</code>和<code>Callable</code>任务。<code>Callable</code>任务可以返回结果和抛出异常，而<code>Runnable</code>任务不能。</li>
+</ul>
+</li>
+<li><strong>使用场景</strong>：<ul>
+<li>如果你只是想要异步执行一个任务，并且不关心结果，那么使用<code>execute</code>。</li>
+<li>如果你需要任务执行的结果，或者需要处理任务中可能抛出的异常，那么使用<code>submit</code>。</li>
+</ul>
+</li>
+</ol>
+<p>下面是一个简单的例子：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">ExecutorService</span> <span class="variable">executor</span> <span class="operator">=</span> Executors.newFixedThreadPool(<span class="number">2</span>);</span><br><span class="line"></span><br><span class="line"><span class="comment">// 使用execute</span></span><br><span class="line">executor.execute(() -&gt; &#123;</span><br><span class="line">    System.out.println(<span class="string">&quot;Task executed via execute&quot;</span>);</span><br><span class="line">&#125;);</span><br><span class="line"></span><br><span class="line"><span class="comment">// 使用submit并获取结果</span></span><br><span class="line">Future&lt;String&gt; future = executor.submit(() -&gt; &#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="string">&quot;Task executed via submit&quot;</span>;</span><br><span class="line">&#125;);</span><br><span class="line"></span><br><span class="line"><span class="keyword">try</span> &#123;</span><br><span class="line">    <span class="type">String</span> <span class="variable">result</span> <span class="operator">=</span> future.get();</span><br><span class="line">    System.out.println(result);</span><br><span class="line">&#125; <span class="keyword">catch</span> (InterruptedException | ExecutionException e) &#123;</span><br><span class="line">    e.printStackTrace();</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">executor.shutdown();</span><br></pre></td></tr></table></figure>
+
+<p>注意：<code>ExecutorService</code>接口还提供了其他方法，如<code>invokeAll</code>和<code>invokeAny</code>，用于批量提交任务。</p>
+<p>总之，选择使用<code>execute</code>还是<code>submit</code>取决于你是否需要任务执行的结果以及异常处理的方式。如果你需要处理结果或异常，那么<code>submit</code>是更合适的选择。</p>
+<p><code>ExecutorService</code> 中的 <code>submit()</code> 和 <code>execute()</code> 方法有以下主要区别：</p>
+<h2 id="1-返回值不同"><a href="#1-返回值不同" class="headerlink" title="1. 返回值不同"></a>1. <strong>返回值不同</strong></h2><ul>
+<li>**<code>execute()</code>**：<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">void</span> <span class="title function_">execute</span><span class="params">(Runnable command)</span>  <span class="comment">// 无返回值</span></span><br></pre></td></tr></table></figure></li>
+<li>**<code>submit()</code>**：<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">&lt;T&gt; Future&lt;T&gt; <span class="title function_">submit</span><span class="params">(Callable&lt;T&gt; task)</span>  <span class="comment">// 返回 Future 对象</span></span><br><span class="line">Future&lt;?&gt; submit(Runnable task)         <span class="comment">// 返回 Future 对象</span></span><br><span class="line">&lt;T&gt; Future&lt;T&gt; <span class="title function_">submit</span><span class="params">(Runnable task, T result)</span></span><br></pre></td></tr></table></figure></li>
+</ul>
+<h2 id="2-接受的参数类型"><a href="#2-接受的参数类型" class="headerlink" title="2. 接受的参数类型"></a>2. <strong>接受的参数类型</strong></h2><ul>
+<li><code>execute()</code> 只接受 <code>Runnable</code> 任务</li>
+<li><code>submit()</code> 可以接受：<ul>
+<li><code>Runnable</code> 任务</li>
+<li><code>Callable</code> 任务（可以返回结果和抛出异常）</li>
+</ul>
+</li>
+</ul>
+<h2 id="3-异常处理"><a href="#3-异常处理" class="headerlink" title="3. 异常处理"></a>3. <strong>异常处理</strong></h2><ul>
+<li>**<code>execute()</code>**：任务中的异常会直接抛出，可能导致线程池中的线程终止<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">executor.execute(() -&gt; &#123;</span><br><span class="line">  <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">RuntimeException</span>(<span class="string">&quot;异常被抛出&quot;</span>);</span><br><span class="line">&#125;);</span><br><span class="line"><span class="comment">// 异常会传播，可能终止线程</span></span><br></pre></td></tr></table></figure></li>
+<li>**<code>submit()</code>**：异常被封装在 Future 对象中，需要通过 <code>get()</code> 方法获取<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">Future&lt;?&gt; future = executor.submit(() -&gt; &#123;</span><br><span class="line">  <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">RuntimeException</span>(<span class="string">&quot;异常被封装&quot;</span>);</span><br><span class="line">&#125;);</span><br><span class="line"><span class="keyword">try</span> &#123;</span><br><span class="line">  future.get();  <span class="comment">// 这里会抛出 ExecutionException，包装了原始异常</span></span><br><span class="line">&#125; <span class="keyword">catch</span> (ExecutionException e) &#123;</span><br><span class="line">  e.getCause();  <span class="comment">// 获取原始异常</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></li>
+</ul>
+<h2 id="4-使用示例对比"><a href="#4-使用示例对比" class="headerlink" title="4. 使用示例对比"></a>4. <strong>使用示例对比</strong></h2><h3 id="execute-示例："><a href="#execute-示例：" class="headerlink" title="execute() 示例："></a>execute() 示例：</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">ExecutorService</span> <span class="variable">executor</span> <span class="operator">=</span> Executors.newFixedThreadPool(<span class="number">2</span>);</span><br><span class="line"></span><br><span class="line">executor.execute(() -&gt; &#123;</span><br><span class="line">    System.out.println(<span class="string">&quot;任务执行中...&quot;</span>);</span><br><span class="line">    <span class="comment">// 无法获取执行结果</span></span><br><span class="line">&#125;);</span><br><span class="line"></span><br><span class="line"><span class="comment">// 无法获取任务状态或结果</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="submit-示例："><a href="#submit-示例：" class="headerlink" title="submit() 示例："></a>submit() 示例：</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">ExecutorService</span> <span class="variable">executor</span> <span class="operator">=</span> Executors.newFixedThreadPool(<span class="number">2</span>);</span><br><span class="line"></span><br><span class="line"><span class="comment">// 提交 Runnable 任务</span></span><br><span class="line">Future&lt;?&gt; future1 = executor.submit(() -&gt; &#123;</span><br><span class="line">    System.out.println(<span class="string">&quot;Runnable 任务&quot;</span>);</span><br><span class="line">&#125;);</span><br><span class="line"></span><br><span class="line"><span class="comment">// 提交 Callable 任务（有返回值）</span></span><br><span class="line">Future&lt;Integer&gt; future2 = executor.submit(() -&gt; &#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="number">42</span>;  <span class="comment">// 返回结果</span></span><br><span class="line">&#125;);</span><br><span class="line"></span><br><span class="line"><span class="comment">// 可以获取结果</span></span><br><span class="line"><span class="keyword">try</span> &#123;</span><br><span class="line">    <span class="type">Integer</span> <span class="variable">result</span> <span class="operator">=</span> future2.get();  <span class="comment">// 获取返回值</span></span><br><span class="line">    System.out.println(<span class="string">&quot;结果: &quot;</span> + result);</span><br><span class="line">&#125; <span class="keyword">catch</span> (Exception e) &#123;</span><br><span class="line">    e.printStackTrace();</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 可以取消任务</span></span><br><span class="line">future1.cancel(<span class="literal">true</span>);</span><br><span class="line"></span><br><span class="line"><span class="comment">// 可以检查任务状态</span></span><br><span class="line"><span class="keyword">if</span> (future2.isDone()) &#123;</span><br><span class="line">    System.out.println(<span class="string">&quot;任务已完成&quot;</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="5-实际应用场景"><a href="#5-实际应用场景" class="headerlink" title="5. 实际应用场景"></a>5. <strong>实际应用场景</strong></h2><h3 id="使用-execute-的场景："><a href="#使用-execute-的场景：" class="headerlink" title="使用 execute() 的场景："></a>使用 <code>execute()</code> 的场景：</h3><ul>
+<li>只需要异步执行，不关心执行结果</li>
+<li>任务内部自行处理异常</li>
+<li>简单的后台任务</li>
+</ul>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 日志记录、数据清理等后台任务</span></span><br><span class="line">executor.execute(() -&gt; &#123;</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        <span class="comment">// 执行清理操作</span></span><br><span class="line">        cleanupData();</span><br><span class="line">    &#125; <span class="keyword">catch</span> (Exception e) &#123;</span><br><span class="line">        logger.error(<span class="string">&quot;清理失败&quot;</span>, e);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;);</span><br></pre></td></tr></table></figure>
+
+<h3 id="使用-submit-的场景："><a href="#使用-submit-的场景：" class="headerlink" title="使用 submit() 的场景："></a>使用 <code>submit()</code> 的场景：</h3><ul>
+<li>需要获取任务执行结果</li>
+<li>需要处理任务抛出的异常</li>
+<li>可能需要取消任务执行</li>
+<li>需要检查任务状态</li>
+</ul>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 并行计算，需要汇总结果</span></span><br><span class="line">List&lt;Future&lt;Integer&gt;&gt; futures = <span class="keyword">new</span> <span class="title class_">ArrayList</span>&lt;&gt;();</span><br><span class="line"><span class="keyword">for</span> (<span class="type">int</span> <span class="variable">i</span> <span class="operator">=</span> <span class="number">0</span>; i &lt; <span class="number">10</span>; i++) &#123;</span><br><span class="line">    <span class="type">int</span> <span class="variable">finalI</span> <span class="operator">=</span> i;</span><br><span class="line">    futures.add(executor.submit(() -&gt; compute(finalI)));</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 汇总所有结果</span></span><br><span class="line"><span class="type">int</span> <span class="variable">total</span> <span class="operator">=</span> <span class="number">0</span>;</span><br><span class="line"><span class="keyword">for</span> (Future&lt;Integer&gt; future : futures) &#123;</span><br><span class="line">    total += future.get();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="总结对比表"><a href="#总结对比表" class="headerlink" title="总结对比表"></a>总结对比表</h2><table>
+<thead>
+<tr>
+<th>特性</th>
+<th>execute()</th>
+<th>submit()</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>返回值</td>
+<td>void</td>
+<td>Future</td>
+</tr>
+<tr>
+<td>参数类型</td>
+<td>Runnable</td>
+<td>Runnable, Callable</td>
+</tr>
+<tr>
+<td>异常处理</td>
+<td>直接抛出</td>
+<td>封装在 Future 中</td>
+</tr>
+<tr>
+<td>结果获取</td>
+<td>不支持</td>
+<td>通过 Future.get()</td>
+</tr>
+<tr>
+<td>任务取消</td>
+<td>不支持</td>
+<td>支持 (Future.cancel())</td>
+</tr>
+<tr>
+<td>状态检查</td>
+<td>不支持</td>
+<td>支持 (Future.isDone())</td>
+</tr>
+</tbody></table>
+<h2 id="最佳实践建议"><a href="#最佳实践建议" class="headerlink" title="最佳实践建议"></a>最佳实践建议</h2><ol>
+<li>**大多数情况下使用 <code>submit()</code>**，因为它更灵活，提供更好的异常处理</li>
+<li>只有在确定不需要结果且异常已处理时，才使用 <code>execute()</code></li>
+<li>使用 <code>submit()</code> 时，确保正确处理 <code>Future.get()</code> 的阻塞和异常</li>
+<li>注意资源清理：使用完 ExecutorService 后调用 <code>shutdown()</code></li>
+</ol>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://example.com/2025/12/06/Executor-submit%E4%B8%8Eexecute%E6%96%B9%E6%B3%95%E5%8C%BA%E5%88%AB/" data-id="cmmemxddq0008ysslaqrfe8fx" data-title="Executor_submit与execute方法区别" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
+      
+      
+      
+    </footer>
+  </div>
+  
+</article>
+
+
+
+  
+    <article id="post-Java-Synchronized底层实现机制详解" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="article-meta">
+    <a href="/2025/12/06/Java-Synchronized%E5%BA%95%E5%B1%82%E5%AE%9E%E7%8E%B0%E6%9C%BA%E5%88%B6%E8%AF%A6%E8%A7%A3/" class="article-date">
+  <time class="dt-published" datetime="2025-12-06T04:46:15.000Z" itemprop="datePublished">2025-12-06</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="p-name article-title" href="/2025/12/06/Java-Synchronized%E5%BA%95%E5%B1%82%E5%AE%9E%E7%8E%B0%E6%9C%BA%E5%88%B6%E8%AF%A6%E8%A7%A3/">Java_Synchronized底层实现机制详解</a>
+    </h1>
+  
+
+      </header>
+    
+    <div class="e-content article-entry" itemprop="articleBody">
+      
+        <p>Java中的synchronized关键字是用于实现线程同步的，它能够确保在同一时刻最多只有一个线程可以执行某个方法或代码块。synchronized可以用于方法（实例方法和静态方法）以及代码块。</p>
+<p>底层工作原理：</p>
+<ol>
+<li>synchronized的实现依赖于JVM层面的监视器锁（Monitor），每个Java对象都可以作为一个监视器锁。当线程进入synchronized方法或代码块时，它会自动获取对象的监视器锁，退出时（无论是正常退出还是异常退出）会自动释放锁。</li>
+<li>在JVM中，监视器锁是通过对象的对象头中的Mark Word来实现的。Mark Word中有一个字段指向一个称为监视器（Monitor）的指针，这个监视器实际上是一个C++实现的对象（ObjectMonitor），它维护了多个队列来管理线程的等待和唤醒。</li>
+<li>当一个线程尝试获取对象的监视器锁时，如果锁没有被其他线程占用，那么该线程就会成为该锁的拥有者，并且将锁的计数器加1。如果该锁已经被其他线程占用，那么该线程就会进入同步队列（SynchronizedQueue）中，并进入阻塞状态，直到锁被释放。</li>
+<li>当线程释放锁时，它会将锁的计数器减1，如果计数器为0，则完全释放锁，然后会从同步队列中唤醒一个线程（具体唤醒哪一个取决于实现，可能是公平的，也可能是非公平的）。</li>
+<li>在早期的Java版本中，synchronized是重量级锁，需要从用户态切换到内核态，性能开销较大。但是经过后续的优化，引入了偏向锁、轻量级锁等机制，使得synchronized的性能有了很大提升。<ul>
+<li>偏向锁：在无竞争的情况下，整个同步过程就消除了同步开销。当一个线程访问同步代码块时，会在对象头和栈帧中的锁记录里存储锁偏向的线程ID，以后该线程进入和退出同步块时不需要进行CAS操作来加锁和解锁。</li>
+<li>轻量级锁：当存在锁竞争但竞争不激烈时，线程不会阻塞，而是通过自旋（CAS操作）来尝试获取锁，从而避免了用户态到内核态的切换。</li>
+<li>重量级锁：当竞争激烈时，轻量级锁会升级为重量级锁，此时未获取到锁的线程会进入阻塞状态，需要操作系统进行线程调度和上下文切换。</li>
+</ul>
+</li>
+<li>锁的升级过程：无锁 -&gt; 偏向锁 -&gt; 轻量级锁 -&gt; 重量级锁。这个过程是为了在无竞争或低竞争的情况下减少锁的开销。</li>
+<li>synchronized的底层实现还涉及到内存屏障（Memory Barrier）来保证可见性和有序性。在进入synchronized块时，会执行一个acquire操作，该操作会刷新处理器缓存，使得当前线程可以看到之前线程对共享变量的修改。在退出synchronized块时，会执行一个release操作，将当前线程对共享变量的修改刷新到主内存中，保证其他线程可见。</li>
+</ol>
+<p>总结：synchronized通过JVM内置的Monitor实现，结合了偏向锁、轻量级锁和重量级锁等多种锁机制，以及内存屏障，来保证线程安全、可见性和有序性。这些优化使得synchronized在大多数情况下都能有较好的性能表现。</p>
+<p>Java中<code>synchronized</code>关键字的底层实现涉及<strong>对象监视器（Monitor）</strong> 和<strong>JVM指令</strong>，主要工作流程如下：</p>
+<h2 id="一、核心机制：对象监视器（Monitor）"><a href="#一、核心机制：对象监视器（Monitor）" class="headerlink" title="一、核心机制：对象监视器（Monitor）"></a>一、核心机制：对象监视器（Monitor）</h2><p>每个Java对象都有一个内置的监视器锁（Monitor），由以下三部分组成：</p>
+<ol>
+<li><strong>Owner</strong>：当前持有锁的线程</li>
+<li><strong>Entry Set</strong>：等待锁的线程队列（竞争锁的线程）</li>
+<li><strong>Wait Set</strong>：调用了<code>wait()</code>的线程队列（等待条件满足）</li>
+</ol>
+<h2 id="二、JVM字节码层面"><a href="#二、JVM字节码层面" class="headerlink" title="二、JVM字节码层面"></a>二、JVM字节码层面</h2><h3 id="1-同步代码块"><a href="#1-同步代码块" class="headerlink" title="1. 同步代码块"></a>1. 同步代码块</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">method</span><span class="params">()</span> &#123;</span><br><span class="line">    <span class="keyword">synchronized</span>(obj) &#123;</span><br><span class="line">        <span class="comment">// 代码块</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>编译后的字节码：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">monitorenter   // 获取锁</span><br><span class="line">// 代码块内容</span><br><span class="line">monitorexit    // 释放锁</span><br><span class="line">monitorexit    // 异常情况释放锁（保证异常时也能释放）</span><br></pre></td></tr></table></figure>
+
+<h3 id="2-同步方法"><a href="#2-同步方法" class="headerlink" title="2. 同步方法"></a>2. 同步方法</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">synchronized</span> <span class="keyword">void</span> <span class="title function_">method</span><span class="params">()</span> &#123;</span><br><span class="line">    <span class="comment">// 方法体</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>方法修饰符中有<code>ACC_SYNCHRONIZED</code>标志，JVM通过该标志识别同步方法。</p>
+<h2 id="三、锁的升级优化（JDK-1-6-）"><a href="#三、锁的升级优化（JDK-1-6-）" class="headerlink" title="三、锁的升级优化（JDK 1.6+）"></a>三、锁的升级优化（JDK 1.6+）</h2><p>为了平衡性能，JVM采用了<strong>锁升级</strong>策略：</p>
+<h3 id="1-无锁状态"><a href="#1-无锁状态" class="headerlink" title="1. 无锁状态"></a>1. <strong>无锁状态</strong></h3><ul>
+<li>对象刚创建时的初始状态</li>
+</ul>
+<h3 id="2-偏向锁（Biased-Locking）"><a href="#2-偏向锁（Biased-Locking）" class="headerlink" title="2. 偏向锁（Biased Locking）"></a>2. <strong>偏向锁（Biased Locking）</strong></h3><figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">┌─────────────────────────────────────────┐</span><br><span class="line">│   Mark Word (64位)                      │</span><br><span class="line">├─────────────────────────────────────────┤</span><br><span class="line">│  unused:25 | identity_hashcode:31       │</span><br><span class="line">│  unused:1 | age:4 | biased_lock:1(0)    │</span><br><span class="line">│  lock:2(01)                             │</span><br><span class="line">└─────────────────────────────────────────┘</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><strong>适用场景</strong>：只有一个线程访问</li>
+<li><strong>原理</strong>：记录线程ID，同一线程重入时无需CAS操作</li>
+<li><strong>优势</strong>：几乎没有同步开销</li>
+</ul>
+<h3 id="3-轻量级锁（Lightweight-Locking）"><a href="#3-轻量级锁（Lightweight-Locking）" class="headerlink" title="3. 轻量级锁（Lightweight Locking）"></a>3. <strong>轻量级锁（Lightweight Locking）</strong></h3><figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">┌─────────────────────────────────────────┐</span><br><span class="line">│  线程栈中的锁记录（Lock Record）         │</span><br><span class="line">│  ┌───────────────────────────────────┐  │</span><br><span class="line">│  │  Displaced Mark Word             │  │</span><br><span class="line">│  └───────────────────────────────────┘  │</span><br><span class="line">│  指向对象头的指针                        │</span><br><span class="line">└─────────────────────────────────────────┘</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><strong>适用场景</strong>：多个线程交替执行，没有实际竞争</li>
+<li><strong>原理</strong>：通过CAS将对象头替换为指向线程栈中锁记录的指针</li>
+<li><strong>失败时膨胀为重量级锁</strong></li>
+</ul>
+<h3 id="4-重量级锁（Heavyweight-Locking）"><a href="#4-重量级锁（Heavyweight-Locking）" class="headerlink" title="4. 重量级锁（Heavyweight Locking）"></a>4. <strong>重量级锁（Heavyweight Locking）</strong></h3><figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">┌─────────────────────────────────────────┐</span><br><span class="line">│  对象头 → Monitor对象                    │</span><br><span class="line">│  ┌───────────────────────────────────┐  │</span><br><span class="line">│  │  Owner: Thread                  │  │</span><br><span class="line">│  │  EntryList: [Thread1, Thread2]   │  │  ← 竞争锁的线程</span><br><span class="line">│  │  WaitSet: [Thread3]              │  │  ← 调用wait()的线程</span><br><span class="line">│  └───────────────────────────────────┘  │</span><br><span class="line">└─────────────────────────────────────────┘</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><strong>适用场景</strong>：多线程激烈竞争</li>
+<li><strong>原理</strong>：依赖操作系统的互斥量（Mutex）实现</li>
+<li><strong>特点</strong>：线程阻塞和唤醒需要内核态切换，开销较大</li>
+</ul>
+<h2 id="四、内存语义"><a href="#四、内存语义" class="headerlink" title="四、内存语义"></a>四、内存语义</h2><p><code>synchronized</code>保证三个特性：</p>
+<ol>
+<li><strong>原子性</strong>：通过互斥访问保证</li>
+<li><strong>可见性</strong>：通过以下内存屏障实现：<ul>
+<li>进入同步块：Load Barrier（读取主内存）</li>
+<li>退出同步块：Store Barrier（写入主内存）</li>
+</ul>
+</li>
+<li><strong>有序性</strong>：禁止指令重排序（as-if-serial语义）</li>
+</ol>
+<h2 id="五、底层源码分析（HotSpot实现）"><a href="#五、底层源码分析（HotSpot实现）" class="headerlink" title="五、底层源码分析（HotSpot实现）"></a>五、底层源码分析（HotSpot实现）</h2><h3 id="ObjectMonitor结构（C-）"><a href="#ObjectMonitor结构（C-）" class="headerlink" title="ObjectMonitor结构（C++）"></a>ObjectMonitor结构（C++）</h3><figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">ObjectMonitor</span> &#123;</span><br><span class="line">    <span class="type">void</span>*   _header;      <span class="comment">// 对象头</span></span><br><span class="line">    <span class="type">void</span>*   _owner;       <span class="comment">// 持有锁的线程</span></span><br><span class="line">    ObjectWaiter* _WaitSet;   <span class="comment">// wait()线程队列</span></span><br><span class="line">    ObjectWaiter* _EntryList; <span class="comment">// 竞争锁的线程队列</span></span><br><span class="line">    <span class="comment">// ...</span></span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<h3 id="关键方法"><a href="#关键方法" class="headerlink" title="关键方法"></a>关键方法</h3><figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 获取锁</span></span><br><span class="line"><span class="function"><span class="type">void</span> ATTR <span class="title">ObjectMonitor::enter</span><span class="params">(TRAPS)</span> </span>&#123;</span><br><span class="line">    Thread * <span class="type">const</span> Self = THREAD;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// 尝试快速获取（偏向锁、轻量级锁优化）</span></span><br><span class="line">    <span class="keyword">if</span> (<span class="built_in">TryLock</span>(Self) &gt; <span class="number">0</span>) <span class="keyword">return</span>;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// 自旋尝试</span></span><br><span class="line">    <span class="keyword">if</span> (<span class="built_in">TrySpin</span>(Self) &gt; <span class="number">0</span>) <span class="keyword">return</span>;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// 进入重量级锁流程</span></span><br><span class="line">    <span class="built_in">EnterI</span>(THREAD);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 释放锁</span></span><br><span class="line"><span class="function"><span class="type">void</span> ATTR <span class="title">ObjectMonitor::exit</span><span class="params">(TRAPS)</span> </span>&#123;</span><br><span class="line">    <span class="comment">// 唤醒等待线程</span></span><br><span class="line">    <span class="keyword">if</span> (_WaitSet != <span class="literal">NULL</span>) &#123;</span><br><span class="line">        <span class="built_in">UnlinkWaiter</span>();</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// 从EntryList中唤醒下一个线程</span></span><br><span class="line">    <span class="keyword">if</span> (_EntryList != <span class="literal">NULL</span>) &#123;</span><br><span class="line">        <span class="built_in">ExitEpilog</span>(Self);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="六、使用示例"><a href="#六、使用示例" class="headerlink" title="六、使用示例"></a>六、使用示例</h2><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">SynchronizedExample</span> &#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> <span class="type">Object</span> <span class="variable">lock</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">Object</span>();</span><br><span class="line">    <span class="keyword">private</span> <span class="type">int</span> <span class="variable">counter</span> <span class="operator">=</span> <span class="number">0</span>;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// 同步代码块</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">increment</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="keyword">synchronized</span>(lock) &#123;</span><br><span class="line">            counter++;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// 同步方法（锁的是this对象）</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">synchronized</span> <span class="keyword">void</span> <span class="title function_">decrement</span><span class="params">()</span> &#123;</span><br><span class="line">        counter--;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// 静态同步方法（锁的是Class对象）</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">synchronized</span> <span class="keyword">void</span> <span class="title function_">staticMethod</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="comment">// ...</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="七、注意事项"><a href="#七、注意事项" class="headerlink" title="七、注意事项"></a>七、注意事项</h2><ol>
+<li><strong>锁的范围</strong>：尽量减小同步代码块的范围</li>
+<li><strong>锁的粒度</strong>：根据场景选择不同的锁对象</li>
+<li><strong>避免死锁</strong>：按固定顺序获取多个锁</li>
+<li><strong>锁消除</strong>：JVM会对不可能存在竞争的锁进行消除</li>
+<li><strong>锁粗化</strong>：JVM会将连续的同步块合并</li>
+</ol>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p><code>synchronized</code>的底层实现是一个从<strong>无锁→偏向锁→轻量级锁→重量级锁</strong>的渐进式升级过程。这种设计在保证线程安全的同时，尽可能减少了同步开销，是Java并发编程的基石之一。</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://example.com/2025/12/06/Java-Synchronized%E5%BA%95%E5%B1%82%E5%AE%9E%E7%8E%B0%E6%9C%BA%E5%88%B6%E8%AF%A6%E8%A7%A3/" data-id="cmmemxddt000fysslcuyw88i5" data-title="Java_Synchronized底层实现机制详解" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
+      
+      
+      
+    </footer>
+  </div>
+  
+</article>
+
+
+
+  
     <article id="post-Spring-Cloud-Gateway-500错误排查" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
   <div class="article-meta">
     <a href="/2025/12/04/Spring-Cloud-Gateway-500%E9%94%99%E8%AF%AF%E6%8E%92%E6%9F%A5/" class="article-date">
@@ -141,7 +407,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://example.com/2025/12/04/Spring-Cloud-Gateway-500%E9%94%99%E8%AF%AF%E6%8E%92%E6%9F%A5/" data-id="cmmem61qn000we0slesmmdjgu" data-title="Spring_Cloud_Gateway_500错误排查" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
+      <a data-url="http://example.com/2025/12/04/Spring-Cloud-Gateway-500%E9%94%99%E8%AF%AF%E6%8E%92%E6%9F%A5/" data-id="cmmemxde2000wysslfxucaoa0" data-title="Spring_Cloud_Gateway_500错误排查" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
       
       
       
@@ -265,7 +531,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://example.com/2025/12/03/DeepWiki%E7%BD%91%E7%AB%99%E5%AE%9E%E7%8E%B0%E5%8E%9F%E7%90%86%E8%A7%A3%E6%9E%90/" data-id="cmmem61qa0005e0sl0cyo4uxs" data-title="DeepWiki网站实现原理解析" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
+      <a data-url="http://example.com/2025/12/03/DeepWiki%E7%BD%91%E7%AB%99%E5%AE%9E%E7%8E%B0%E5%8E%9F%E7%90%86%E8%A7%A3%E6%9E%90/" data-id="cmmemxddn0004yssldknzfb94" data-title="DeepWiki网站实现原理解析" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
       
       
       
@@ -345,7 +611,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://example.com/2025/11/16/%E8%A7%84%E5%88%92%E6%89%A7%E8%A1%8C%E6%99%BA%E8%83%BD%E4%BD%93%E4%BC%AA%E4%BB%A3%E7%A0%81/" data-id="cmmem61rb0026e0slcsnh6hp1" data-title="规划执行智能体伪代码" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
+      <a data-url="http://example.com/2025/11/16/%E8%A7%84%E5%88%92%E6%89%A7%E8%A1%8C%E6%99%BA%E8%83%BD%E4%BD%93%E4%BC%AA%E4%BB%A3%E7%A0%81/" data-id="cmmemxdeo0022yssl96o34w1h" data-title="规划执行智能体伪代码" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
       
       
       
@@ -437,7 +703,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://example.com/2025/11/13/Java%E7%BA%BF%E7%A8%8B%E6%B1%A0%E5%8F%82%E6%95%B0%E9%85%8D%E7%BD%AE%E8%AF%A6%E8%A7%A3/" data-id="cmmem61qg000je0slbspm4n49" data-title="Java线程池参数配置详解" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
+      <a data-url="http://example.com/2025/11/13/Java%E7%BA%BF%E7%A8%8B%E6%B1%A0%E5%8F%82%E6%95%B0%E9%85%8D%E7%BD%AE%E8%AF%A6%E8%A7%A3/" data-id="cmmemxddu000jyssl0wi0621k" data-title="Java线程池参数配置详解" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
       
       
       
@@ -480,7 +746,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://example.com/2025/11/13/Claude-Code-LSP-AST%E6%94%AF%E6%8C%81%E6%8E%A2%E8%AE%A8/" data-id="cmmem61q80003e0sld9rd0cli" data-title="Claude_Code_LSP_AST支持探讨" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
+      <a data-url="http://example.com/2025/11/13/Claude-Code-LSP-AST%E6%94%AF%E6%8C%81%E6%8E%A2%E8%AE%A8/" data-id="cmmemxddh0003yssl9tp76t8h" data-title="Claude_Code_LSP_AST支持探讨" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
       
       
       
@@ -558,7 +824,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://example.com/2025/11/06/Cursor%E4%BB%A3%E7%A0%81%E5%BA%93%E7%B4%A2%E5%BC%95%E6%8A%80%E6%9C%AF%E8%AF%A6%E8%A7%A3/" data-id="cmmem61q90004e0sl1lol789v" data-title="Cursor代码库索引技术详解" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
+      <a data-url="http://example.com/2025/11/06/Cursor%E4%BB%A3%E7%A0%81%E5%BA%93%E7%B4%A2%E5%BC%95%E6%8A%80%E6%9C%AF%E8%AF%A6%E8%A7%A3/" data-id="cmmemxddo0005yssldw265mqp" data-title="Cursor代码库索引技术详解" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
       
       
       
@@ -676,7 +942,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://example.com/2025/11/04/LangGraph%E6%B7%B1%E5%BA%A6%E7%A0%94%E7%A9%B6%E4%BB%A3%E7%90%86%E5%AE%9E%E7%8E%B0/" data-id="cmmem61qk000qe0sl7a7fchy3" data-title="LangGraph深度研究代理实现" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
+      <a data-url="http://example.com/2025/11/04/LangGraph%E6%B7%B1%E5%BA%A6%E7%A0%94%E7%A9%B6%E4%BB%A3%E7%90%86%E5%AE%9E%E7%8E%B0/" data-id="cmmemxddx000oysslgumxap6f" data-title="LangGraph深度研究代理实现" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
       
       
       
@@ -741,343 +1007,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://example.com/2025/10/24/%E5%88%86%E5%B8%83%E5%BC%8F%E9%93%BE%E8%B7%AF%E8%BF%BD%E8%B8%AA%E6%80%9D%E8%B7%AF%E4%BB%8B%E7%BB%8D/" data-id="cmmem61qq0013e0slagge84gf" data-title="分布式链路追踪思路介绍" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
-      
-      
-      
-    </footer>
-  </div>
-  
-</article>
-
-
-
-  
-    <article id="post-线上CPU飙升排查经验分享" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
-  <div class="article-meta">
-    <a href="/2025/10/04/%E7%BA%BF%E4%B8%8ACPU%E9%A3%99%E5%8D%87%E6%8E%92%E6%9F%A5%E7%BB%8F%E9%AA%8C%E5%88%86%E4%BA%AB/" class="article-date">
-  <time class="dt-published" datetime="2025-10-04T04:44:46.000Z" itemprop="datePublished">2025-10-04</time>
-</a>
-    
-  </div>
-  <div class="article-inner">
-    
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="p-name article-title" href="/2025/10/04/%E7%BA%BF%E4%B8%8ACPU%E9%A3%99%E5%8D%87%E6%8E%92%E6%9F%A5%E7%BB%8F%E9%AA%8C%E5%88%86%E4%BA%AB/">线上CPU飙升排查经验分享</a>
-    </h1>
-  
-
-      </header>
-    
-    <div class="e-content article-entry" itemprop="articleBody">
-      
-        <hr>
-<h3 id="回答范例：一次高并发下CPU飙升的排查与解决"><a href="#回答范例：一次高并发下CPU飙升的排查与解决" class="headerlink" title="回答范例：一次高并发下CPU飙升的排查与解决"></a>回答范例：一次高并发下CPU飙升的排查与解决</h3><p><strong>1. 问题背景与发现（Situation）</strong></p>
-<ul>
-<li><strong>时间</strong>：某次大促活动期间。</li>
-<li><strong>现象</strong>：监控系统（如Zabbix、Prometheus）发出告警，显示核心业务服务（如订单服务）的CPU使用率突然从平时的20%飙升到95%以上，且持续不降。部分接口响应时间明显变长，甚至出现超时。</li>
-</ul>
-<p><strong>2. 紧急响应与定位过程（Task &amp; Action）</strong><br>我立刻登录到跳板机，按照以下步骤进行排查：</p>
-<ul>
-<li><strong>第一步：快速全局定位</strong><ul>
-<li>使用 <code>top</code> 命令查看服务器整体资源，确认是Java进程（PID：12345）占用了最高的CPU。</li>
-<li>接着使用 <code>top -Hp 12345</code> 查看该进程内最耗费CPU的线程。发现有几个线程（如PID：6789）的CPU占用率特别高。</li>
-<li><strong>关键操作</strong>：将线程ID <code>6789</code> 转换为十六进制 <code>1a85</code>（因为线程栈文件里用的是十六进制），命令：<code>printf &quot;%x\n&quot; 6789</code>。</li>
-</ul>
-</li>
-<li><strong>第二步：深入代码层面分析</strong><ul>
-<li>使用 <code>jstack 12345 | grep -A 20 1a85</code> 导出线程栈，并过滤出那个问题线程的堆栈信息。</li>
-<li><strong>发现</strong>：堆栈信息清晰地指向了项目中的一个类 <code>OrderAnalyseHandler</code> 的第38行。</li>
-</ul>
-</li>
-<li><strong>第三步：结合业务与日志分析根因</strong><ul>
-<li>我马上打开对应的业务代码。发现第38行是一个 <strong>正则表达式验证</strong>，用于处理用户输入的备注信息，其正则在极端情况下会触发 <strong>“灾难性回溯”</strong>。</li>
-<li>同时查看该时间点的业务日志（如ELK、Splunk），发现恰好有大量包含特殊字符（如一连串的<code>“AAAAAAAAA”</code>）的请求涌入。这个输入正是触发正则回溯的“导火索”。</li>
-<li>至此，根本原因已定位：<strong>一个低效的正则表达式 + 恶意&#x2F;特殊的用户输入 &#x3D; CPU打满</strong>。</li>
-</ul>
-</li>
-</ul>
-<p><strong>3. 解决方案与实施（Result）</strong></p>
-<ul>
-<li><strong>紧急止血</strong>：由于是线上大促，首要任务是恢复服务。我联系运维同学，将该节点从负载均衡（Nginx&#x2F;F5）上摘除，重启服务后临时恢复。同时，在网关层（如Sentinel、Hystrix）对该接口增加了<strong>限流和熔断</strong>规则，防止流量再次冲击。</li>
-<li><strong>根本解决</strong>：<ol>
-<li><strong>优化代码</strong>：将原正则 <code>(a+)+b</code> 这类写法替换为非回溯模式，或者使用更高效的预编译Pattern，甚至改用字符串遍历的方式替代。</li>
-<li><strong>代码审查</strong>：修复后，与团队成员一起复盘，对所有类似的正则使用场景进行梳理。</li>
-<li><strong>完善监控</strong>：在代码中增加了对方法执行耗时的监控（Metrics），如果某个方法执行超过阈值，会提前发出预警。</li>
-</ol>
-</li>
-</ul>
-<p><strong>4. 事后复盘与总结</strong><br>这个问题让我意识到，代码中一个看似微小的逻辑，在高并发场景下也可能演变成重大故障。之后的开发规范里，我们明确要求<strong>禁止编写复杂且可能回溯的正则，并强调了参数校验的重要性</strong>。</p>
-<hr>
-<h3 id="细节"><a href="#细节" class="headerlink" title="细节"></a>细节</h3><ul>
-<li><strong>为什么用 <code>top -Hp</code> 而不是直接用 <code>jstack</code>？</strong><br>答：<code>top</code>能直观地找出最耗CPU的线程PID，能快速缩小排查范围，避免在海量线程日志里大海捞针。</li>
-<li><strong>除了CPU飙升，你还排查过内存泄漏（OOM）的问题吗？</strong><br>可以准备一个内存泄漏的案例，关键点在于使用 <code>jstat</code> 观察GC情况，以及用 <code>jmap</code> 生成堆转储文件（Heap Dump），然后用MAT或JProfiler分析大对象。</li>
-<li><strong>如果当时没有监控，你怎么发现这个异常？</strong><br>可以从业务感知（用户反馈慢）、日志异常（大量TimeOut日志）以及现场登录服务器查看这三方面来回答。</li>
-</ul>
-<p>希望这个范例能给你一些启发。如果需要，我还可以帮你梳理一个内存泄漏的排查案例。</p>
-
-      
-    </div>
-    <footer class="article-footer">
-      <a data-url="http://example.com/2025/10/04/%E7%BA%BF%E4%B8%8ACPU%E9%A3%99%E5%8D%87%E6%8E%92%E6%9F%A5%E7%BB%8F%E9%AA%8C%E5%88%86%E4%BA%AB/" data-id="cmmem61r7001qe0sl7hen4js6" data-title="线上CPU飙升排查经验分享" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
-      
-      
-      
-    </footer>
-  </div>
-  
-</article>
-
-
-
-  
-    <article id="post-MySQL-EXPLAIN命令详解与优化" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
-  <div class="article-meta">
-    <a href="/2025/09/06/MySQL-EXPLAIN%E5%91%BD%E4%BB%A4%E8%AF%A6%E8%A7%A3%E4%B8%8E%E4%BC%98%E5%8C%96/" class="article-date">
-  <time class="dt-published" datetime="2025-09-06T07:26:21.000Z" itemprop="datePublished">2025-09-06</time>
-</a>
-    
-  </div>
-  <div class="article-inner">
-    
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="p-name article-title" href="/2025/09/06/MySQL-EXPLAIN%E5%91%BD%E4%BB%A4%E8%AF%A6%E8%A7%A3%E4%B8%8E%E4%BC%98%E5%8C%96/">MySQL_EXPLAIN命令详解与优化</a>
-    </h1>
-  
-
-      </header>
-    
-    <div class="e-content article-entry" itemprop="articleBody">
-      
-        <p>思考过程（Thinking）：</p>
-<p>MySQL 的 EXPLAIN 命令是分析查询性能的关键工具，用于获取查询执行计划信息。以下是详细说明：</p>
-<h2 id="一、基本用法"><a href="#一、基本用法" class="headerlink" title="一、基本用法"></a>一、基本用法</h2><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">EXPLAIN [EXTENDED <span class="operator">|</span> PARTITIONS <span class="operator">|</span> FORMAT <span class="operator">=</span> format] <span class="keyword">SELECT</span> ...;</span><br></pre></td></tr></table></figure>
-
-<p>常用简化形式：</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">EXPLAIN <span class="keyword">SELECT</span> ...;</span><br></pre></td></tr></table></figure>
-
-<h2 id="二、输出列详解"><a href="#二、输出列详解" class="headerlink" title="二、输出列详解"></a>二、输出列详解</h2><p>EXPLAIN 输出结果包含以下重要列：</p>
-<h3 id="1-id"><a href="#1-id" class="headerlink" title="1. id"></a>1. <strong>id</strong></h3><ul>
-<li>查询标识符</li>
-<li>数字越大越先执行，相同则从上到下执行</li>
-</ul>
-<h3 id="2-select-type"><a href="#2-select-type" class="headerlink" title="2. select_type"></a>2. <strong>select_type</strong></h3><ul>
-<li>SIMPLE：简单查询（无子查询或UNION）</li>
-<li>PRIMARY：主查询（最外层）</li>
-<li>SUBQUERY：子查询</li>
-<li>DERIVED：派生表（FROM子句中的子查询）</li>
-<li>UNION：UNION中的第二个及后续查询</li>
-<li>UNION RESULT：UNION结果</li>
-</ul>
-<h3 id="3-table"><a href="#3-table" class="headerlink" title="3. table"></a>3. <strong>table</strong></h3><ul>
-<li>访问的表名（或别名）</li>
-</ul>
-<h3 id="4-type（重要性能指标）"><a href="#4-type（重要性能指标）" class="headerlink" title="4. type（重要性能指标）"></a>4. <strong>type</strong>（重要性能指标）</h3><p>访问类型，性能从好到坏排序：</p>
-<ul>
-<li><strong>system</strong>：表只有一行</li>
-<li><strong>const</strong>：通过主键或唯一索引查找，最多返回一行</li>
-<li><strong>eq_ref</strong>：联表查询时使用主键或唯一索引</li>
-<li><strong>ref</strong>：使用非唯一索引查找</li>
-<li><strong>range</strong>：索引范围扫描</li>
-<li><strong>index</strong>：全索引扫描</li>
-<li><strong>ALL</strong>：全表扫描（应避免）</li>
-</ul>
-<h3 id="5-possible-keys"><a href="#5-possible-keys" class="headerlink" title="5. possible_keys"></a>5. <strong>possible_keys</strong></h3><ul>
-<li>可能使用的索引</li>
-</ul>
-<h3 id="6-key"><a href="#6-key" class="headerlink" title="6. key"></a>6. <strong>key</strong></h3><ul>
-<li>实际使用的索引</li>
-</ul>
-<h3 id="7-key-len"><a href="#7-key-len" class="headerlink" title="7. key_len"></a>7. <strong>key_len</strong></h3><ul>
-<li>使用的索引长度</li>
-</ul>
-<h3 id="8-ref"><a href="#8-ref" class="headerlink" title="8. ref"></a>8. <strong>ref</strong></h3><ul>
-<li>与索引比较的列或常量</li>
-</ul>
-<h3 id="9-rows"><a href="#9-rows" class="headerlink" title="9. rows"></a>9. <strong>rows</strong></h3><ul>
-<li>预估需要读取的行数</li>
-</ul>
-<h3 id="10-Extra（重要优化信息）"><a href="#10-Extra（重要优化信息）" class="headerlink" title="10. Extra（重要优化信息）"></a>10. <strong>Extra</strong>（重要优化信息）</h3><ul>
-<li><strong>Using index</strong>：覆盖索引，无需回表</li>
-<li><strong>Using where</strong>：服务器层过滤</li>
-<li><strong>Using temporary</strong>：使用临时表</li>
-<li><strong>Using filesort</strong>：需要额外排序</li>
-<li><strong>Using join buffer</strong>：使用连接缓冲区</li>
-</ul>
-<h2 id="三、使用示例"><a href="#三、使用示例" class="headerlink" title="三、使用示例"></a>三、使用示例</h2><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- 基本用法</span></span><br><span class="line">EXPLAIN <span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> users <span class="keyword">WHERE</span> id <span class="operator">=</span> <span class="number">1</span>;</span><br><span class="line"></span><br><span class="line"><span class="comment">-- 联表查询分析</span></span><br><span class="line">EXPLAIN <span class="keyword">SELECT</span> u.name, o.order_no </span><br><span class="line"><span class="keyword">FROM</span> users u </span><br><span class="line"><span class="keyword">JOIN</span> orders o <span class="keyword">ON</span> u.id <span class="operator">=</span> o.user_id </span><br><span class="line"><span class="keyword">WHERE</span> u.age <span class="operator">&gt;</span> <span class="number">25</span>;</span><br><span class="line"></span><br><span class="line"><span class="comment">-- 查看详细执行计划</span></span><br><span class="line">EXPLAIN FORMAT <span class="operator">=</span> JSON <span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> products <span class="keyword">WHERE</span> price <span class="operator">&gt;</span> <span class="number">100</span>;</span><br></pre></td></tr></table></figure>
-
-<h2 id="四、高级用法"><a href="#四、高级用法" class="headerlink" title="四、高级用法"></a>四、高级用法</h2><h3 id="1-EXPLAIN-ANALYZE（MySQL-8-0-18-）"><a href="#1-EXPLAIN-ANALYZE（MySQL-8-0-18-）" class="headerlink" title="1. EXPLAIN ANALYZE（MySQL 8.0.18+）"></a>1. <strong>EXPLAIN ANALYZE</strong>（MySQL 8.0.18+）</h3><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">EXPLAIN ANALYZE <span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> large_table <span class="keyword">WHERE</span> category <span class="operator">=</span> <span class="string">&#x27;books&#x27;</span>;</span><br></pre></td></tr></table></figure>
-
-<p>提供实际执行时间和成本统计。</p>
-<h3 id="2-JSON格式输出"><a href="#2-JSON格式输出" class="headerlink" title="2. JSON格式输出"></a>2. <strong>JSON格式输出</strong></h3><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">EXPLAIN FORMAT<span class="operator">=</span>JSON <span class="keyword">SELECT</span> ...;</span><br></pre></td></tr></table></figure>
-
-<p>获取更详细的JSON格式执行计划。</p>
-<h3 id="3-分区表分析"><a href="#3-分区表分析" class="headerlink" title="3. 分区表分析"></a>3. <strong>分区表分析</strong></h3><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">EXPLAIN PARTITIONS <span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> sales <span class="keyword">WHERE</span> <span class="keyword">year</span> <span class="operator">=</span> <span class="number">2023</span>;</span><br></pre></td></tr></table></figure>
-
-<p>显示分区访问情况。</p>
-<h2 id="五、优化建议"><a href="#五、优化建议" class="headerlink" title="五、优化建议"></a>五、优化建议</h2><ol>
-<li><strong>重点关注指标</strong><ul>
-<li><code>type</code> 尽量达到 ref 或 range 以上</li>
-<li><code>rows</code> 值尽可能小</li>
-<li><code>Extra</code> 避免出现 Using temporary 和 Using filesort</li>
-</ul>
-</li>
-<li><strong>常见优化场景</strong><ul>
-<li>全表扫描（type&#x3D;ALL）→ 考虑添加索引</li>
-<li>文件排序（Using filesort）→ 优化ORDER BY子句</li>
-<li>临时表（Using temporary）→ 优化GROUP BY或DISTINCT</li>
-</ul>
-</li>
-<li><strong>索引优化示例</strong></li>
-</ol>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- 优化前</span></span><br><span class="line">EXPLAIN <span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> orders <span class="keyword">WHERE</span> order_date <span class="operator">&gt;</span> <span class="string">&#x27;2023-01-01&#x27;</span>;</span><br><span class="line"><span class="comment">-- 如果type为ALL，添加索引</span></span><br><span class="line"><span class="keyword">CREATE</span> INDEX idx_order_date <span class="keyword">ON</span> orders(order_date);</span><br></pre></td></tr></table></figure>
-
-<h2 id="六、限制说明"><a href="#六、限制说明" class="headerlink" title="六、限制说明"></a>六、限制说明</h2><ol>
-<li>不实际执行查询</li>
-<li>基于统计信息估算</li>
-<li>不显示触发器和存储过程影响</li>
-<li>对于UPDATE&#x2F;DELETE语句，需要先转换为SELECT查看</li>
-</ol>
-<h2 id="七、实际工作流程"><a href="#七、实际工作流程" class="headerlink" title="七、实际工作流程"></a>七、实际工作流程</h2><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- 1. 分析慢查询</span></span><br><span class="line">EXPLAIN <span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> slow_query_table <span class="keyword">WHERE</span> conditions;</span><br><span class="line"></span><br><span class="line"><span class="comment">-- 2. 查看索引使用情况</span></span><br><span class="line">EXPLAIN <span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> <span class="keyword">table</span> USE INDEX (index_name) <span class="keyword">WHERE</span> ...;</span><br><span class="line"></span><br><span class="line"><span class="comment">-- 3. 对比不同写法</span></span><br><span class="line">EXPLAIN <span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> <span class="keyword">table</span> <span class="keyword">WHERE</span> a <span class="operator">=</span> <span class="number">1</span> <span class="keyword">AND</span> b <span class="operator">=</span> <span class="number">2</span>;</span><br><span class="line">EXPLAIN <span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> <span class="keyword">table</span> <span class="keyword">WHERE</span> b <span class="operator">=</span> <span class="number">2</span> <span class="keyword">AND</span> a <span class="operator">=</span> <span class="number">1</span>;</span><br><span class="line"></span><br><span class="line"><span class="comment">-- 4. 验证优化效果</span></span><br></pre></td></tr></table></figure>
-
-<p>通过 EXPLAIN 分析，可以系统性地识别查询性能瓶颈，制定合理的优化策略。</p>
-<h1 id="MySQL-EXPLAIN-命令详解"><a href="#MySQL-EXPLAIN-命令详解" class="headerlink" title="MySQL EXPLAIN 命令详解"></a>MySQL EXPLAIN 命令详解</h1><p>EXPLAIN 是 MySQL 中用于分析查询执行计划的关键工具，它能帮助我们理解查询是如何执行的，从而进行性能优化。</p>
-<h2 id="基本用法"><a href="#基本用法" class="headerlink" title="基本用法"></a>基本用法</h2><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- 基本语法</span></span><br><span class="line">EXPLAIN <span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> users <span class="keyword">WHERE</span> id <span class="operator">=</span> <span class="number">1</span>;</span><br><span class="line"></span><br><span class="line"><span class="comment">-- 也可以用于其他 DML 语句</span></span><br><span class="line">EXPLAIN <span class="keyword">UPDATE</span> users <span class="keyword">SET</span> name <span class="operator">=</span> <span class="string">&#x27;John&#x27;</span> <span class="keyword">WHERE</span> id <span class="operator">=</span> <span class="number">1</span>;</span><br><span class="line">EXPLAIN <span class="keyword">DELETE</span> <span class="keyword">FROM</span> users <span class="keyword">WHERE</span> id <span class="operator">=</span> <span class="number">1</span>;</span><br><span class="line"></span><br><span class="line"><span class="comment">-- 完整语法（MySQL 8.0+）</span></span><br><span class="line">EXPLAIN [FORMAT <span class="operator">=</span> &#123;TRADITIONAL <span class="operator">|</span> JSON <span class="operator">|</span> TREE&#125;] <span class="keyword">SELECT</span> ...;</span><br></pre></td></tr></table></figure>
-
-<h2 id="输出结果详解"><a href="#输出结果详解" class="headerlink" title="输出结果详解"></a>输出结果详解</h2><h3 id="主要字段说明"><a href="#主要字段说明" class="headerlink" title="主要字段说明"></a>主要字段说明</h3><table>
-<thead>
-<tr>
-<th>字段</th>
-<th>说明</th>
-</tr>
-</thead>
-<tbody><tr>
-<td><strong>id</strong></td>
-<td>查询标识符，数字越大越先执行</td>
-</tr>
-<tr>
-<td><strong>select_type</strong></td>
-<td>查询类型</td>
-</tr>
-<tr>
-<td><strong>table</strong></td>
-<td>访问的表名</td>
-</tr>
-<tr>
-<td><strong>partitions</strong></td>
-<td>匹配的分区</td>
-</tr>
-<tr>
-<td><strong>type</strong></td>
-<td>访问类型（重要性能指标）</td>
-</tr>
-<tr>
-<td><strong>possible_keys</strong></td>
-<td>可能使用的索引</td>
-</tr>
-<tr>
-<td><strong>key</strong></td>
-<td>实际使用的索引</td>
-</tr>
-<tr>
-<td><strong>key_len</strong></td>
-<td>使用的索引长度</td>
-</tr>
-<tr>
-<td><strong>ref</strong></td>
-<td>与索引比较的列或常量</td>
-</tr>
-<tr>
-<td><strong>rows</strong></td>
-<td>预估需要读取的行数</td>
-</tr>
-<tr>
-<td><strong>filtered</strong></td>
-<td>过滤后的行百分比</td>
-</tr>
-<tr>
-<td><strong>Extra</strong></td>
-<td>额外信息</td>
-</tr>
-</tbody></table>
-<h3 id="1-select-type（查询类型）"><a href="#1-select-type（查询类型）" class="headerlink" title="1. select_type（查询类型）"></a>1. <strong>select_type</strong>（查询类型）</h3><ul>
-<li><strong>SIMPLE</strong>：简单查询（无子查询或UNION）</li>
-<li><strong>PRIMARY</strong>：主查询（最外层）</li>
-<li><strong>SUBQUERY</strong>：子查询</li>
-<li><strong>DERIVED</strong>：派生表（FROM子句中的子查询）</li>
-<li><strong>UNION</strong>：UNION中的第二个及后续查询</li>
-<li><strong>UNION RESULT</strong>：UNION结果</li>
-</ul>
-<h3 id="2-type（访问类型-非常重要！）"><a href="#2-type（访问类型-非常重要！）" class="headerlink" title="2. type（访问类型 - 非常重要！）"></a>2. <strong>type</strong>（访问类型 - 非常重要！）</h3><p>按性能从好到坏排序：</p>
-<ol>
-<li><strong>system</strong>：表只有一行</li>
-<li><strong>const</strong>：通过主键或唯一索引查找，最多返回一行</li>
-<li><strong>eq_ref</strong>：联表查询时使用主键或唯一索引</li>
-<li><strong>ref</strong>：使用非唯一索引查找</li>
-<li><strong>range</strong>：索引范围扫描</li>
-<li><strong>index</strong>：全索引扫描</li>
-<li><strong>ALL</strong>：全表扫描（应避免）</li>
-</ol>
-<h3 id="3-Extra（额外信息）"><a href="#3-Extra（额外信息）" class="headerlink" title="3. Extra（额外信息）"></a>3. <strong>Extra</strong>（额外信息）</h3><ul>
-<li><strong>Using index</strong>：覆盖索引，无需回表</li>
-<li><strong>Using where</strong>：服务器层过滤</li>
-<li><strong>Using temporary</strong>：使用临时表</li>
-<li><strong>Using filesort</strong>：需要额外排序</li>
-<li><strong>Using join buffer</strong>：使用连接缓冲区</li>
-</ul>
-<h2 id="实战示例"><a href="#实战示例" class="headerlink" title="实战示例"></a>实战示例</h2><h3 id="示例1：基本查询分析"><a href="#示例1：基本查询分析" class="headerlink" title="示例1：基本查询分析"></a>示例1：基本查询分析</h3><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">EXPLAIN <span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> orders <span class="keyword">WHERE</span> customer_id <span class="operator">=</span> <span class="number">100</span>;</span><br></pre></td></tr></table></figure>
-
-<h3 id="示例2：连接查询分析"><a href="#示例2：连接查询分析" class="headerlink" title="示例2：连接查询分析"></a>示例2：连接查询分析</h3><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">EXPLAIN <span class="keyword">SELECT</span> o.<span class="operator">*</span>, c.name </span><br><span class="line"><span class="keyword">FROM</span> orders o </span><br><span class="line"><span class="keyword">JOIN</span> customers c <span class="keyword">ON</span> o.customer_id <span class="operator">=</span> c.id </span><br><span class="line"><span class="keyword">WHERE</span> o.amount <span class="operator">&gt;</span> <span class="number">1000</span>;</span><br></pre></td></tr></table></figure>
-
-<h3 id="示例3：JSON格式输出（MySQL-8-0-）"><a href="#示例3：JSON格式输出（MySQL-8-0-）" class="headerlink" title="示例3：JSON格式输出（MySQL 8.0+）"></a>示例3：JSON格式输出（MySQL 8.0+）</h3><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">EXPLAIN FORMAT<span class="operator">=</span>JSON </span><br><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> products <span class="keyword">WHERE</span> category_id <span class="operator">=</span> <span class="number">5</span>;</span><br></pre></td></tr></table></figure>
-
-<p>JSON格式提供更详细的信息，包括成本估算等。</p>
-<h2 id="优化案例"><a href="#优化案例" class="headerlink" title="优化案例"></a>优化案例</h2><h3 id="案例1：识别全表扫描"><a href="#案例1：识别全表扫描" class="headerlink" title="案例1：识别全表扫描"></a>案例1：识别全表扫描</h3><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- 问题查询</span></span><br><span class="line">EXPLAIN <span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> users <span class="keyword">WHERE</span> email <span class="keyword">LIKE</span> <span class="string">&#x27;%@gmail.com&#x27;</span>;</span><br><span class="line"><span class="comment">-- 如果 type = ALL，说明是全表扫描</span></span><br><span class="line"></span><br><span class="line"><span class="comment">-- 优化方案：考虑添加索引或修改查询条件</span></span><br><span class="line"><span class="keyword">CREATE</span> INDEX idx_email <span class="keyword">ON</span> users(email);</span><br></pre></td></tr></table></figure>
-
-<h3 id="案例2：识别文件排序"><a href="#案例2：识别文件排序" class="headerlink" title="案例2：识别文件排序"></a>案例2：识别文件排序</h3><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- 问题查询</span></span><br><span class="line">EXPLAIN <span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> orders <span class="keyword">ORDER</span> <span class="keyword">BY</span> order_date;</span><br><span class="line"><span class="comment">-- 如果 Extra 出现 &quot;Using filesort&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="comment">-- 优化方案：添加合适的索引</span></span><br><span class="line"><span class="keyword">CREATE</span> INDEX idx_order_date <span class="keyword">ON</span> orders(order_date);</span><br></pre></td></tr></table></figure>
-
-<h2 id="高级用法"><a href="#高级用法" class="headerlink" title="高级用法"></a>高级用法</h2><h3 id="1-EXPLAIN-ANALYZE（MySQL-8-0-18-）-1"><a href="#1-EXPLAIN-ANALYZE（MySQL-8-0-18-）-1" class="headerlink" title="1. EXPLAIN ANALYZE（MySQL 8.0.18+）"></a>1. EXPLAIN ANALYZE（MySQL 8.0.18+）</h3><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- 提供实际执行时间和成本统计</span></span><br><span class="line">EXPLAIN ANALYZE <span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> large_table <span class="keyword">WHERE</span> category <span class="operator">=</span> <span class="string">&#x27;books&#x27;</span>;</span><br></pre></td></tr></table></figure>
-
-<h3 id="2-分析分区表"><a href="#2-分析分区表" class="headerlink" title="2. 分析分区表"></a>2. 分析分区表</h3><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- 查看分区访问情况</span></span><br><span class="line">EXPLAIN PARTITIONS </span><br><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> sales <span class="keyword">WHERE</span> sale_date <span class="keyword">BETWEEN</span> <span class="string">&#x27;2023-01-01&#x27;</span> <span class="keyword">AND</span> <span class="string">&#x27;2023-12-31&#x27;</span>;</span><br></pre></td></tr></table></figure>
-
-<h3 id="3-对比不同查询计划"><a href="#3-对比不同查询计划" class="headerlink" title="3. 对比不同查询计划"></a>3. 对比不同查询计划</h3><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- 对比两个查询的性能</span></span><br><span class="line">EXPLAIN <span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> users <span class="keyword">WHERE</span> last_name <span class="operator">=</span> <span class="string">&#x27;Smith&#x27;</span> <span class="keyword">AND</span> first_name <span class="operator">=</span> <span class="string">&#x27;John&#x27;</span>;</span><br><span class="line">EXPLAIN <span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> users USE INDEX (idx_lastname) </span><br><span class="line"><span class="keyword">WHERE</span> last_name <span class="operator">=</span> <span class="string">&#x27;Smith&#x27;</span> <span class="keyword">AND</span> first_name <span class="operator">=</span> <span class="string">&#x27;John&#x27;</span>;</span><br></pre></td></tr></table></figure>
-
-<h2 id="优化建议"><a href="#优化建议" class="headerlink" title="优化建议"></a>优化建议</h2><ol>
-<li><strong>关注关键指标</strong><ul>
-<li>避免 <code>type: ALL</code>（全表扫描）</li>
-<li>尽量减少 <code>rows</code> 的值</li>
-<li>注意 <code>Using filesort</code> 和 <code>Using temporary</code></li>
-</ul>
-</li>
-<li><strong>索引优化</strong><ul>
-<li>确保查询使用了合适的索引</li>
-<li>考虑复合索引的顺序</li>
-<li>利用覆盖索引（Using index）</li>
-</ul>
-</li>
-<li><strong>查询结构调整</strong><ul>
-<li>避免在 WHERE 子句中对列进行函数操作</li>
-<li>减少子查询，改用 JOIN</li>
-<li>合理使用 LIMIT</li>
-</ul>
-</li>
-</ol>
-<h2 id="常用诊断查询"><a href="#常用诊断查询" class="headerlink" title="常用诊断查询"></a>常用诊断查询</h2><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- 查看表的索引情况</span></span><br><span class="line"><span class="keyword">SHOW</span> INDEX <span class="keyword">FROM</span> table_name;</span><br><span class="line"></span><br><span class="line"><span class="comment">-- 分析查询缓存中的执行计划</span></span><br><span class="line">EXPLAIN EXTENDED <span class="keyword">SELECT</span> ...;</span><br><span class="line"><span class="keyword">SHOW</span> WARNINGS;</span><br><span class="line"></span><br><span class="line"><span class="comment">-- 强制使用/忽略索引</span></span><br><span class="line">EXPLAIN <span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> <span class="keyword">table</span> USE INDEX (index_name) <span class="keyword">WHERE</span> ...;</span><br><span class="line">EXPLAIN <span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> <span class="keyword">table</span> IGNORE INDEX (index_name) <span class="keyword">WHERE</span> ...;</span><br></pre></td></tr></table></figure>
-
-<p>EXPLAIN 是 MySQL 性能调优的基础工具，结合慢查询日志、性能模式等工具，可以全面诊断和优化数据库性能。</p>
-
-      
-    </div>
-    <footer class="article-footer">
-      <a data-url="http://example.com/2025/09/06/MySQL-EXPLAIN%E5%91%BD%E4%BB%A4%E8%AF%A6%E8%A7%A3%E4%B8%8E%E4%BC%98%E5%8C%96/" data-id="cmmem61qj000oe0sl0gwo91sd" data-title="MySQL_EXPLAIN命令详解与优化" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
+      <a data-url="http://example.com/2025/10/24/%E5%88%86%E5%B8%83%E5%BC%8F%E9%93%BE%E8%B7%AF%E8%BF%BD%E8%B8%AA%E6%80%9D%E8%B7%AF%E4%BB%8B%E7%BB%8D/" data-id="cmmemxde70012yssl1e9e3ftw" data-title="分布式链路追踪思路介绍" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
       
       
       
@@ -1126,7 +1056,7 @@
   <div class="widget-wrap">
     <h3 class="widget-title">Archiv</h3>
     <div class="widget">
-      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/02/">February 2026</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/01/">January 2026</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/12/">December 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/11/">November 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/10/">October 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/09/">September 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/08/">August 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/07/">July 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/04/">April 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/03/">March 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/02/">February 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/01/">January 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/12/">December 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/11/">November 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/10/">October 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/07/">July 2024</a></li></ul>
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/03/">March 2026</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/02/">February 2026</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/01/">January 2026</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/12/">December 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/11/">November 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/10/">October 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/09/">September 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/08/">August 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/07/">July 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/04/">April 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/03/">March 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/02/">February 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/01/">January 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/12/">December 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/11/">November 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/10/">October 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/07/">July 2024</a></li></ul>
     </div>
   </div>
 
@@ -1139,6 +1069,14 @@
       <ul>
         
           <li>
+            <a href="/2026/03/01/element-vue-admin%E5%89%8D%E7%AB%AFmock%E6%98%AF%E5%A6%82%E4%BD%95%E5%AE%9E%E7%8E%B0%E7%9A%84/">element-vue-admin前端mock是如何实现的</a>
+          </li>
+        
+          <li>
+            <a href="/2026/02/18/Disruptor%E5%9C%A8%E6%92%AE%E5%90%88%E5%BC%95%E6%93%8E%E7%9A%84%E5%AE%9E%E8%B7%B5%EF%BD%9C%E5%BE%97%E7%89%A9%E6%8A%80%E6%9C%AF/">Disruptor在撮合引擎的实践｜得物技术</a>
+          </li>
+        
+          <li>
             <a href="/2026/02/14/%E4%B9%90%E8%A7%82%E9%94%81%E5%AE%9E%E7%8E%B0%E9%AB%98%E5%B9%B6%E5%8F%91%E7%8A%B6%E6%80%81%E4%B8%80%E8%87%B4/">乐观锁实现高并发状态一致</a>
           </li>
         
@@ -1148,14 +1086,6 @@
         
           <li>
             <a href="/2026/01/23/Java%E7%BA%BF%E7%A8%8B%E6%B1%A0%E5%BC%82%E5%B8%B8%E5%A4%84%E7%90%86%E6%9C%BA%E5%88%B6/">Java线程池异常处理机制</a>
-          </li>
-        
-          <li>
-            <a href="/2026/01/04/%E5%80%9F%E8%AF%81%E4%B8%9A%E5%8A%A1%E7%8A%B6%E6%80%81%E6%9C%BA%E5%BB%BA%E6%A8%A1%E5%8E%9F%E5%AD%90%E6%80%A7/">借证业务状态机建模原子性</a>
-          </li>
-        
-          <li>
-            <a href="/2026/01/04/RAG%E6%B5%81%E7%A8%8B%E8%AF%A6%E8%A7%A3%E4%B8%8E%E5%9B%BE%E8%A7%A3/">RAG流程详解与图解</a>
           </li>
         
       </ul>
