@@ -91,12 +91,7 @@
     
     <div class="e-content article-entry" itemprop="articleBody">
       
-        <p>思考过程（Thinking）：</p>
-<p>好的，用户之前问了线上消息队列故障的兜底改造方案，我给出了一个比较全面的分层方案，现在用户简单回复“需要”，这显然是对我上一轮回答的延续。</p>
-<p>嗯，用户应该是希望我针对上一轮方案中的某个具体部分，进行更深入的展开。回顾一下，我上一轮提到了好几个方案，包括快速分析的短期策略、中期策略、长期策略，还重点推荐了“本地数据库消息表+定时任务”的经典架构。</p>
-<p>用户可能是一位开发人员或架构师，正在处理实际的生产故障或进行系统加固。他的真实需求不仅仅是知道理论，而是需要可落地的、具体的代码实现指导。他可能正面临MQ不可用的紧急情况，或者在进行系统改造，急需一个能立即上手的解决方案。</p>
-<p>那么，用户最可能需要的，就是对我上一轮重点推荐的“本地数据库消息表+定时任务”模式进行详细展开。这个方案最经典、最稳妥，也最容易用代码实现。我需要提供从建表SQL、生产端代码、消费端代码到定时任务扫描的完整示例，并且要考虑到幂等性、异常处理这些关键点，让用户能直接参考甚至复制使用。</p>
-<p>好的，我们来详细拆解一下<strong>“本地数据库消息表 + 定时任务”</strong>这套兜底方案的具体落地方案。</p>
+        <p>详细拆解一下<strong>“本地数据库消息表 + 定时任务”</strong>这套兜底方案的具体落地方案。</p>
 <p>它的核心思路是利用本地数据库事务来保证业务数据和消息状态的一致性。当 MQ 不可用时，消息会被可靠地保存在数据库中，由定时任务等待 MQ 恢复后重新投递。</p>
 <p>下面我们分模块来看具体的实现方式：</p>
 <h3 id="模块一：消息表结构设计"><a href="#模块一：消息表结构设计" class="headerlink" title="模块一：消息表结构设计"></a>模块一：消息表结构设计</h3><p>首先需要在业务库中创建一张消息表，用于持久化待发送的消息。</p>
@@ -124,7 +119,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://example.com/2024/11/02/%E6%9C%AC%E5%9C%B0%E6%B6%88%E6%81%AF%E8%A1%A8%E5%8A%A0%E5%AE%9A%E6%97%B6%E4%BB%BB%E5%8A%A1%E5%85%9C%E5%BA%95%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" data-id="cmmemxdec001eyssl91rqeo9m" data-title="本地消息表加定时任务兜底消息队列" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
+      <a data-url="http://example.com/2024/11/02/%E6%9C%AC%E5%9C%B0%E6%B6%88%E6%81%AF%E8%A1%A8%E5%8A%A0%E5%AE%9A%E6%97%B6%E4%BB%BB%E5%8A%A1%E5%85%9C%E5%BA%95%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" data-id="cmmen68dj001f1ssl9y8g82wf" data-title="本地消息表加定时任务兜底消息队列" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
       
       
       
@@ -175,7 +170,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://example.com/2024/10/29/%E7%BA%AF%E5%8E%9F%E7%94%9Fjs%E7%AE%80%E5%8D%95%E5%AE%9E%E7%8E%B0%E5%8F%AF%E6%8B%96%E6%8B%BD%E4%BB%BB%E5%8A%A1%E7%9C%8B%E6%9D%BF/" data-id="cmmemxdeh001nysslcb8975ft" data-title="纯原生js简单实现可拖拽任务看板" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
+      <a data-url="http://example.com/2024/10/29/%E7%BA%AF%E5%8E%9F%E7%94%9Fjs%E7%AE%80%E5%8D%95%E5%AE%9E%E7%8E%B0%E5%8F%AF%E6%8B%96%E6%8B%BD%E4%BB%BB%E5%8A%A1%E7%9C%8B%E6%9D%BF/" data-id="cmmen68dn001o1sslflbwhcl9" data-title="纯原生js简单实现可拖拽任务看板" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
       
       
       
@@ -266,7 +261,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://example.com/2024/10/10/%E7%BF%BB%E8%AF%91-Java%20%E4%B8%AD%E7%9A%84%E7%AE%A1%E9%81%93%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/" data-id="cmmemxdem001zysslefo068e1" data-title="翻译-Java 中的管道设计模式" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
+      <a data-url="http://example.com/2024/10/10/%E7%BF%BB%E8%AF%91-Java%20%E4%B8%AD%E7%9A%84%E7%AE%A1%E9%81%93%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/" data-id="cmmen68dp001t1ssl764xc60s" data-title="翻译-Java 中的管道设计模式" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
       
       
       
@@ -388,7 +383,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://example.com/2024/10/10/%E6%96%87%E6%A1%A3-element-vue-admin%20mock-api/" data-id="cmmemxdee001gysslc6syazz7" data-title="文档-element-vue-admin官方文档mock-api" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
+      <a data-url="http://example.com/2024/10/10/%E6%96%87%E6%A1%A3-element-vue-admin%20mock-api/" data-id="cmmen68di001e1ssle6p05aik" data-title="文档-element-vue-admin官方文档mock-api" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
       
       
       
@@ -498,7 +493,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://example.com/2024/10/08/%E8%AE%BE%E7%BD%AE%E5%85%83%E7%B4%A0%E5%B1%85%E4%B8%AD%E7%9A%847%E7%A7%8D%E5%8A%9E%E6%B3%95/" data-id="cmmemxdeo0023yssl907i7qjv" data-title="设置元素居中的7种办法" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
+      <a data-url="http://example.com/2024/10/08/%E8%AE%BE%E7%BD%AE%E5%85%83%E7%B4%A0%E5%B1%85%E4%B8%AD%E7%9A%847%E7%A7%8D%E5%8A%9E%E6%B3%95/" data-id="cmmen68du00271ssle88rd0q6" data-title="设置元素居中的7种办法" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
       
       
       
@@ -664,7 +659,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://example.com/2024/10/07/%E4%BB%8E%20synchronized%20%E5%88%B0%20CAS%20%E5%92%8C%20AQS%20-%20%E5%BD%BB%E5%BA%95%E5%BC%84%E6%87%82%20Java%20%E5%90%84%E7%A7%8D%E5%B9%B6%E5%8F%91%E9%94%81/" data-id="cmmemxde80013yssldgzb2qzz" data-title="从 synchronized 到 CAS 和 AQS - 彻底弄懂 Java 各种并发锁" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
+      <a data-url="http://example.com/2024/10/07/%E4%BB%8E%20synchronized%20%E5%88%B0%20CAS%20%E5%92%8C%20AQS%20-%20%E5%BD%BB%E5%BA%95%E5%BC%84%E6%87%82%20Java%20%E5%90%84%E7%A7%8D%E5%B9%B6%E5%8F%91%E9%94%81/" data-id="cmmen68dc00101ssl45oa4v6q" data-title="从 synchronized 到 CAS 和 AQS - 彻底弄懂 Java 各种并发锁" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
       
       
       
@@ -784,7 +779,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://example.com/2024/10/07/%E7%AD%96%E7%95%A5+%E5%B7%A5%E5%8E%82%E6%A8%A1%E5%BC%8F%E8%A7%A3%E5%86%B3if-else/" data-id="cmmemxdej001sysslb01ahw48" data-title="策略+工厂模式解决if-else" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
+      <a data-url="http://example.com/2024/10/07/%E7%AD%96%E7%95%A5+%E5%B7%A5%E5%8E%82%E6%A8%A1%E5%BC%8F%E8%A7%A3%E5%86%B3if-else/" data-id="cmmen68dm001m1ssl2que2110" data-title="策略+工厂模式解决if-else" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
       
       
       
@@ -901,7 +896,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://example.com/2024/10/06/MySQL%E4%BA%8B%E5%8A%A1%E9%9A%94%E7%A6%BB%E7%BA%A7%E5%88%AB%E8%AF%A6%E8%A7%A3/" data-id="cmmemxddy000qysslfolsedhi" data-title="MySQL事务隔离级别详解" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
+      <a data-url="http://example.com/2024/10/06/MySQL%E4%BA%8B%E5%8A%A1%E9%9A%94%E7%A6%BB%E7%BA%A7%E5%88%AB%E8%AF%A6%E8%A7%A3/" data-id="cmmen68d4000r1ssl6eat1tt5" data-title="MySQL事务隔离级别详解" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
       
       
       
@@ -1041,7 +1036,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://example.com/2024/10/06/8%20%E4%B8%AA%E7%BA%BF%E7%A8%8B%E6%B1%A0%E6%9C%80%E4%BD%B3%E5%AE%9E%E8%B7%B5%E5%92%8C%E5%9D%91%EF%BC%81%E4%BD%BF%E7%94%A8%E4%B8%8D%E5%BD%93%E7%9B%B4%E6%8E%A5%E7%94%9F%E4%BA%A7%E4%BA%8B%E6%95%85%EF%BC%81%EF%BC%81/" data-id="cmmemxdd90000yssl1tid4byx" data-title="8 个线程池最佳实践和坑！使用不当直接生产事故！！" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
+      <a data-url="http://example.com/2024/10/06/8%20%E4%B8%AA%E7%BA%BF%E7%A8%8B%E6%B1%A0%E6%9C%80%E4%BD%B3%E5%AE%9E%E8%B7%B5%E5%92%8C%E5%9D%91%EF%BC%81%E4%BD%BF%E7%94%A8%E4%B8%8D%E5%BD%93%E7%9B%B4%E6%8E%A5%E7%94%9F%E4%BA%A7%E4%BA%8B%E6%95%85%EF%BC%81%EF%BC%81/" data-id="cmmen68ce00001sslct1wcc0i" data-title="8 个线程池最佳实践和坑！使用不当直接生产事故！！" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
       
       
       
@@ -1210,7 +1205,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://example.com/2024/10/01/%E5%B9%BF%E5%91%8ASDK%E6%97%A0%E6%98%BE%E7%A4%BA%E6%8E%92%E6%9F%A5/" data-id="cmmemxdea0018ysslbv775367" data-title="广告SDK无显示排查" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
+      <a data-url="http://example.com/2024/10/01/%E5%B9%BF%E5%91%8ASDK%E6%97%A0%E6%98%BE%E7%A4%BA%E6%8E%92%E6%9F%A5/" data-id="cmmen68dg00171sslflma6m9z" data-title="广告SDK无显示排查" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
       
       
       
