@@ -125,7 +125,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://example.com/2026/03/01/element-vue-admin%E5%89%8D%E7%AB%AFmock%E6%98%AF%E5%A6%82%E4%BD%95%E5%AE%9E%E7%8E%B0%E7%9A%84/" data-id="cmmen68d8000z1sslaj2z5uhs" data-title="element-vue-admin前端mock是如何实现的" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
+      <a data-url="http://example.com/2026/03/01/element-vue-admin%E5%89%8D%E7%AB%AFmock%E6%98%AF%E5%A6%82%E4%BD%95%E5%AE%9E%E7%8E%B0%E7%9A%84/" data-id="cmmswyugv0018hksl9hok4cxy" data-title="element-vue-admin前端mock是如何实现的" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
       
       
       
@@ -395,7 +395,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://example.com/2026/02/18/Disruptor%E5%9C%A8%E6%92%AE%E5%90%88%E5%BC%95%E6%93%8E%E7%9A%84%E5%AE%9E%E8%B7%B5%EF%BD%9C%E5%BE%97%E7%89%A9%E6%8A%80%E6%9C%AF/" data-id="cmmen68cu00071ssl0vf4evft" data-title="Disruptor在撮合引擎的实践｜得物技术" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
+      <a data-url="http://example.com/2026/02/18/Disruptor%E5%9C%A8%E6%92%AE%E5%90%88%E5%BC%95%E6%93%8E%E7%9A%84%E5%AE%9E%E8%B7%B5%EF%BD%9C%E5%BE%97%E7%89%A9%E6%8A%80%E6%9C%AF/" data-id="cmmswyugq000zhksl49ce0cvu" data-title="Disruptor在撮合引擎的实践｜得物技术" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
       
       
       
@@ -454,7 +454,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://example.com/2026/02/14/%E4%B9%90%E8%A7%82%E9%94%81%E5%AE%9E%E7%8E%B0%E9%AB%98%E5%B9%B6%E5%8F%91%E7%8A%B6%E6%80%81%E4%B8%80%E8%87%B4/" data-id="cmmen68d8000y1ssl4oo50iz4" data-title="乐观锁实现高并发状态一致" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
+      <a data-url="http://example.com/2026/02/14/%E4%B9%90%E8%A7%82%E9%94%81%E5%AE%9E%E7%8E%B0%E9%AB%98%E5%B9%B6%E5%8F%91%E7%8A%B6%E6%80%81%E4%B8%80%E8%87%B4/" data-id="cmmswyugo000whksladuoe1sy" data-title="乐观锁实现高并发状态一致" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
       
       
       
@@ -488,22 +488,7 @@
     
     <div class="e-content article-entry" itemprop="articleBody">
       
-        <p>思考过程（Thinking）：</p>
-<p>我们被问到：“如何解决大模型不按要求输出标准json格式的问题”。这是一个关于大语言模型（LLM）应用开发中的常见问题：当要求模型输出JSON时，它可能输出带有额外解释、格式错误、或者不完全符合JSON规范的内容。</p>
-<p>用户想要知道如何解决这个问题。作为助手，需要提供一些实用的方法和技术来强制或引导模型输出有效的JSON。</p>
-<p>需要覆盖：</p>
-<ol>
-<li>为什么模型会输出非标准JSON（自然语言习惯、缺少约束等）。</li>
-<li>提示工程技巧：清晰指定格式、使用few-shot示例、明确要求“只输出JSON，不要其他内容”。</li>
-<li>使用约束解码或结构化生成技术（如JSON模式、语法约束、使用函数调用&#x2F;工具使用）。</li>
-<li>后处理修复：解析失败时进行修复（如使用正则提取、json修复库如<code>json5</code>、<code>demjson3</code>）。</li>
-<li>使用特定的API参数：如OpenAI的<code>response_format</code>参数（<code>json_object</code>或<code>json_schema</code>）。</li>
-<li>其他方法：调整温度参数降低随机性，多次尝试并验证。</li>
-<li>总结建议：最好结合提示工程和API参数，后处理作为兜底。</li>
-</ol>
-<p>回答应结构化，提供步骤和代码示例（可能），但不要过于冗长。使用中文。</p>
-<p>现在组织回答。</p>
-<p>大模型不按要求输出标准 JSON 是一个常见问题，主要原因在于模型训练数据中包含大量自然语言和自由文本，对格式的约束力较弱。解决这一问题可以从<strong>提示工程</strong>、<strong>API 参数控制</strong>、<strong>结构化生成</strong>以及<strong>后处理修复</strong>四个层面入手。</p>
+        <p>大模型不按要求输出标准 JSON 是一个常见问题，主要原因在于模型训练数据中包含大量自然语言和自由文本，对格式的约束力较弱。解决这一问题可以从<strong>提示工程</strong>、<strong>API 参数控制</strong>、<strong>结构化生成</strong>以及<strong>后处理修复</strong>四个层面入手。</p>
 <hr>
 <h3 id="1-优化提示词（Prompt-Engineering）"><a href="#1-优化提示词（Prompt-Engineering）" class="headerlink" title="1. 优化提示词（Prompt Engineering）"></a>1. 优化提示词（Prompt Engineering）</h3><ul>
 <li><strong>明确指定输出格式</strong>：在指令中强调“只输出 JSON，不要包含任何解释、注释或 Markdown 代码块标记”。</li>
@@ -554,7 +539,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://example.com/2026/02/04/%E5%A4%A7%E6%A8%A1%E5%9E%8B%E8%BE%93%E5%87%BA%E6%A0%87%E5%87%86JSON%E8%A7%A3%E5%86%B3%E6%96%B9%E6%B3%95/" data-id="cmmen68dh00191ssl2ckb2k69" data-title="大模型输出标准JSON解决方法" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
+      <a data-url="http://example.com/2026/02/04/%E5%A4%A7%E6%A8%A1%E5%9E%8B%E8%BE%93%E5%87%BA%E6%A0%87%E5%87%86JSON%E8%A7%A3%E5%86%B3%E6%96%B9%E6%B3%95/" data-id="cmmswyugr0012hkslhbko19v6" data-title="大模型输出标准JSON解决方法" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
       
       
       
@@ -664,7 +649,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://example.com/2026/01/23/Java%E7%BA%BF%E7%A8%8B%E6%B1%A0%E5%BC%82%E5%B8%B8%E5%A4%84%E7%90%86%E6%9C%BA%E5%88%B6/" data-id="cmmen68d0000k1ssl2ekm3pxn" data-title="Java线程池异常处理机制" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
+      <a data-url="http://example.com/2026/01/23/Java%E7%BA%BF%E7%A8%8B%E6%B1%A0%E5%BC%82%E5%B8%B8%E5%A4%84%E7%90%86%E6%9C%BA%E5%88%B6/" data-id="cmmswyugf000jhksl9x004b6t" data-title="Java线程池异常处理机制" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
       
       
       
@@ -756,7 +741,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://example.com/2026/01/04/%E5%80%9F%E8%AF%81%E4%B8%9A%E5%8A%A1%E7%8A%B6%E6%80%81%E6%9C%BA%E5%BB%BA%E6%A8%A1%E5%8E%9F%E5%AD%90%E6%80%A7/" data-id="cmmen68de00121sslap5x6s3l" data-title="借证业务状态机建模原子性" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
+      <a data-url="http://example.com/2026/01/04/%E5%80%9F%E8%AF%81%E4%B8%9A%E5%8A%A1%E7%8A%B6%E6%80%81%E6%9C%BA%E5%BB%BA%E6%A8%A1%E5%8E%9F%E5%AD%90%E6%80%A7/" data-id="cmmswyugp000xhksl0m9t492e" data-title="借证业务状态机建模原子性" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
       
       
       
@@ -842,7 +827,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://example.com/2026/01/04/RAG%E6%B5%81%E7%A8%8B%E8%AF%A6%E8%A7%A3%E4%B8%8E%E5%9B%BE%E8%A7%A3/" data-id="cmmen68d6000u1sslf6qc5wrf" data-title="RAG流程详解与图解" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
+      <a data-url="http://example.com/2026/01/04/RAG%E6%B5%81%E7%A8%8B%E8%AF%A6%E8%A7%A3%E4%B8%8E%E5%9B%BE%E8%A7%A3/" data-id="cmmswyugm000shksl40tvdrj0" data-title="RAG流程详解与图解" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
       
       
       
@@ -969,7 +954,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://example.com/2025/12/30/LLM%E5%8F%82%E6%95%B0%E5%8E%9F%E7%90%86%E8%A7%A3%E6%9E%90/" data-id="cmmen68d2000n1sslho42avjk" data-title="LLM参数原理解析" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
+      <a data-url="http://example.com/2025/12/30/LLM%E5%8F%82%E6%95%B0%E5%8E%9F%E7%90%86%E8%A7%A3%E6%9E%90/" data-id="cmmswyugi000nhksl6908083o" data-title="LLM参数原理解析" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
       
       
       
@@ -1035,7 +1020,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://example.com/2025/12/26/AI%E6%99%BA%E8%83%BD%E4%BD%93%E7%B1%BB%E5%9E%8B%E4%BB%8B%E7%BB%8D/" data-id="cmmen68ci00011sslb5hxekle" data-title="AI智能体类型介绍" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
+      <a data-url="http://example.com/2025/12/26/AI%E6%99%BA%E8%83%BD%E4%BD%93%E7%B1%BB%E5%9E%8B%E4%BB%8B%E7%BB%8D/" data-id="cmmswyug10001hksl0ssx4gg3" data-title="AI智能体类型介绍" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
       
       
       
@@ -1123,7 +1108,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://example.com/2025/12/06/%E6%89%8B%E5%86%99ReAct-Agent%E5%AE%9E%E7%8E%B0/" data-id="cmmen68dh001a1sslc3mz6d2z" data-title="手写ReAct_Agent实现" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
+      <a data-url="http://example.com/2025/12/06/%E6%89%8B%E5%86%99ReAct-Agent%E5%AE%9E%E7%8E%B0/" data-id="cmmswyugs0014hksl2zpzdwkd" data-title="手写ReAct_Agent实现" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
       
       
       
